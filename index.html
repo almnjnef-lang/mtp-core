@@ -167,11 +167,11 @@
     </div>
 
     <script>
-        // --- إعدادات الربط المباشرة بالسيرفر المحدثة بالكامل ---
+        // --- إعدادات الربط المباشرة بالسيرفر ---
         const SUPABASE_URL = "https://deuwblgjxtcaekpiaplt.supabase.co";
-        const SUPABASE_KEY = "EyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRldXdibGdqeHRjYWVrcGlhcGx0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg4NzI3NjcsImV4cCI6MjA5NDQ0ODc2N30.DvU-NIGJj-KhjCPqvxBbCh7Kvoj5DTLgw7DKbB7lcQM";
+        // تم تصحيح الحساب هنا لتبدأ بـ eyJ سمول وإلغاء كابيتال الجوال التلقائي
+        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRldXdibGdqeHRjYWVrcGlhcGx0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg4NzI3NjcsImV4cCI6MjA5NDQ0ODc2N30.DvU-NIGJj-KhjCPqvxBbCh7Kvoj5DTLgw7DKbB7lcQM";
 
-        // تهيئة اتصال الـ Supabase وثقبه برمجياً بالواجهة بدون تعارض
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         let isLoginMode = true;
