@@ -24,7 +24,6 @@
             flex-grow: 1; height: 100%; position: relative;
         }
 
-        /* لوحة أدوات البناء العملاقة المحترفة */
         .sidebar-tools {
             width: 340px; background: #151618; border-left: 1px solid #25272a;
             height: 100%; padding: 20px; display: flex; flex-direction: column; gap: 18px; z-index: 10;
@@ -37,7 +36,6 @@
         .tool-group { display: flex; flex-direction: column; gap: 8px; }
         .tool-group label { font-size: 11px; color: #6e757c; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 5px; }
 
-        /* شبكة أزرار توليد الأشكال */
         .spawn-grid {
             display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px;
         }
@@ -49,7 +47,6 @@
         }
         .btn-tool:hover { border-color: #00A2FF; color: #00A2FF; background: #19232d; }
 
-        /* لوحات التحكم المتقدمة والخصائص */
         .properties-panel {
             background: #0d0e10; border: 1px solid #232528; padding: 12px; border-radius: 6px;
             display: flex; flex-direction: column; gap: 10px;
@@ -61,12 +58,10 @@
         .slider-container span { font-size: 10px; color: #a2a8ae; display: flex; justify-content: space-between; }
         .slider-container input[type=range] { width: 100%; accent-color: #00A2FF; cursor: pointer; margin: 0; }
 
-        /* مدخل الألوان المتقدم */
         .color-picker-container { display: flex; align-items: center; justify-content: space-between; background: #1d1f22; padding: 8px; border-radius: 4px; border: 1px solid #2d3135; }
         .color-picker-container span { font-size: 11px; color: #ffffff; }
         .color-picker-container input[type=color] { border: none; background: none; width: 35px; height: 25px; cursor: pointer; }
 
-        /* خيارات التمرير وقفل الحركة بالشبكة */
         .toggle-container { display: flex; align-items: center; justify-content: space-between; background: #1d1f22; padding: 8px; border-radius: 4px; border: 1px solid #2d3135; font-size: 11px; }
         .toggle-container input[type=checkbox] { width: 16px; height: 16px; accent-color: #00A2FF; cursor: pointer; }
 
@@ -75,10 +70,11 @@
         .btn-clone { background: #34495e; } .btn-clone:hover { background: #2c3e50; }
         .btn-del { background: #E74C3C; } .btn-del:hover { background: #c0392b; }
 
-        .btn-save { background: #2ECC71; color: white; border: none; padding: 12px; font-size: 13px; font-weight: 700; border-radius: 6px; cursor: pointer; margin-top: 10px; min-height: 45px; }
+        .btn-save { background: #2ECC71; color: white; border: none; padding: 12px; font-size: 13px; font-weight: 700; border-radius: 6px; cursor: pointer; margin-top: auto; min-height: 45px; }
         .btn-save:hover { background: #27AE60; }
         .btn-exit { background: transparent; color: #ff4a4a; border: 1px solid #ff4a4a; padding: 8px; font-size: 11px; font-weight: 600; border-radius: 4px; cursor: pointer; text-align: center; }
 
+        /* تلميح الكاميرا العلوي - تم إزالة الإيموجي من هنا */
         .camera-hint {
             position: absolute; top: 15px; left: 50%; transform: translateX(-50%);
             background: rgba(13, 14, 16, 0.9); border: 1px solid rgba(255,255,255,0.03);
@@ -185,13 +181,12 @@
         </aside>
 
         <div id="canvas-container">
-            <div class="camera-hint">🤖 اسحب لتدوير زاوية الرؤية الحرة // اضغط على أي كرت أو عنصر لتعديله حياً بالمحاور</div>
+            <div class="camera-hint">اسحب لتدوير زاوية الرؤية الحرة // اضغط على أي كرت أو عنصر لتعديله حياً بالمحاور</div>
         </div>
 
     </div>
 
     <script>
-        // التحقق من حساب المطور عبر Supabase
         const SUPABASE_URL = "https://deuwblgjxtcaekpiaplt.supabase.co";
         const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRldXdibGdqeHRjYWVrcGlhcGx0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg4NzI3NjcsImV4cCI6MjA5NDQ0ODc2N30.DvU-NIGJj-KhjCPqvxBbCh7Kvoj5DTLgw7DKbB7lcQM";
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -202,7 +197,6 @@
         }
         window.onload = checkUser;
 
-        // إعداد البنية التحتية لمحرك الألعاب ثلاثي الأبعاد
         const container = document.getElementById('canvas-container');
         const scene = new THREE.Scene();
         const defaultSkyColor = 0x141517;
@@ -221,14 +215,12 @@
         controls.enableDamping = true; controls.dampingFactor = 0.05;
         controls.maxPolarAngle = Math.PI / 2 - 0.02;
 
-        // مصادر الإضاءة الفائقة للمحرك
         const ambientLight = new THREE.AmbientLight(0x777777);
         scene.add(ambientLight);
         const sunLight = new THREE.DirectionalLight(0xffffff, 1.2);
         sunLight.position.set(30, 60, 20); sunLight.castShadow = true;
         scene.add(sunLight);
 
-        // قاعدة البناء (Baseplate GRID)
         const gridXZ = new THREE.GridHelper(120, 60, 0x00A2FF, 0x282a2d);
         scene.add(gridXZ);
         const floorGeo = new THREE.PlaneGeometry(120, 120);
@@ -240,7 +232,6 @@
         let spawnedObjects = [];
         let selectedObject = null;
 
-        // المحرك الذكي لتوليد الأشكال المتعددة
         function spawnMesh(type) {
             let geometry;
             if (type === 'cube') geometry = new THREE.BoxGeometry(2, 2, 2);
@@ -263,7 +254,6 @@
             selectObject(mesh);
         }
 
-        // أداة التحسس والالتقاط الدقيق باللمس (Raycasting)
         const raycaster = new THREE.Raycaster();
         const mouse = new THREE.Vector2();
 
@@ -277,22 +267,20 @@
 
             if (intersects.length > 0) {
                 selectObject(intersects[0].object);
-                controls.enabled = false; // إيقاف الكاميرا لسهولة السحب والتعديل
+                controls.enabled = false;
             }
         });
 
         container.addEventListener('pointerup', () => { controls.enabled = true; });
 
-        // دالة تحديد الأشكال وتغذية الواجهة بالبيانات الحية
         function selectObject(mesh) {
             if (selectedObject) selectedObject.material.emissiveIntensity = 0.2;
             
             selectedObject = mesh;
-            selectedObject.material.emissiveIntensity = 0.6; // توهج نيون قوي للعنصر النشط
+            selectedObject.material.emissiveIntensity = 0.6;
 
             document.getElementById('selected-info').innerText = "الكتلة النشطة: " + mesh.userData.type.toUpperCase();
             
-            // تعبئة قيم أشرطة المحاور الحية تلقائياً بناءً على وضع العنصر
             document.getElementById('scale-x').value = mesh.scale.x;
             document.getElementById('scale-y').value = mesh.scale.y;
             document.getElementById('scale-z').value = mesh.scale.z;
@@ -303,12 +291,10 @@
             document.getElementById('object-color').value = "#" + mesh.material.color.getHexString();
         }
 
-        // تحوير محاور وأبعاد العنصر حياً مع ميزة الـ Snap to Grid الذكية
         function updateSelected(property, axis, value) {
             if (!selectedObject) return;
             let parsedVal = parseFloat(value);
 
-            // تطبيق الـ Snap (محاذاة الشبكة إلى خطوات من 1 متر) لو الخيار مفعل
             const isSnap = document.getElementById('snap-toggle').checked;
             if (isSnap && property === 'position' && (axis === 'x' || axis === 'z')) {
                 parsedVal = Math.round(parsedVal);
@@ -328,14 +314,12 @@
             if (selectedObject) selectedObject.material.emissiveIntensity = parseFloat(value);
         }
 
-        // أداة مضاعفة العناصر الفائقة (Clone Command)
         function cloneSelectedObject() {
             if (!selectedObject) return;
             
             const cloneMesh = selectedObject.clone();
-            cloneMesh.material = selectedObject.material.clone(); // فصل الخامة لكي لا يتأثر لونه بالأصلي
+            cloneMesh.material = selectedObject.material.clone();
             
-            // إزاحة طفيفة في المحور لمنع التطابق المطلق فوق الكتل
             cloneMesh.position.x += 2.5; 
             
             scene.add(cloneMesh);
@@ -352,7 +336,6 @@
             }
         }
 
-        // تحكم محرك غلاف العالم والبيئة المحيطة حياً
         function updateEnvironmentSky(hex) {
             scene.background.set(hex);
             scene.fog.color.set(hex);
@@ -362,7 +345,6 @@
             scene.fog.density = parseFloat(value);
         }
 
-        // حلقة التشغيل والإنعاش التلقائي اللانهائي للمحرك
         function animate() {
             requestAnimationFrame(animate);
             controls.update();
