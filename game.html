@@ -1,1 +1,218 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MTP Engine // Core Player</title>
+    <link href="https://fonts.googleapis.com/css2?family=Segoe+UI:wght@600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            width: 100%;
+            height: 100%;
+            background-color: #000000;
+            font-family: 'Segoe UI', sans-serif;
+        }
 
+        /* شاشة التحميل العصرية */
+        #loading-screen {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: #191B1D;
+            z-index: 99;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            transition: opacity 0.5s ease;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 3px solid #393B3D;
+            border-top: 3px solid #00A2FF;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+
+        @animation spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* أزرار واجهة المستخدم فوق اللعبة */
+        .game-ui {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 10;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .btn-back {
+            background: #232527;
+            color: white;
+            border: 1px solid #393B3D;
+            padding: 10px 20px;
+            font-size: 14px;
+            font-weight: 600;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .btn-back:hover {
+            background: #00A2FF;
+            border-color: #00A2FF;
+        }
+
+        .controls-hint {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(35, 37, 39, 0.85);
+            padding: 10px 20px;
+            border-radius: 20px;
+            color: #ffffff;
+            font-size: 13px;
+            pointer-events: none;
+            border: 1px solid rgba(255,255,255,0.1);
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="loading-screen">
+        <div class="spinner"></div>
+        <h2>جاري تشغيل محرك MTP ثلاثي الأبعاد...</h2>
+        <p style="color: #888; margin-top: 5px;">تجهيز بيئة السايبر الحية وبناء خريطة الاختبار</p>
+    </div>
+
+    <div class="game-ui">
+        <button class="btn-back" onclick="window.location.href='dashboard.html'">✕ إنهاء اللعب والرجوع</button>
+    </div>
+
+    <div class="controls-hint">
+        تحرك داخل العالم باستخدام أزرار الكيبورد: <b>W, A, S, D</b> أو <b>الأسهم ⬆️⬇️⬅️➡️</b>
+    </div>
+
+    <script>
+        // --- التحقق من أمان الجلسة عبر Supabase ---
+        const SUPABASE_URL = "https://deuwblgjxtcaekpiaplt.supabase.co";
+        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRldXdibGdqeHRjYWVrcGlhcGx0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg4NzI3NjcsImV4cCI6MjA5NDQ0ODc2N30.DvU-NIGJj-KhjCPqvxBbCh7Kvoj5DTLgw7DKbB7lcQM";
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        async function checkUser() {
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            if (!session) {
+                window.location.href = "index.html";
+            } else {
+                // إخفاء شاشة التحميل بعد التأكد من الحساب وبدء المحرك
+                setTimeout(() => {
+                    document.getElementById('loading-screen').style.opacity = 0;
+                    setTimeout(() => document.getElementById('loading-screen').style.display = 'none', 500);
+                }, 1000);
+            }
+        }
+        window.onload = checkUser;
+
+        // --- بناء محرك الألعاب ثلاثي الأبعاد (Three.js Engine) ---
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x0a0b0c); // خلفية فضاء داكنة
+        scene.fog = new THREE.FogExp2(0x0a0b0c, 0.015); // تأثير ضبابي مستقبلي عميق
+
+        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true;
+        document.body.appendChild(renderer.domElement);
+
+        // إضافة إضاءة المحرك (نيون مستقبلي)
+        const ambientLight = new THREE.AmbientLight(0x333333);
+        scene.add(ambientLight);
+
+        const dirLight = new THREE.DirectionalLight(0x00A2FF, 1.5); // ضوء أزرق مسلط
+        dirLight.position.set(20, 40, 20);
+        dirLight.castShadow = true;
+        scene.add(dirLight);
+
+        // إنشاء أرضية الاختبار (Grid Baseplate) بأسلوب النيون
+        const gridXZ = new THREE.GridHelper(200, 100, 0x00A2FF, 0x232527);
+        gridXZ.position.y = 0;
+        scene.add(gridXZ);
+
+        const floorGeo = new THREE.PlaneGeometry(200, 200);
+        const floorMat = new THREE.MeshStandardMaterial({ color: #111215, roughness: 0.4 });
+        const floor = new THREE.Mesh(floorGeo, floorMat);
+        floor.rotation.x = -Math.PI / 2;
+        floor.receiveShadow = true;
+        scene.add(floor);
+
+        // إنشاء اللاعب (أفاتار الكريستالة المتوهجة لتفادي تقليد روبلوكس)
+        const playerGeo = new THREE.OctahedronGeometry(1.2, 0); // مجسم ثماني الأوجه فخم كأنه جوهرة تقنية
+        const playerMat = new THREE.MeshStandardMaterial({ 
+            color: 0x00A2FF, 
+            emissive: 0x0033aa, // توهج ذاتي خفيف
+            roughness: 0.1, 
+            metalness: 0.8 
+        });
+        const player = new THREE.Mesh(playerGeo, playerMat);
+        player.position.y = 1.5;
+        player.castShadow = true;
+        scene.add(player);
+
+        // إعدادات الكاميرا والملاحقة (Third-Person Camera)
+        const cameraOffset = new THREE.Vector3(0, 6, 14);
+
+        // إدارة التحكم بالكيبورد
+        const keys = { w: false, a: false, s: false, d: false, ArrowUp: false, ArrowDown: false, ArrowLeft: false, ArrowRight: false };
+        window.addEventListener('keydown', (e) => { if (e.key in keys || e.key.toLowerCase() in keys) keys[e.key.toLowerCase() === 'w' || e.key.toLowerCase() === 'a' || e.key.toLowerCase() === 's' || e.key.toLowerCase() === 'd' ? e.key.toLowerCase() : e.key] = true; });
+        window.addEventListener('keyup', (e) => { if (e.key in keys || e.key.toLowerCase() in keys) keys[e.key.toLowerCase() === 'w' || e.key.toLowerCase() === 'a' || e.key.toLowerCase() === 's' || e.key.toLowerCase() === 'd' ? e.key.toLowerCase() : e.key] = false; });
+
+        const playerSpeed = 0.25;
+
+        // حلقة اللعبة المستمرة (Game Loop)
+        function animate() {
+            requestAnimationFrame(animate);
+
+            // تحريك مجسم اللاعب وتدويره بشكل جمالي مستمر
+            player.rotation.y += 0.01;
+
+            // معالجة الحركة بناءً على الأزرار المضغوطة
+            if (keys.w || keys.arrowup) player.position.z -= playerSpeed;
+            if (keys.s || keys.arrowdown) player.position.z += playerSpeed;
+            if (keys.a || keys.arrowleft) player.position.x -= playerSpeed;
+            if (keys.d || keys.arrowright) player.position.x += playerSpeed;
+
+            // ملاحقة الكاميرا للاعب بسلاسة سينمائية
+            camera.position.x = player.position.x + cameraOffset.x;
+            camera.position.y = player.position.y + cameraOffset.y;
+            camera.position.z = player.position.z + cameraOffset.z;
+            camera.lookAt(player.position);
+
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        // دعم إعادة ضبط الشاشة عند تدوير الجوال أو تغيير الحجم
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+</html>
