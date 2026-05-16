@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MTP Engine // Core Player</title>
-    <link href="https://fonts.googleapis.com/css2?family=Segoe+UI:wght@600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Segoe+UI:wght=600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     
@@ -44,7 +44,7 @@
             margin-bottom: 20px;
         }
 
-        @animation spin {
+        @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
@@ -55,9 +55,6 @@
             top: 20px;
             right: 20px;
             z-index: 10;
-            display: flex;
-            gap: 15px;
-            align-items: center;
         }
 
         .btn-back {
@@ -90,6 +87,7 @@
             pointer-events: none;
             border: 1px solid rgba(255,255,255,0.1);
             text-align: center;
+            z-index: 10;
         }
     </style>
 </head>
@@ -120,11 +118,11 @@
             if (!session) {
                 window.location.href = "index.html";
             } else {
-                // إخفاء شاشة التحميل بعد التأكد من الحساب وبدء المحرك
+                // إخفاء شاشة التحميل فوراً بعد التأكد من الحساب وبدء المحرك
                 setTimeout(() => {
                     document.getElementById('loading-screen').style.opacity = 0;
                     setTimeout(() => document.getElementById('loading-screen').style.display = 'none', 500);
-                }, 1000);
+                }, 800);
             }
         }
         window.onload = checkUser;
@@ -132,7 +130,7 @@
         // --- بناء محرك الألعاب ثلاثي الأبعاد (Three.js Engine) ---
         const scene = new THREE.Scene();
         scene.background = new THREE.Color(0x0a0b0c); // خلفية فضاء داكنة
-        scene.fog = new THREE.FogExp2(0x0a0b0c, 0.015); // تأثير ضبابي مستقبلي عميق
+        scene.fog = new THREE.FogExp2(0x0a0b0c, 0.015); // تأثير ضبابي عميق
 
         const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
         const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -140,7 +138,7 @@
         renderer.shadowMap.enabled = true;
         document.body.appendChild(renderer.domElement);
 
-        // إضافة إضاءة المحرك (نيون مستقبلي)
+        // إضافة إضاءة المحرك
         const ambientLight = new THREE.AmbientLight(0x333333);
         scene.add(ambientLight);
 
@@ -155,17 +153,17 @@
         scene.add(gridXZ);
 
         const floorGeo = new THREE.PlaneGeometry(200, 200);
-        const floorMat = new THREE.MeshStandardMaterial({ color: #111215, roughness: 0.4 });
+        const floorMat = new THREE.MeshStandardMaterial({ color: 0x111215, roughness: 0.4 }); // تم تصحيح الكود هنا
         const floor = new THREE.Mesh(floorGeo, floorMat);
         floor.rotation.x = -Math.PI / 2;
         floor.receiveShadow = true;
         scene.add(floor);
 
-        // إنشاء اللاعب (أفاتار الكريستالة المتوهجة لتفادي تقليد روبلوكس)
-        const playerGeo = new THREE.OctahedronGeometry(1.2, 0); // مجسم ثماني الأوجه فخم كأنه جوهرة تقنية
+        // إنشاء اللاعب (أفاتار الكريستالة المتوهجة)
+        const playerGeo = new THREE.OctahedronGeometry(1.2, 0); 
         const playerMat = new THREE.MeshStandardMaterial({ 
             color: 0x00A2FF, 
-            emissive: 0x0033aa, // توهج ذاتي خفيف
+            emissive: 0x0033aa, 
             roughness: 0.1, 
             metalness: 0.8 
         });
@@ -174,13 +172,20 @@
         player.castShadow = true;
         scene.add(player);
 
-        // إعدادات الكاميرا والملاحقة (Third-Person Camera)
+        // إعدادات الكاميرا والملاحقة
         const cameraOffset = new THREE.Vector3(0, 6, 14);
 
-        // إدارة التحكم بالكيبورد
-        const keys = { w: false, a: false, s: false, d: false, ArrowUp: false, ArrowDown: false, ArrowLeft: false, ArrowRight: false };
-        window.addEventListener('keydown', (e) => { if (e.key in keys || e.key.toLowerCase() in keys) keys[e.key.toLowerCase() === 'w' || e.key.toLowerCase() === 'a' || e.key.toLowerCase() === 's' || e.key.toLowerCase() === 'd' ? e.key.toLowerCase() : e.key] = true; });
-        window.addEventListener('keyup', (e) => { if (e.key in keys || e.key.toLowerCase() in keys) keys[e.key.toLowerCase() === 'w' || e.key.toLowerCase() === 'a' || e.key.toLowerCase() === 's' || e.key.toLowerCase() === 'd' ? e.key.toLowerCase() : e.key] = false; });
+        // إدارة التحكم بالكيبورد بشكل مبسط ومضمون
+        const keys = { w: false, a: false, s: false, d: false, arrowup: false, arrowdown: false, arrowleft: false, arrowright: false };
+        
+        window.addEventListener('keydown', (e) => { 
+            let k = e.key.toLowerCase();
+            if (k in keys) keys[k] = true; 
+        });
+        window.addEventListener('keyup', (e) => { 
+            let k = e.key.toLowerCase();
+            if (k in keys) keys[k] = false; 
+        });
 
         const playerSpeed = 0.25;
 
@@ -188,7 +193,7 @@
         function animate() {
             requestAnimationFrame(animate);
 
-            // تحريك مجسم اللاعب وتدويره بشكل جمالي مستمر
+            // تدوير مجسم اللاعب بشكل جمالي مستمر
             player.rotation.y += 0.01;
 
             // معالجة الحركة بناءً على الأزرار المضغوطة
@@ -207,7 +212,7 @@
         }
         animate();
 
-        // دعم إعادة ضبط الشاشة عند تدوير الجوال أو تغيير الحجم
+        // دعم إعادة ضبط الشاشة عند تغيير الحجم
         window.addEventListener('resize', () => {
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
