@@ -25,6 +25,7 @@
             overflow: hidden;
         }
 
+        /* تأثير تقني خلفي ناعم */
         body::before {
             content: '';
             position: absolute;
@@ -44,7 +45,7 @@
             padding: 40px;
             width: 100%;
             max-width: 420px;
-            border-radius: 0px; 
+            border-radius: 0px; /* تصميم حاد ومستقيم احترافي */
             box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8);
         }
 
@@ -92,7 +93,7 @@
             border-radius: 0px;
             outline: none;
             transition: border-color 0.3s ease;
-            text-align: left; 
+            text-align: left; /* الحقول بالإنجليزي للإيميل والباسورد */
         }
 
         .form-group input:focus {
@@ -166,10 +167,12 @@
     </div>
 
     <script>
+        // --- إعدادات الربط المباشرة بالسيرفر ---
         const SUPABASE_URL = "https://deuwblgjxtcaekpiaplt.supabase.co";
         const SUPABASE_KEY = "Sb_publishable_LdkS4_JwLGr99-i5NbMiWw_5WcEA07B";
 
-        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        // تم إصلاح التسمية هنا لمنع التعارض مع السكريبت العالمي
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         let isLoginMode = true;
 
@@ -205,7 +208,8 @@
             statusText.innerText = "جاري معالجة الطلب...";
 
             if (isLoginMode) {
-                const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+                // تسجيل الدخول باستخدام العميل المصحح
+                const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
                 if (error) {
                     statusText.className = "status-msg error";
                     statusText.innerText = "خطأ: " + error.message;
@@ -214,7 +218,8 @@
                     statusText.innerText = "تم تسجيل الدخول بنجاح! جاري تحويلك...";
                 }
             } else {
-                const { data, error } = await supabase.auth.signUp({ email, password });
+                // إنشاء حساب جديد باستخدام العميل المصحح
+                const { data, error } = await supabaseClient.auth.signUp({ email, password });
                 if (error) {
                     statusText.className = "status-msg error";
                     statusText.innerText = "خطأ: " + error.message;
