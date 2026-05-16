@@ -3,10 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>MTP Studio // بيئة بناء العوالم</title>
+    <title>MTP Studio // بيئة بناء العوالم المتقدمة</title>
     <link href="https://fonts.googleapis.com/css2?family=Segoe+UI:wght@400;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     
     <style>
         body, html {
@@ -15,7 +16,6 @@
             font-family: 'Segoe UI', sans-serif; user-select: none;
         }
 
-        /* تخطيط الاستوديو الاحترافي: شاشة الألعاب + شريط أدوات البناء */
         .studio-layout {
             display: flex; width: 100%; height: 100%; position: relative;
         }
@@ -24,34 +24,61 @@
             flex-grow: 1; height: 100%; position: relative;
         }
 
-        /* شريط أدوات البناء الجانبي (مثل روبلوكس ستوديو ولكن نيون وعصري) */
+        /* لوحة أدوات البناء المتقدمة */
         .sidebar-tools {
-            width: 280px; background: #191B1D; border-right: 1px solid #2d3035;
-            height: 100%; padding: 20px; display: flex; flex-direction: column; gap: 20px; z-index: 10;
-            box-shadow: 5px 0 15px rgba(0,0,0,0.5);
+            width: 300px; background: #191B1D; border-left: 1px solid #2d3035;
+            height: 100%; padding: 20px; display: flex; flex-direction: column; gap: 15px; z-index: 10;
+            box-shadow: -5px 0 15px rgba(0,0,0,0.5);
+            overflow-y: auto; -webkit-overflow-scrolling: touch;
         }
 
-        .sidebar-tools h3 { font-size: 16px; font-weight: 700; color: #ffffff; border-bottom: 1px solid #2d3035; padding-bottom: 10px; margin: 0; }
+        .sidebar-tools h3 { font-size: 15px; font-weight: 700; color: #ffffff; border-bottom: 1px solid #2d3035; padding-bottom: 8px; margin: 0; }
         
-        .tool-group { display: flex; flex-direction: column; gap: 10px; }
-        .tool-group label { font-size: 12px; color: #888888; font-weight: 600; }
+        .tool-group { display: flex; flex-direction: column; gap: 8px; }
+        .tool-group label { font-size: 11px; color: #888888; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
 
-        /* أزرار توليد المجسمات */
+        /* أزرار توليد الأشكال */
         .btn-tool {
-            background: #232527; color: #ffffff; border: 1px solid #393B3D; padding: 12px;
-            font-size: 14px; font-weight: 600; border-radius: 6px; cursor: pointer; text-align: right;
+            background: #232527; color: #ffffff; border: 1px solid #393B3D; padding: 10px 12px;
+            font-size: 13px; font-weight: 600; border-radius: 6px; cursor: pointer; text-align: right;
             transition: all 0.2s; display: flex; justify-content: space-between; align-items: center;
         }
         .btn-tool:hover { border-color: #00A2FF; color: #00A2FF; background: #1e2933; }
 
-        .btn-save { background: #2ECC71; color: white; border: none; padding: 12px; font-size: 14px; font-weight: 700; border-radius: 6px; cursor: pointer; margin-top: auto; }
+        /* لوحة التحكم بالعنصر المحدد (الخصائص) */
+        .properties-panel {
+            background: #111214; border: 1px solid #2d3035; padding: 15px; border-radius: 6px;
+            display: flex; flex-direction: column; gap: 12px; margin-top: 5px;
+        }
+        .properties-panel h4 { font-size: 12px; color: #00A2FF; margin: 0; font-weight: 700; }
+        
+        .slider-container { display: flex; flex-direction: column; gap: 5px; }
+        .slider-container span { font-size: 11px; color: #b0b5b9; }
+        .slider-container input[type=range] { width: 100%; accent-color: #00A2FF; cursor: pointer; }
+
+        .btn-delete { background: #E74C3C; color: white; border: none; padding: 8px; font-size: 12px; font-weight: 600; border-radius: 4px; cursor: pointer; }
+        .btn-delete:hover { background: #c0392b; }
+
+        .btn-save { background: #2ECC71; color: white; border: none; padding: 12px; font-size: 14px; font-weight: 700; border-radius: 6px; cursor: pointer; margin-top: auto; min-height: 45px; }
         .btn-save:hover { background: #27AE60; }
         
-        .btn-exit { background: transparent; color: #ff4a4a; border: 1px solid #ff4a4a; padding: 8px; font-size: 12px; font-weight: 600; border-radius: 4px; cursor: pointer; text-align: center; }
+        .btn-exit { background: transparent; color: #ff4a4a; border: 1px solid #ff4a4a; padding: 10px; font-size: 12px; font-weight: 600; border-radius: 4px; cursor: pointer; text-align: center; min-height: 40px; }
         .btn-exit:hover { background: #ff4a4a; color: white; }
 
-        /* عداد المجسمات الحية */
         .object-counter { font-size: 11px; color: #00A2FF; background: rgba(0,162,255,0.1); padding: 4px 8px; border-radius: 4px; }
+
+        /* تلميح الكاميرا العلوي */
+        .camera-hint {
+            position: absolute; top: 15px; left: 50%; transform: translateX(-50%);
+            background: rgba(25, 27, 29, 0.8); border: 1px solid rgba(255,255,255,0.05);
+            padding: 6px 15px; border-radius: 20px; color: #888888; font-size: 11px; z-index: 5; pointer-events: none;
+        }
+
+        @media (max-width: 768px) {
+            .studio-layout { flex-direction: column-reverse; }
+            .sidebar-tools { width: 100%; height: 48%; border-left: none; border-top: 1px solid #2d3035; }
+            #canvas-container { width: 100%; height: 52%; }
+        }
     </style>
 </head>
 <body>
@@ -62,30 +89,44 @@
             <h3>MTP STUDIO // أدوات البناء</h3>
             
             <div class="tool-group">
-                <label>توليد عناصر البيئة (SPAWN OBJECTS)</label>
+                <label>توليد عناصر البيئة (SPAWN)</label>
                 <button class="btn-tool" onclick="spawnMesh('cube', 0x00A2FF)"><span>📦 إضافة مكعب نيون أزرق</span></button>
-                <button class="btn-tool" onclick="spawnMesh('cube', 0x2ECC71)"><span>🟩 إضافة مكعب عشب أخضر</span></button>
-                <button class="btn-tool" onclick="spawnMesh('wall', 0xE74C3C)"><span>🧱 إضافة جدار حماية أحمر</span></button>
+                <button class="btn-tool" onclick="spawnMesh('sphere', 0x2ECC71)"><span>🔮 إضافة كرة طاقة خضراء</span></button>
+                <button class="btn-tool" onclick="spawnMesh('cylinder', 0xE74C3C)"><span>🧪 إضافة أسطوانة نيون حمراء</span></button>
             </div>
 
             <div class="tool-group">
-                <label>إحصائيات العالم الحالي</label>
+                <label>تعديل العنصر المحدد (PROPERTIES)</label>
+                <div class="properties-panel">
+                    <h4>العنصر النشط الحالي</h4>
+                    <div class="slider-container">
+                        <span>مقياس الحجم (Scale):</span>
+                        <input type="range" id="scale-slider" min="0.3" max="4" step="0.1" value="1" oninput="updateObjectScale(this.value)">
+                    </div>
+                    <button class="btn-delete" onclick="deleteSelectedObject()">🗑️ حذف العنصر المحدد</button>
+                </div>
+            </div>
+
+            <div class="tool-group">
+                <label>إحصائيات العالم</label>
                 <div class="btn-tool" style="cursor: default;">
                     <span>إجمالي العناصر بالخريطة:</span>
                     <span class="object-counter" id="obj-count">0</span>
                 </div>
             </div>
 
-            <button class="btn-save" onclick="alert('جاري تجهيز نظام الكبسلة وحفظ الخريطة في Supabase في الخطوة القادمة!')">💾 حفظ العالم ونشره</button>
-            <button class="btn-exit" onclick="window.location.href='dashboard.html'">✕ الخروج من الاستوديو</button>
+            <button class="btn-save" onclick="alert('جاهزون لربط السيرفر وتخزين مصفوفة الـ JSON في خطوتنا القادمة!')">💾 حفظ العالم ونشره</button>
+            <button class="btn-exit" onclick="window.location.href='dashboard.html'">✕ الخروج</button>
         </aside>
 
-        <div id="canvas-container"></div>
+        <div id="canvas-container">
+            <div class="camera-hint">💡 اسحب بإصبعك لتدوير الكاميرا وحرك إصبعين للتكبير والتصغير</div>
+        </div>
 
     </div>
 
     <script>
-        // --- التحقق من أمان الجلسة عبر Supabase ---
+        // التحقق من الجلسة
         const SUPABASE_URL = "https://deuwblgjxtcaekpiaplt.supabase.co";
         const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRldXdibGdqeHRjYWVrcGlhcGx0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg4NzI3NjcsImV4cCI6MjA5NDQ0ODc2N30.DvU-NIGJj-KhjCPqvxBbCh7Kvoj5DTLgw7DKbB7lcQM";
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -96,30 +137,35 @@
         }
         window.onload = checkUser;
 
-        // --- بناء المحرك ثلاثي الأبعاد للاستوديو ---
+        // إعداد المحرك ثلاثي الأبعاد
         const container = document.getElementById('canvas-container');
         const scene = new THREE.Scene();
         scene.background = new THREE.Color(0x141517);
         scene.fog = new THREE.FogExp2(0x141517, 0.015);
 
         const camera = new THREE.PerspectiveCamera(60, container.clientWidth / container.clientHeight, 0.1, 1000);
-        camera.position.set(0, 15, 25);
-        camera.lookAt(0, 0, 0);
+        camera.position.set(15, 15, 25);
 
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(container.clientWidth, container.clientHeight);
         renderer.shadowMap.enabled = true;
         container.appendChild(renderer.domElement);
 
+        // تفعيل التحكم الحر والذكي بالكاميرا (OrbitControls)
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true; // تنعيم حركة الكاميرا سينمائياً
+        controls.dampingFactor = 0.05;
+        controls.maxPolarAngle = Math.PI / 2 - 0.05; // منع الكاميرا من النزول تحت الأرضية
+
         // الإضاءة
-        const ambientLight = new THREE.AmbientLight(0x444444);
+        const ambientLight = new THREE.AmbientLight(0x555555);
         scene.add(ambientLight);
         const dirLight = new THREE.DirectionalLight(0xffffff, 1.2);
         dirLight.position.set(20, 40, 20);
         dirLight.castShadow = true;
         scene.add(dirLight);
 
-        // الأرضية الأساسية للاستوديو (Baseplate)
+        // الأرضية الافتراضية
         const gridXZ = new THREE.GridHelper(100, 50, 0x393B3D, 0x232527);
         scene.add(gridXZ);
         const floorGeo = new THREE.PlaneGeometry(100, 100);
@@ -129,54 +175,73 @@
         floor.receiveShadow = true;
         scene.add(floor);
 
-        // مصفوفة لتخزين الكتل المضافة برمجياً
+        // إدارة مصفوفة العناصر والعنصر المحدد
         let spawnedObjects = [];
+        let selectedObject = null;
 
-        // دالة توليد وبناء المجسمات حياً في الفضاء ثلاثي الأبعاد
+        // دالة توليد الأشكال المتقدمة
         function spawnMesh(type, colorHex) {
             let geometry;
             if (type === 'cube') {
                 geometry = new THREE.BoxGeometry(2, 2, 2);
-            } else if (type === 'wall') {
-                geometry = new THREE.BoxGeometry(6, 4, 0.8);
+            } else if (type === 'sphere') {
+                geometry = new THREE.SphereGeometry(1.2, 32, 32);
+            } else if (type === 'cylinder') {
+                geometry = new THREE.CylinderGeometry(1, 1, 3, 32);
             }
 
             const material = new THREE.MeshStandardMaterial({
-                color: colorHex,
-                roughness: 0.2,
-                metalness: 0.5,
-                emissive: colorHex,
-                emissiveIntensity: 0.15
+                color: colorHex, roughness: 0.2, metalness: 0.5,
+                emissive: colorHex, emissiveIntensity: 0.2
             });
 
             const mesh = new THREE.Mesh(geometry, material);
             
-            // وضع المجسم في مكان عشوائي طفيف فوق الأرضية لكي لا تتداخل الكتل
-            mesh.position.set(
-                (Math.random() - 0.5) * 15,
-                type === 'wall' ? 2 : 1, 
-                (Math.random() - 0.5) * 15
-            );
+            // تحديد الارتفاع حسب نوع الشكل
+            let spawnY = 1;
+            if (type === 'cylinder') spawnY = 1.5;
+
+            mesh.position.set((Math.random() - 0.5) * 15, spawnY, (Math.random() - 0.5) * 15);
             mesh.castShadow = true;
             mesh.receiveShadow = true;
             
             scene.add(mesh);
             spawnedObjects.push(mesh);
-
-            // تحديث العداد في الواجهة
+            
+            // تعيين العنصر الجديد كعنصر محدد تلقائياً للتعديل عليه
+            selectObject(mesh);
+            
             document.getElementById('obj-count').innerText = spawnedObjects.length;
         }
 
-        // تدوير الكاميرا ببطء حول المنصة لإعطاء مظهر استوديو احترافي ديناميكي
-        let angle = 0;
+        // دالة تحديد العنصر وإعادة ضبط السلايدر الخاص بالحجم
+        function selectObject(mesh) {
+            selectedObject = mesh;
+            document.getElementById('scale-slider').value = mesh.scale.x;
+        }
+
+        // دالة تغيير حجم العنصر المحدد حياً عبر السلايدر
+        function updateObjectScale(value) {
+            if (selectedObject) {
+                selectedObject.scale.set(value, value, value);
+            }
+        }
+
+        // دالة حذف العنصر المحدد من الفضاء والمصفوفة
+        function deleteSelectedObject() {
+            if (selectedObject) {
+                scene.remove(selectedObject);
+                spawnedObjects = spawnedObjects.filter(obj => obj !== selectedObject);
+                selectedObject = null;
+                document.getElementById('obj-count').innerText = spawnedObjects.length;
+                document.getElementById('scale-slider').value = 1;
+            }
+        }
+
+        // حلقة اللعبة المستمرة والتحديث السينمائي للمحرك
         function animate() {
             requestAnimationFrame(animate);
-            
-            angle += 0.002;
-            camera.position.x = Math.sin(angle) * 30;
-            camera.position.z = Math.cos(angle) * 30;
-            camera.lookAt(0, 2, 0);
-
+            controls.update(); // تحديث حركة الكاميرا الحرة باستمرار
             renderer.render(scene, camera);
         }
         animate();
