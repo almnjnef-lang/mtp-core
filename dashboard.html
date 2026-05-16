@@ -7,214 +7,35 @@
     <link href="https://fonts.googleapis.com/css2?family=Segoe+UI:wght@400;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-
-        body {
-            background-color: #191B1D;
-            color: #ffffff;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-        }
-
-        /* شريط علوي فخم يشبه الهيدر الخاص بروبلوكس */
-        .top-navbar {
-            background-color: #232527;
-            padding: 15px 30px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px solid #111111;
-            box-shadow: 0 20px 30px rgba(0,0,0,0.15);
-        }
-
-        .logo-section h1 {
-            font-size: 20px;
-            font-weight: 700;
-            letter-spacing: 0.5px;
-        }
-
-        .user-nav-profile {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
-        .user-nav-profile span {
-            font-size: 14px;
-            color: #BBBBBB;
-        }
-
-        .btn-logout {
-            background: transparent;
-            color: #ff4a4a;
-            border: 1px solid #ff4a4a;
-            padding: 6px 15px;
-            font-size: 13px;
-            font-weight: 600;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .btn-logout:hover {
-            background: #ff4a4a;
-            color: #ffffff;
-        }
-
-        /* الحاوية الرئيسية للمحتويات الداخلية */
-        .main-dashboard {
-            max-width: 1100px;
-            width: 100%;
-            margin: 40px auto;
-            padding: 0 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 30px;
-        }
-
-        /* بطاقة ترحيبية علوية */
-        .welcome-card {
-            background: #232527;
-            padding: 25px;
-            border-radius: 8px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-        }
-
-        .welcome-card h2 {
-            font-size: 22px;
-            margin-bottom: 5px;
-        }
-
-        .welcome-card p {
-            font-size: 14px;
-            color: #888888;
-        }
-
-        /* شبكة تقسيم المحتويات والألعاب */
-        .dashboard-grid {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 20px;
-        }
-
-        @media (min-width: 768px) {
-            .dashboard-grid {
-                grid-template-columns: 2fr 1fr;
-            }
-        }
-
-        /* قسم الألعاب والعوالم */
-        .games-section {
-            background: #232527;
-            padding: 25px;
-            border-radius: 8px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-        }
-
-        .section-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            border-bottom: 1px solid #333333;
-            padding-bottom: 10px;
-        }
-
-        .btn-create-game {
-            background: #2ECC71;
-            color: #ffffff;
-            border: none;
-            padding: 8px 16px;
-            font-size: 13px;
-            font-weight: 600;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-
-        .btn-create-game:hover {
-            background: #27AE60;
-        }
-
-        /* الكروت الخاصة بالألعاب الافتراضية داخل المنصة */
-        .games-list-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-            gap: 15px;
-        }
-
-        .game-card-item {
-            background: #393B3D;
-            border-radius: 6px;
-            overflow: hidden;
-            border: 1px solid #111111;
-            cursor: pointer;
-            transition: transform 0.2s;
-        }
-
-        .game-card-item:hover {
-            transform: translateY(-5px);
-        }
-
-        .game-thumbnail-placeholder {
-            background: #111111;
-            height: 110px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 24px;
-            color: #555555;
-        }
-
-        .game-info-box {
-            padding: 10px;
-        }
-
-        .game-info-box h4 {
-            font-size: 14px;
-            font-weight: 600;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .game-info-box p {
-            font-size: 11px;
-            color: #AAAAAA;
-            margin-top: 3px;
-        }
-
-        /* بطاقة البيانات الجانبية (الأفاتار/العملات التجريبية) */
-        .sidebar-section {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-
-        .stats-card {
-            background: #232527;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-        }
-
-        .stats-item {
-            display: flex;
-            justify-content: space-between;
-            padding: 10px 0;
-            border-bottom: 1px solid #333333;
-            font-size: 14px;
-        }
-
-        .stats-item:last-child {
-            border-bottom: none;
-        }
-
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: #191B1D; color: #ffffff; min-height: 100vh; display: flex; flex-direction: column; }
+        .top-navbar { background-color: #232527; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #111111; box-shadow: 0 20px 30px rgba(0,0,0,0.15); }
+        .logo-section h1 { font-size: 20px; font-weight: 700; letter-spacing: 0.5px; }
+        .user-nav-profile { display: flex; align-items: center; gap: 15px; }
+        .user-nav-profile span { font-size: 14px; color: #BBBBBB; }
+        .btn-logout { background: transparent; color: #ff4a4a; border: 1px solid #ff4a4a; padding: 6px 15px; font-size: 13px; font-weight: 600; border-radius: 4px; cursor: pointer; transition: all 0.2s; }
+        .btn-logout:hover { background: #ff4a4a; color: #ffffff; }
+        .main-dashboard { max-width: 1100px; width: 100%; margin: 40px auto; padding: 0 20px; display: flex; flex-direction: column; gap: 30px; }
+        .welcome-card { background: #232527; padding: 25px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+        .welcome-card h2 { font-size: 22px; margin-bottom: 5px; }
+        .welcome-card p { font-size: 14px; color: #888888; }
+        .dashboard-grid { display: grid; grid-template-columns: 1fr; gap: 20px; }
+        @media (min-width: 768px) { .dashboard-grid { grid-template-columns: 2fr 1fr; } }
+        .games-section { background: #232527; padding: 25px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+        .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #333333; padding-bottom: 10px; }
+        .btn-create-game { background: #2ECC71; color: #ffffff; border: none; padding: 8px 16px; font-size: 13px; font-weight: 600; border-radius: 4px; cursor: pointer; }
+        .btn-create-game:hover { background: #27AE60; }
+        .games-list-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 15px; }
+        .game-card-item { background: #393B3D; border-radius: 6px; overflow: hidden; border: 1px solid #111111; cursor: pointer; transition: transform 0.2s; }
+        .game-card-item:hover { transform: translateY(-5px); border-color: #00A2FF; }
+        .game-thumbnail-placeholder { background: #111111; height: 110px; display: flex; justify-content: center; align-items: center; font-size: 24px; color: #555555; }
+        .game-info-box { padding: 10px; }
+        .game-info-box h4 { font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .game-info-box p { font-size: 11px; color: #00A2FF; margin-top: 3px; font-weight: 600; }
+        .sidebar-section { display: flex; flex-direction: column; gap: 20px; }
+        .stats-card { background: #232527; padding: 20px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+        .stats-item { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #333333; font-size: 14px; }
+        .stats-item:last-child { border-bottom: none; }
         .stats-item span.label { color: #888888; }
         .stats-item span.value { font-weight: 600; color: #00A2FF; }
     </style>
@@ -232,30 +53,28 @@
     </nav>
 
     <main class="main-dashboard">
-        
         <div class="welcome-card">
-            <h2 id="welcome-text">مرحباً بك مجدداً أيها المطور!</h2>
-            <p>لوحة التحكم البرمجية // إدارة العوالم والألعاب الحية وثنائية الأبعاد.</p>
+            <h2>مرحباً بك مجدداً أيها المطور!</h2>
+            <p>لوحة التحكم البرمجية // إدارة العوالم والألعاب الحية المستقلة.</p>
         </div>
 
         <div class="dashboard-grid">
-            
             <section class="games-section">
                 <div class="section-header">
                     <h3>ألعابك وتجاربك الافتراضية (Experiences)</h3>
-                    <button class="btn-create-game" onclick="alert('جاهزون للخطوة القادمة! سنقوم ببرمجة محرك عوالم 3D هنا قريباً.')">+ إنشاء عالم جديد</button>
+                    <button class="btn-create-game" onclick="window.location.href='game.html'">+ إنشاء عالم جديد</button>
                 </div>
 
                 <div class="games-list-grid">
-                    <div class="game-card-item">
+                    <div class="game-card-item" onclick="window.location.href='game.html'">
                         <div class="game-thumbnail-placeholder">🎮</div>
                         <div class="game-info-box">
                             <h4>MTP World Testing</h4>
-                            <p>نشط // Public</p>
+                            <p>اضغط للعب فورا ⚡</p>
                         </div>
                     </div>
 
-                    <div class="game-card-item">
+                    <div class="game-card-item" onclick="window.location.href='game.html'">
                         <div class="game-thumbnail-placeholder">🏗️</div>
                         <div class="game-info-box">
                             <h4>Baseplate Space</h4>
@@ -282,9 +101,7 @@
                     </div>
                 </div>
             </div>
-
         </div>
-
     </main>
 
     <script>
@@ -297,7 +114,6 @@
             if (!session) {
                 window.location.href = "index.html";
             } else {
-                // عرض إيميل المستخدم في الهيدر العلوي بشكل نظيف
                 document.getElementById('nav-username').innerText = session.user.email;
             }
         }
