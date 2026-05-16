@@ -2,92 +2,72 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>MTP Engine // Core Player</title>
-    <link href="https://fonts.googleapis.com/css2?family=Segoe+UI:wght=600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Segoe+UI:wght@600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     
     <style>
         body, html {
-            margin: 0;
-            padding: 0;
-            overflow: hidden;
-            width: 100%;
-            height: 100%;
-            background-color: #000000;
+            margin: 0; padding: 0; overflow: hidden;
+            width: 100%; height: 100%; background-color: #000000;
             font-family: 'Segoe UI', sans-serif;
+            user-select: none; -webkit-user-select: none;
         }
 
-        /* شاشة التحميل العصرية */
         #loading-screen {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            background: #191B1D;
-            z-index: 99;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            color: white;
+            position: absolute; width: 100%; height: 100%;
+            background: #191B1D; z-index: 99;
+            display: flex; flex-direction: column; justify-content: center; align-items: center; color: white;
             transition: opacity 0.5s ease;
         }
 
         .spinner {
-            width: 50px;
-            height: 50px;
-            border: 3px solid #393B3D;
-            border-top: 3px solid #00A2FF;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin-bottom: 20px;
+            width: 50px; height: 50px; border: 3px solid #393B3D;
+            border-top: 3px solid #00A2FF; border-radius: 50%;
+            animation: spin 1s linear infinite; margin-bottom: 20px;
         }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        /* أزرار واجهة المستخدم فوق اللعبة */
-        .game-ui {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            z-index: 10;
-        }
-
+        .game-ui { position: absolute; top: 20px; right: 20px; z-index: 10; }
         .btn-back {
-            background: #232527;
-            color: white;
-            border: 1px solid #393B3D;
-            padding: 10px 20px;
-            font-size: 14px;
-            font-weight: 600;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: 0.2s;
+            background: #232527; color: white; border: 1px solid #393B3D;
+            padding: 10px 20px; font-size: 14px; font-weight: 600; border-radius: 4px; cursor: pointer;
         }
 
-        .btn-back:hover {
-            background: #00A2FF;
-            border-color: #00A2FF;
-        }
-
-        .controls-hint {
+        /* حاوية أزرار اللمس لجوالك (تصميم نيون فخم) */
+        .mobile-pad {
             position: absolute;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(35, 37, 39, 0.85);
-            padding: 10px 20px;
-            border-radius: 20px;
+            bottom: 30px;
+            left: 30px;
+            display: grid;
+            grid-template-columns: repeat(3, 60px);
+            grid-template-rows: repeat(3, 60px);
+            gap: 8px;
+            z-index: 15;
+        }
+
+        .touch-btn {
+            background: rgba(35, 37, 39, 0.6);
+            border: 1px solid #00A2FF;
+            color: #00A2FF;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 22px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(0, 162, 255, 0.2);
+            touch-action: none;
+        }
+
+        /* تأثير إضاءة الزر عند ضغطه بإصبعك */
+        .touch-btn:active {
+            background: #00A2FF;
             color: #ffffff;
-            font-size: 13px;
-            pointer-events: none;
-            border: 1px solid rgba(255,255,255,0.1);
-            text-align: center;
-            z-index: 10;
+            box-shadow: 0 0 20px #00A2FF;
         }
     </style>
 </head>
@@ -100,11 +80,19 @@
     </div>
 
     <div class="game-ui">
-        <button class="btn-back" onclick="window.location.href='dashboard.html'">✕ إنهاء اللعب والرجوع</button>
+        <button class="btn-back" onclick="window.location.href='dashboard.html'">✕ إنهاء والرجوع</button>
     </div>
 
-    <div class="controls-hint">
-        تحرك داخل العالم باستخدام أزرار الكيبورد: <b>W, A, S, D</b> أو <b>الأسهم ⬆️⬇️⬅️➡️</b>
+    <div class="mobile-pad">
+        <div></div>
+        <div class="touch-btn" id="t-up" style="grid-row: 1; grid-column: 2;">▲</div>
+        <div></div>
+        <div class="touch-btn" id="t-left" style="grid-row: 2; grid-column: 1;">◀</div>
+        <div></div>
+        <div class="touch-btn" id="t-right" style="grid-row: 2; grid-column: 3;">▶</div>
+        <div></div>
+        <div class="touch-btn" id="t-down" style="grid-row: 3; grid-column: 2;">▼</div>
+        <div></div>
     </div>
 
     <script>
@@ -118,7 +106,6 @@
             if (!session) {
                 window.location.href = "index.html";
             } else {
-                // إخفاء شاشة التحميل فوراً بعد التأكد من الحساب وبدء المحرك
                 setTimeout(() => {
                     document.getElementById('loading-screen').style.opacity = 0;
                     setTimeout(() => document.getElementById('loading-screen').style.display = 'none', 500);
@@ -127,10 +114,10 @@
         }
         window.onload = checkUser;
 
-        // --- بناء محرك الألعاب ثلاثي الأبعاد (Three.js Engine) ---
+        // --- بناء محرك الألعاب ثلاثي الأبعاد ---
         const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x0a0b0c); // خلفية فضاء داكنة
-        scene.fog = new THREE.FogExp2(0x0a0b0c, 0.015); // تأثير ضبابي عميق
+        scene.background = new THREE.Color(0x0a0b0c);
+        scene.fog = new THREE.FogExp2(0x0a0b0c, 0.015);
 
         const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
         const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -138,71 +125,75 @@
         renderer.shadowMap.enabled = true;
         document.body.appendChild(renderer.domElement);
 
-        // إضافة إضاءة المحرك
         const ambientLight = new THREE.AmbientLight(0x333333);
         scene.add(ambientLight);
 
-        const dirLight = new THREE.DirectionalLight(0x00A2FF, 1.5); // ضوء أزرق مسلط
+        const dirLight = new THREE.DirectionalLight(0x00A2FF, 1.5);
         dirLight.position.set(20, 40, 20);
         dirLight.castShadow = true;
         scene.add(dirLight);
 
-        // إنشاء أرضية الاختبار (Grid Baseplate) بأسلوب النيون
         const gridXZ = new THREE.GridHelper(200, 100, 0x00A2FF, 0x232527);
-        gridXZ.position.y = 0;
         scene.add(gridXZ);
 
         const floorGeo = new THREE.PlaneGeometry(200, 200);
-        const floorMat = new THREE.MeshStandardMaterial({ color: 0x111215, roughness: 0.4 }); // تم تصحيح الكود هنا
+        const floorMat = new THREE.MeshStandardMaterial({ color: 0x111215, roughness: 0.4 });
         const floor = new THREE.Mesh(floorGeo, floorMat);
         floor.rotation.x = -Math.PI / 2;
         floor.receiveShadow = true;
         scene.add(floor);
 
-        // إنشاء اللاعب (أفاتار الكريستالة المتوهجة)
         const playerGeo = new THREE.OctahedronGeometry(1.2, 0); 
-        const playerMat = new THREE.MeshStandardMaterial({ 
-            color: 0x00A2FF, 
-            emissive: 0x0033aa, 
-            roughness: 0.1, 
-            metalness: 0.8 
-        });
+        const playerMat = new THREE.MeshStandardMaterial({ color: 0x00A2FF, emissive: 0x0033aa, roughness: 0.1, metalness: 0.8 });
         const player = new THREE.Mesh(playerGeo, playerMat);
         player.position.y = 1.5;
         player.castShadow = true;
         scene.add(player);
 
-        // إعدادات الكاميرا والملاحقة
         const cameraOffset = new THREE.Vector3(0, 6, 14);
 
-        // إدارة التحكم بالكيبورد بشكل مبسط ومضمون
-        const keys = { w: false, a: false, s: false, d: false, arrowup: false, arrowdown: false, arrowleft: false, arrowright: false };
-        
-        window.addEventListener('keydown', (e) => { 
+        // --- مصفوفة التحكم (تدعم الكيبورد واللمس معاً) ---
+        const controls = { up: false, down: false, left: false, right: false };
+
+        // 1. استقبال تحكم الكيبورد (للكمبيوتر)
+        window.addEventListener('keydown', (e) => {
             let k = e.key.toLowerCase();
-            if (k in keys) keys[k] = true; 
+            if (k === 'w' || k === 'arrowup') controls.up = true;
+            if (k === 's' || k === 'arrowdown') controls.down = true;
+            if (k === 'a' || k === 'arrowleft') controls.left = true;
+            if (k === 'd' || k === 'arrowright') controls.right = true;
         });
-        window.addEventListener('keyup', (e) => { 
+        window.addEventListener('keyup', (e) => {
             let k = e.key.toLowerCase();
-            if (k in keys) keys[k] = false; 
+            if (k === 'w' || k === 'arrowup') controls.up = false;
+            if (k === 's' || k === 'arrowdown') controls.down = false;
+            if (k === 'a' || k === 'arrowleft') controls.left = false;
+            if (k === 'd' || k === 'arrowright') controls.right = false;
         });
+
+        // 2. استقبال تحكم اللمس (لجوالك)
+        function bindTouch(elementId, direction) {
+            const btn = document.getElementById(elementId);
+            btn.addEventListener('touchstart', (e) => { e.preventDefault(); controls[direction] = true; });
+            btn.addEventListener('touchend', () => { controls[direction] = false; });
+        }
+        bindTouch('t-up', 'up');
+        bindTouch('t-down', 'down');
+        bindTouch('t-left', 'left');
+        bindTouch('t-right', 'right');
 
         const playerSpeed = 0.25;
 
-        // حلقة اللعبة المستمرة (Game Loop)
         function animate() {
             requestAnimationFrame(animate);
-
-            // تدوير مجسم اللاعب بشكل جمالي مستمر
             player.rotation.y += 0.01;
 
-            // معالجة الحركة بناءً على الأزرار المضغوطة
-            if (keys.w || keys.arrowup) player.position.z -= playerSpeed;
-            if (keys.s || keys.arrowdown) player.position.z += playerSpeed;
-            if (keys.a || keys.arrowleft) player.position.x -= playerSpeed;
-            if (keys.d || keys.arrowright) player.position.x += playerSpeed;
+            // تطبيق الحركة بناءً على الكيبورد أو اللمس
+            if (controls.up) player.position.z -= playerSpeed;
+            if (controls.down) player.position.z += playerSpeed;
+            if (controls.left) player.position.x -= playerSpeed;
+            if (controls.right) player.position.x += playerSpeed;
 
-            // ملاحقة الكاميرا للاعب بسلاسة سينمائية
             camera.position.x = player.position.x + cameraOffset.x;
             camera.position.y = player.position.y + cameraOffset.y;
             camera.position.z = player.position.z + cameraOffset.z;
@@ -212,7 +203,6 @@
         }
         animate();
 
-        // دعم إعادة ضبط الشاشة عند تغيير الحجم
         window.addEventListener('resize', () => {
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
