@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>MTP PROTOCOL | CYBER SANDBOX 3D</title>
+    <style>
+        body, html { margin: 0; padding: 0; overflow: hidden; background: #f5f7fa; width: 100%; height: 100%; font-family: -apple-system, BlinkMacSystemFont, sans-serif; }
+        #core-ui { position: absolute; top: 25px; left: 25px; color: #1d1d1f; font-size: 16px; font-weight: 800; pointer-events: none; letter-spacing: 1px; background: rgba(255,255,255,0.9); padding: 12px 20px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.03); border: 1px solid rgba(0,0,0,0.02); }
+        #score-val { color: #00a3ff; font-size: 20px; }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+
+    <div id="core-ui">// MTP_PROTOCOL_CORE <br><span style="font-size:12px; font-weight:500; color:#86868b;">الفيروسات المدمرة:</span> <span id="score-val">0</span></div>
+
+    <script>
+        let scene, camera, renderer, cyberCubes = [], score = 0;
+        const raycaster = new THREE.Raycaster();
+        const pointer = new THREE.Vector2();
+
+        function initMtpEngine() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color('#f5f7fa');
+            scene.fog = new THREE.FogExp2('#f5f7fa', 0.04);
+
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 4, 12);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            document.body.appendChild(renderer.domElement);
+
+            const lightA = new THREE.AmbientLight(0xffffff, 0.7);
+            scene.add(lightA);
+
+            const lightD = new THREE.DirectionalLight(0x00a3ff, 0.8);
+            lightD.position.set(10, 20, 10);
+            scene.add(lightD);
+
+            const grid = new THREE.GridHelper(60, 40, '#00a3ff', '#e5e5ea');
+            grid.position.y = 0;
+            scene.add(grid);
+
+            window.addEventListener('touchstart', onMtpTouch, false);
+            window.addEventListener('resize', onWindowResize, false);
+
+            animateEngine();
+        }
+
+        function spawnCyberCube() {
+            const size = Math.random() * 1.2 + 0.4;
+            const geometry = new THREE.BoxGeometry(size, size, size);
+            const material = new THREE.MeshStandardMaterial({ 
+                color: Math.random() > 0.4 ? '#00a3ff' : '#a255ff',
+                wireframe: Math.random() > 0.7 ? true : false,
+                roughness: 0.2
+            });
+            const mesh = new THREE.Mesh(geometry, material);
+
+            mesh.position.set(
+                (Math.random() - 0.5) * 16,
+                size / 2 + Math.random() * 3,
+                -25 - Math.random() * 15
+            );
+            
+            scene.add(mesh);
+            cyberCubes.push(mesh);
+        }
+
+        function onMtpTouch(event) {
+            pointer.x = (event.touches[0].clientX / window.innerWidth) * 2 - 1;
+            pointer.y = -(event.touches[0].clientY / window.innerHeight) * 2 + 1;
+
+            raycaster.setFromCamera(pointer, camera);
+            const intersects = raycaster.intersectObjects(cyberCubes);
+
+            if (intersects.length > 0) {
+                const target = intersects[0].object;
+                target.scale.set(0, 0, 0);
+                scene.remove(target);
+                cyberCubes = cyberCubes.filter(c => c !== target);
+                score++;
+                document.getElementById('score-val').innerText = score;
+            }
+        }
+
+        function animateEngine() {
+            requestAnimationFrame(animateEngine);
+
+            for (let i = cyberCubes.length - 1; i >= 0; i--) {
+                cyberCubes[i].position.z += 0.12;
+                cyberCubes[i].rotation.x += 0.01;
+                cyberCubes[i].rotation.y += 0.015;
+
+                if (cyberCubes[i].position.z > camera.position.z) {
+                    scene.remove(cyberCubes[i]);
+                    cyberCubes.splice(i, 1);
+                }
+            }
+
+            if (Math.random() < 0.035 && cyberCubes.length < 12) {
+                spawnCyberCube();
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        window.onload = initMtpEngine;
+    </script>
+</body>
+</html>
