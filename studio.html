@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>MTP Studio // بيئة بناء العوالم المتقدمة</title>
+    <title>MTP Ultra Studio // المحرك الاحترافي لبناء العوالم</title>
     <link href="https://fonts.googleapis.com/css2?family=Segoe+UI:wght@400;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -12,7 +12,7 @@
     <style>
         body, html {
             margin: 0; padding: 0; overflow: hidden;
-            width: 100%; height: 100%; background-color: #141517;
+            width: 100%; height: 100%; background-color: #0b0c0d;
             font-family: 'Segoe UI', sans-serif; user-select: none;
         }
 
@@ -24,60 +24,71 @@
             flex-grow: 1; height: 100%; position: relative;
         }
 
-        /* لوحة أدوات البناء المتقدمة */
+        /* لوحة أدوات البناء العملاقة المحترفة */
         .sidebar-tools {
-            width: 300px; background: #191B1D; border-left: 1px solid #2d3035;
-            height: 100%; padding: 20px; display: flex; flex-direction: column; gap: 15px; z-index: 10;
-            box-shadow: -5px 0 15px rgba(0,0,0,0.5);
+            width: 340px; background: #151618; border-left: 1px solid #25272a;
+            height: 100%; padding: 20px; display: flex; flex-direction: column; gap: 18px; z-index: 10;
+            box-shadow: -5px 0 25px rgba(0,0,0,0.6);
             overflow-y: auto; -webkit-overflow-scrolling: touch;
         }
 
-        .sidebar-tools h3 { font-size: 15px; font-weight: 700; color: #ffffff; border-bottom: 1px solid #2d3035; padding-bottom: 8px; margin: 0; }
+        .sidebar-tools h3 { font-size: 14px; font-weight: 700; color: #ffffff; border-bottom: 1px solid #25272a; padding-bottom: 8px; margin: 0; letter-spacing: 0.5px; }
         
         .tool-group { display: flex; flex-direction: column; gap: 8px; }
-        .tool-group label { font-size: 11px; color: #888888; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+        .tool-group label { font-size: 11px; color: #6e757c; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 5px; }
 
-        /* أزرار توليد الأشكال */
+        /* شبكة أزرار توليد الأشكال */
+        .spawn-grid {
+            display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px;
+        }
+
         .btn-tool {
-            background: #232527; color: #ffffff; border: 1px solid #393B3D; padding: 10px 12px;
-            font-size: 13px; font-weight: 600; border-radius: 6px; cursor: pointer; text-align: right;
+            background: #1d1f22; color: #ffffff; border: 1px solid #2d3135; padding: 10px;
+            font-size: 12px; font-weight: 600; border-radius: 6px; cursor: pointer; text-align: right;
             transition: all 0.2s; display: flex; justify-content: space-between; align-items: center;
         }
-        .btn-tool:hover { border-color: #00A2FF; color: #00A2FF; background: #1e2933; }
+        .btn-tool:hover { border-color: #00A2FF; color: #00A2FF; background: #19232d; }
 
-        /* لوحة التحكم بالعنصر المحدد (الخصائص) */
+        /* لوحات التحكم المتقدمة والخصائص */
         .properties-panel {
-            background: #111214; border: 1px solid #2d3035; padding: 15px; border-radius: 6px;
-            display: flex; flex-direction: column; gap: 12px; margin-top: 5px;
+            background: #0d0e10; border: 1px solid #232528; padding: 12px; border-radius: 6px;
+            display: flex; flex-direction: column; gap: 10px;
         }
-        .properties-panel h4 { font-size: 12px; color: #00A2FF; margin: 0; font-weight: 700; }
+        .properties-panel h4 { font-size: 12px; color: #00A2FF; margin: 0; font-weight: 700; border-bottom: 1px solid #1d1f22; padding-bottom: 4px; }
         
-        .slider-container { display: flex; flex-direction: column; gap: 5px; }
-        .slider-container span { font-size: 11px; color: #b0b5b9; }
-        .slider-container input[type=range] { width: 100%; accent-color: #00A2FF; cursor: pointer; }
+        .slider-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+        .slider-container { display: flex; flex-direction: column; gap: 3px; flex-grow: 1; }
+        .slider-container span { font-size: 10px; color: #a2a8ae; display: flex; justify-content: space-between; }
+        .slider-container input[type=range] { width: 100%; accent-color: #00A2FF; cursor: pointer; margin: 0; }
 
-        .btn-delete { background: #E74C3C; color: white; border: none; padding: 8px; font-size: 12px; font-weight: 600; border-radius: 4px; cursor: pointer; }
-        .btn-delete:hover { background: #c0392b; }
+        /* مدخل الألوان المتقدم */
+        .color-picker-container { display: flex; align-items: center; justify-content: space-between; background: #1d1f22; padding: 8px; border-radius: 4px; border: 1px solid #2d3135; }
+        .color-picker-container span { font-size: 11px; color: #ffffff; }
+        .color-picker-container input[type=color] { border: none; background: none; width: 35px; height: 25px; cursor: pointer; }
 
-        .btn-save { background: #2ECC71; color: white; border: none; padding: 12px; font-size: 14px; font-weight: 700; border-radius: 6px; cursor: pointer; margin-top: auto; min-height: 45px; }
+        /* خيارات التمرير وقفل الحركة بالشبكة */
+        .toggle-container { display: flex; align-items: center; justify-content: space-between; background: #1d1f22; padding: 8px; border-radius: 4px; border: 1px solid #2d3135; font-size: 11px; }
+        .toggle-container input[type=checkbox] { width: 16px; height: 16px; accent-color: #00A2FF; cursor: pointer; }
+
+        .action-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; }
+        .btn-action-panel { padding: 8px; font-size: 11px; font-weight: 600; border-radius: 4px; border: none; cursor: pointer; text-align: center; color: white; transition: 0.2s; }
+        .btn-clone { background: #34495e; } .btn-clone:hover { background: #2c3e50; }
+        .btn-del { background: #E74C3C; } .btn-del:hover { background: #c0392b; }
+
+        .btn-save { background: #2ECC71; color: white; border: none; padding: 12px; font-size: 13px; font-weight: 700; border-radius: 6px; cursor: pointer; margin-top: 10px; min-height: 45px; }
         .btn-save:hover { background: #27AE60; }
-        
-        .btn-exit { background: transparent; color: #ff4a4a; border: 1px solid #ff4a4a; padding: 10px; font-size: 12px; font-weight: 600; border-radius: 4px; cursor: pointer; text-align: center; min-height: 40px; }
-        .btn-exit:hover { background: #ff4a4a; color: white; }
+        .btn-exit { background: transparent; color: #ff4a4a; border: 1px solid #ff4a4a; padding: 8px; font-size: 11px; font-weight: 600; border-radius: 4px; cursor: pointer; text-align: center; }
 
-        .object-counter { font-size: 11px; color: #00A2FF; background: rgba(0,162,255,0.1); padding: 4px 8px; border-radius: 4px; }
-
-        /* تلميح الكاميرا العلوي */
         .camera-hint {
             position: absolute; top: 15px; left: 50%; transform: translateX(-50%);
-            background: rgba(25, 27, 29, 0.8); border: 1px solid rgba(255,255,255,0.05);
-            padding: 6px 15px; border-radius: 20px; color: #888888; font-size: 11px; z-index: 5; pointer-events: none;
+            background: rgba(13, 14, 16, 0.9); border: 1px solid rgba(255,255,255,0.03);
+            padding: 6px 16px; border-radius: 20px; color: #a2a8ae; font-size: 11px; z-index: 5; pointer-events: none; box-shadow: 0 4px 15px rgba(0,0,0,0.5);
         }
 
-        @media (max-width: 768px) {
+        @media (max-width: 900px) {
             .studio-layout { flex-direction: column-reverse; }
-            .sidebar-tools { width: 100%; height: 48%; border-left: none; border-top: 1px solid #2d3035; }
-            #canvas-container { width: 100%; height: 52%; }
+            .sidebar-tools { width: 100%; height: 50%; border-left: none; border-top: 1px solid #25272a; }
+            #canvas-container { width: 100%; height: 50%; }
         }
     </style>
 </head>
@@ -86,47 +97,101 @@
     <div class="studio-layout">
         
         <aside class="sidebar-tools">
-            <h3>MTP STUDIO // أدوات البناء</h3>
+            <h3>MTP ENGINE // لوحة تحكم المطور</h3>
             
             <div class="tool-group">
-                <label>توليد عناصر البيئة (SPAWN)</label>
-                <button class="btn-tool" onclick="spawnMesh('cube', 0x00A2FF)"><span>📦 إضافة مكعب نيون أزرق</span></button>
-                <button class="btn-tool" onclick="spawnMesh('sphere', 0x2ECC71)"><span>🔮 إضافة كرة طاقة خضراء</span></button>
-                <button class="btn-tool" onclick="spawnMesh('cylinder', 0xE74C3C)"><span>🧪 إضافة أسطوانة نيون حمراء</span></button>
+                <label>توليد المجسمات (SPAWN PRIMITIVES)</label>
+                <div class="spawn-grid">
+                    <button class="btn-tool" onclick="spawnMesh('cube')"><span>📦 مكعب نيون</span></button>
+                    <button class="btn-tool" onclick="spawnMesh('sphere')"><span>🔮 كرة طاقة</span></button>
+                    <button class="btn-tool" onclick="spawnMesh('cylinder')"><span>🧪 أسطوانة</span></button>
+                    <button class="btn-tool" onclick="spawnMesh('cone')"><span>📐 مخروط</span></button>
+                </div>
             </div>
 
             <div class="tool-group">
-                <label>تعديل العنصر المحدد (PROPERTIES)</label>
+                <label>خيارات محاذاة الشبكة (GRID SNAP)</label>
+                <div class="toggle-container">
+                    <span>تفعيل قفل الحركة على الشبكة (Snap)</span>
+                    <input type="checkbox" id="snap-toggle" checked>
+                </div>
+            </div>
+
+            <div class="tool-group">
+                <label>صلاحيات تكييف العنصر (TRANSFORM & MATERIAL)</label>
                 <div class="properties-panel">
-                    <h4>العنصر النشط الحالي</h4>
+                    <h4 id="selected-info">حدد مجسماً لتفعيل الصلاحيات</h4>
+                    
                     <div class="slider-container">
-                        <span>مقياس الحجم (Scale):</span>
-                        <input type="range" id="scale-slider" min="0.3" max="4" step="0.1" value="1" oninput="updateObjectScale(this.value)">
+                        <span>الحجم الطولي (Scale X)</span>
+                        <input type="range" id="scale-x" min="0.2" max="15" step="0.1" value="1" oninput="updateSelected('scale', 'x', this.value)">
                     </div>
-                    <button class="btn-delete" onclick="deleteSelectedObject()">🗑️ حذف العنصر المحدد</button>
+                    <div class="slider-container">
+                        <span>الارتفاع (Scale Y)</span>
+                        <input type="range" id="scale-y" min="0.2" max="15" step="0.1" value="1" oninput="updateSelected('scale', 'y', this.value)">
+                    </div>
+                    <div class="slider-container">
+                        <span>العرض (Scale Z)</span>
+                        <input type="range" id="scale-z" min="0.2" max="15" step="0.1" value="1" oninput="updateSelected('scale', 'z', this.value)">
+                    </div>
+
+                    <div class="slider-container">
+                        <span>تحريك جانبي (Position X)</span>
+                        <input type="range" id="pos-x" min="-40" max="40" step="0.2" value="0" oninput="updateSelected('position', 'x', this.value)">
+                    </div>
+                    <div class="slider-container">
+                        <span>تحريك عمودي (Position Y)</span>
+                        <input type="range" id="pos-y" min="0" max="30" step="0.2" value="0" oninput="updateSelected('position', 'y', this.value)">
+                    </div>
+
+                    <div class="slider-container">
+                        <span>تدوير زاوية (Rotation Y)</span>
+                        <input type="range" id="rot-y" min="0" max="6.28" step="0.05" value="0" oninput="updateSelected('rotation', 'y', this.value)">
+                    </div>
+
+                    <div class="color-picker-container">
+                        <span>تعديل لون الكتلة:</span>
+                        <input type="color" id="object-color" value="#00A2FF" oninput="updateObjectColor(this.value)">
+                    </div>
+                    
+                    <div class="slider-container">
+                        <span>قوة توهج النيون (Glow)</span>
+                        <input type="range" id="glow-intensity" min="0" max="2" step="0.1" value="0.2" oninput="updateObjectGlow(this.value)">
+                    </div>
+
+                    <div class="action-grid">
+                        <button class="btn-action-panel btn-clone" onclick="cloneSelectedObject()">📋 مضاعفة (Clone)</button>
+                        <button class="btn-action-panel btn-del" onclick="deleteSelectedObject()">🗑️ حذف الكتلة</button>
+                    </div>
                 </div>
             </div>
 
             <div class="tool-group">
-                <label>إحصائيات العالم</label>
-                <div class="btn-tool" style="cursor: default;">
-                    <span>إجمالي العناصر بالخريطة:</span>
-                    <span class="object-counter" id="obj-count">0</span>
+                <label>إعدادات غلاف العالم (ENVIRONMENT)</label>
+                <div class="properties-panel">
+                    <div class="color-picker-container">
+                        <span>لون السماء والضباب:</span>
+                        <input type="color" id="sky-color" value="#141517" oninput="updateEnvironmentSky(this.value)">
+                    </div>
+                    <div class="slider-container">
+                        <span>كثافة غبار العالم (Fog Density)</span>
+                        <input type="range" id="fog-slider" min="0" max="0.05" step="0.005" value="0.012" oninput="updateEnvironmentFog(this.value)">
+                    </div>
                 </div>
             </div>
 
-            <button class="btn-save" onclick="alert('جاهزون لربط السيرفر وتخزين مصفوفة الـ JSON في خطوتنا القادمة!')">💾 حفظ العالم ونشره</button>
-            <button class="btn-exit" onclick="window.location.href='dashboard.html'">✕ الخروج</button>
+            <button class="btn-save" onclick="alert('النظام جاهز! في الخطوة القادمة سنقوم بحفظ البنية كاملة في قاعدة البيانات!')">💾 نشر وحفظ الخريطة</button>
+            <button class="btn-exit" onclick="window.location.href='dashboard.html'">✕ إنهاء البناء</button>
         </aside>
 
         <div id="canvas-container">
-            <div class="camera-hint">💡 اسحب بإصبعك لتدوير الكاميرا وحرك إصبعين للتكبير والتصغير</div>
+            <div class="camera-hint">🤖 اسحب لتدوير زاوية الرؤية الحرة // اضغط على أي كرت أو عنصر لتعديله حياً بالمحاور</div>
         </div>
 
     </div>
 
     <script>
-        // التحقق من الجلسة
+        // التحقق من حساب المطور عبر Supabase
         const SUPABASE_URL = "https://deuwblgjxtcaekpiaplt.supabase.co";
         const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRldXdibGdqeHRjYWVrcGlhcGx0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg4NzI3NjcsImV4cCI6MjA5NDQ0ODc2N30.DvU-NIGJj-KhjCPqvxBbCh7Kvoj5DTLgw7DKbB7lcQM";
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -137,111 +202,170 @@
         }
         window.onload = checkUser;
 
-        // إعداد المحرك ثلاثي الأبعاد
+        // إعداد البنية التحتية لمحرك الألعاب ثلاثي الأبعاد
         const container = document.getElementById('canvas-container');
         const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x141517);
-        scene.fog = new THREE.FogExp2(0x141517, 0.015);
+        const defaultSkyColor = 0x141517;
+        scene.background = new THREE.Color(defaultSkyColor);
+        scene.fog = new THREE.FogExp2(defaultSkyColor, 0.012);
 
         const camera = new THREE.PerspectiveCamera(60, container.clientWidth / container.clientHeight, 0.1, 1000);
-        camera.position.set(15, 15, 25);
+        camera.position.set(20, 25, 35);
 
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(container.clientWidth, container.clientHeight);
         renderer.shadowMap.enabled = true;
         container.appendChild(renderer.domElement);
 
-        // تفعيل التحكم الحر والذكي بالكاميرا (OrbitControls)
         const controls = new THREE.OrbitControls(camera, renderer.domElement);
-        controls.enableDamping = true; // تنعيم حركة الكاميرا سينمائياً
-        controls.dampingFactor = 0.05;
-        controls.maxPolarAngle = Math.PI / 2 - 0.05; // منع الكاميرا من النزول تحت الأرضية
+        controls.enableDamping = true; controls.dampingFactor = 0.05;
+        controls.maxPolarAngle = Math.PI / 2 - 0.02;
 
-        // الإضاءة
-        const ambientLight = new THREE.AmbientLight(0x555555);
+        // مصادر الإضاءة الفائقة للمحرك
+        const ambientLight = new THREE.AmbientLight(0x777777);
         scene.add(ambientLight);
-        const dirLight = new THREE.DirectionalLight(0xffffff, 1.2);
-        dirLight.position.set(20, 40, 20);
-        dirLight.castShadow = true;
-        scene.add(dirLight);
+        const sunLight = new THREE.DirectionalLight(0xffffff, 1.2);
+        sunLight.position.set(30, 60, 20); sunLight.castShadow = true;
+        scene.add(sunLight);
 
-        // الأرضية الافتراضية
-        const gridXZ = new THREE.GridHelper(100, 50, 0x393B3D, 0x232527);
+        // قاعدة البناء (Baseplate GRID)
+        const gridXZ = new THREE.GridHelper(120, 60, 0x00A2FF, 0x282a2d);
         scene.add(gridXZ);
-        const floorGeo = new THREE.PlaneGeometry(100, 100);
-        const floorMat = new THREE.MeshStandardMaterial({ color: 0x191B1D, roughness: 0.5 });
+        const floorGeo = new THREE.PlaneGeometry(120, 120);
+        const floorMat = new THREE.MeshStandardMaterial({ color: 0x111214, roughness: 0.7 });
         const floor = new THREE.Mesh(floorGeo, floorMat);
-        floor.rotation.x = -Math.PI / 2;
-        floor.receiveShadow = true;
+        floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true;
         scene.add(floor);
 
-        // إدارة مصفوفة العناصر والعنصر المحدد
         let spawnedObjects = [];
         let selectedObject = null;
 
-        // دالة توليد الأشكال المتقدمة
-        function spawnMesh(type, colorHex) {
+        // المحرك الذكي لتوليد الأشكال المتعددة
+        function spawnMesh(type) {
             let geometry;
-            if (type === 'cube') {
-                geometry = new THREE.BoxGeometry(2, 2, 2);
-            } else if (type === 'sphere') {
-                geometry = new THREE.SphereGeometry(1.2, 32, 32);
-            } else if (type === 'cylinder') {
-                geometry = new THREE.CylinderGeometry(1, 1, 3, 32);
-            }
+            if (type === 'cube') geometry = new THREE.BoxGeometry(2, 2, 2);
+            else if (type === 'sphere') geometry = new THREE.SphereGeometry(1.2, 32, 32);
+            else if (type === 'cylinder') geometry = new THREE.CylinderGeometry(1, 1, 3, 32);
+            else if (type === 'cone') geometry = new THREE.CylinderGeometry(0, 1.2, 3, 32);
 
             const material = new THREE.MeshStandardMaterial({
-                color: colorHex, roughness: 0.2, metalness: 0.5,
-                emissive: colorHex, emissiveIntensity: 0.2
+                color: 0x00A2FF, roughness: 0.2, metalness: 0.3,
+                emissive: 0x00A2FF, emissiveIntensity: 0.2
             });
 
             const mesh = new THREE.Mesh(geometry, material);
-            
-            // تحديد الارتفاع حسب نوع الشكل
-            let spawnY = 1;
-            if (type === 'cylinder') spawnY = 1.5;
+            mesh.position.set((Math.random() - 0.5) * 8, 1.5, (Math.random() - 0.5) * 8);
+            mesh.castShadow = true; mesh.receiveShadow = true;
+            mesh.userData = { type: type };
 
-            mesh.position.set((Math.random() - 0.5) * 15, spawnY, (Math.random() - 0.5) * 15);
-            mesh.castShadow = true;
-            mesh.receiveShadow = true;
-            
             scene.add(mesh);
             spawnedObjects.push(mesh);
-            
-            // تعيين العنصر الجديد كعنصر محدد تلقائياً للتعديل عليه
             selectObject(mesh);
-            
-            document.getElementById('obj-count').innerText = spawnedObjects.length;
         }
 
-        // دالة تحديد العنصر وإعادة ضبط السلايدر الخاص بالحجم
+        // أداة التحسس والالتقاط الدقيق باللمس (Raycasting)
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+
+        container.addEventListener('pointerdown', (e) => {
+            const rect = renderer.domElement.getBoundingClientRect();
+            mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+            mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects(spawnedObjects);
+
+            if (intersects.length > 0) {
+                selectObject(intersects[0].object);
+                controls.enabled = false; // إيقاف الكاميرا لسهولة السحب والتعديل
+            }
+        });
+
+        container.addEventListener('pointerup', () => { controls.enabled = true; });
+
+        // دالة تحديد الأشكال وتغذية الواجهة بالبيانات الحية
         function selectObject(mesh) {
+            if (selectedObject) selectedObject.material.emissiveIntensity = 0.2;
+            
             selectedObject = mesh;
-            document.getElementById('scale-slider').value = mesh.scale.x;
+            selectedObject.material.emissiveIntensity = 0.6; // توهج نيون قوي للعنصر النشط
+
+            document.getElementById('selected-info').innerText = "الكتلة النشطة: " + mesh.userData.type.toUpperCase();
+            
+            // تعبئة قيم أشرطة المحاور الحية تلقائياً بناءً على وضع العنصر
+            document.getElementById('scale-x').value = mesh.scale.x;
+            document.getElementById('scale-y').value = mesh.scale.y;
+            document.getElementById('scale-z').value = mesh.scale.z;
+            document.getElementById('pos-x').value = mesh.position.x;
+            document.getElementById('pos-y').value = mesh.position.y;
+            document.getElementById('rot-y').value = mesh.rotation.y;
+            document.getElementById('glow-intensity').value = mesh.material.emissiveIntensity;
+            document.getElementById('object-color').value = "#" + mesh.material.color.getHexString();
         }
 
-        // دالة تغيير حجم العنصر المحدد حياً عبر السلايدر
-        function updateObjectScale(value) {
+        // تحوير محاور وأبعاد العنصر حياً مع ميزة الـ Snap to Grid الذكية
+        function updateSelected(property, axis, value) {
+            if (!selectedObject) return;
+            let parsedVal = parseFloat(value);
+
+            // تطبيق الـ Snap (محاذاة الشبكة إلى خطوات من 1 متر) لو الخيار مفعل
+            const isSnap = document.getElementById('snap-toggle').checked;
+            if (isSnap && property === 'position' && (axis === 'x' || axis === 'z')) {
+                parsedVal = Math.round(parsedVal);
+            }
+
+            selectedObject[property][axis] = parsedVal;
+        }
+
+        function updateObjectColor(hex) {
             if (selectedObject) {
-                selectedObject.scale.set(value, value, value);
+                selectedObject.material.color.set(hex);
+                selectedObject.material.emissive.set(hex);
             }
         }
 
-        // دالة حذف العنصر المحدد من الفضاء والمصفوفة
+        function updateObjectGlow(value) {
+            if (selectedObject) selectedObject.material.emissiveIntensity = parseFloat(value);
+        }
+
+        // أداة مضاعفة العناصر الفائقة (Clone Command)
+        function cloneSelectedObject() {
+            if (!selectedObject) return;
+            
+            const cloneMesh = selectedObject.clone();
+            cloneMesh.material = selectedObject.material.clone(); // فصل الخامة لكي لا يتأثر لونه بالأصلي
+            
+            // إزاحة طفيفة في المحور لمنع التطابق المطلق فوق الكتل
+            cloneMesh.position.x += 2.5; 
+            
+            scene.add(cloneMesh);
+            spawnedObjects.push(cloneMesh);
+            selectObject(cloneMesh);
+        }
+
         function deleteSelectedObject() {
             if (selectedObject) {
                 scene.remove(selectedObject);
                 spawnedObjects = spawnedObjects.filter(obj => obj !== selectedObject);
                 selectedObject = null;
-                document.getElementById('obj-count').innerText = spawnedObjects.length;
-                document.getElementById('scale-slider').value = 1;
+                document.getElementById('selected-info').innerText = "حدد مجسماً لتفعيل الصلاحيات";
             }
         }
 
-        // حلقة اللعبة المستمرة والتحديث السينمائي للمحرك
+        // تحكم محرك غلاف العالم والبيئة المحيطة حياً
+        function updateEnvironmentSky(hex) {
+            scene.background.set(hex);
+            scene.fog.color.set(hex);
+        }
+
+        function updateEnvironmentFog(value) {
+            scene.fog.density = parseFloat(value);
+        }
+
+        // حلقة التشغيل والإنعاش التلقائي اللانهائي للمحرك
         function animate() {
             requestAnimationFrame(animate);
-            controls.update(); // تحديث حركة الكاميرا الحرة باستمرار
+            controls.update();
             renderer.render(scene, camera);
         }
         animate();
