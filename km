@@ -1,1 +1,24 @@
+#include <pybind11/pybind11.h>
+#include <pybind11/stl.h>
+#include <vector>
+#include <numeric>
 
+namespace py = pybind11;
+
+class AlmnjnefCore {
+public:
+    AlmnjnefCore() = default;
+
+    double process_player_data(const std::vector<double>& data) {
+        if (data.empty()) return 0.0;
+        double sum = std::accumulate(data.begin(), data.end(), 0.0);
+        return sum / data.size();
+    }
+};
+
+PYBIND11_MODULE(almnjnef_core, m) {
+    m.doc() = "Almnjnef High-Performance C++ Core Engine";
+    py::class_<AlmnjnefCore>(m, "AlmnjnefCore")
+        .def(py::init<>())
+        .def("process_player_data", &AlmnjnefCore::process_player_data);
+}
