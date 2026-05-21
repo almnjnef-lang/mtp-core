@@ -1,1 +1,21 @@
-cd ~/almnjnef_engine
+import socket
+
+HOST = '127.0.0.1'  # عنوان خادم Almnjnef الداخلي
+PORT = 7777
+
+# إعداد جهاز اللاعب للاتصال
+client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+print("Client: Attempting to connect to Almnjnef Server...")
+
+try:
+    # تنفيذ الاتصال
+    client.connect((HOST, PORT))
+    
+    # استقبال حزمة الترحيب من الخادم
+    response = client.recv(1024)
+    print("\n[SUCCESS] Message from Server:", response.decode('utf-8'))
+    
+except ConnectionRefusedError:
+    print("\n[ERROR] Could not connect. Is the server running?")
+finally:
+    client.close()
