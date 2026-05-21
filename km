@@ -1,1 +1,1 @@
-g++ -O3 -Wall -shared -std=c++11 -fPIC $(python3 -m pybind11 --includes) core_engine.cpp -o almnjnef_core$(python3-config --extension-suffix)
+sudo apt install python3-pybind11 -y
