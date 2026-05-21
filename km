@@ -14,27 +14,19 @@ print(f"Connecting to Almnjnef Server as '{USERNAME}'...")
 try:
     client.connect((HOST, PORT))
     
-    # إرسال حزمة تسجيل الدخول (JSON)
-    login_packet = {
-        "action": "auth",
-        "player": USERNAME,
-        "password": PASSWORD
-    }
-    client.sendall(json.dumps(login_packet).encode('utf-8'))
+    # التعديل الهندسي: إرسال الاسم والباسوورد كنص عادي كما برمجنا السيرفر
+    auth_string = f"{USERNAME},{PASSWORD}"
+    client.sendall(auth_string.encode('utf-8'))
     
-    # استقبال الرد
+    # استقبال الرد من السيرفر
     response = client.recv(1024).decode('utf-8')
-    try:
-        response_data = json.loads(response)
-    except Exception:
-        response_data = {"status": "success", "message": response}
-        
-    if response_data.get("status") == "success":
-        print(f"\n{response_data.get('message')}")
+    
+    if response.startswith("SUCCESS"):
+        print(f"\n[SERVER ACCEPTED] -> {response}")
         print("[\033[93mCLIENT\033[0m] Starting 3D Movement Simulation...")
         x, y, z = 0.0, 0.0, 100.0
         
-        # حلقة المزامنة الحية
+        # حلقة المزامنة الحية (Game Loop)
         while True:
             x += random.uniform(-2.0, 2.0)
             y += random.uniform(-2.0, 2.0)
@@ -46,18 +38,14 @@ try:
             }
             client.sendall(json.dumps(move_packet).encode('utf-8'))
             
-            # استقبال نتيجة محرك C++ من السيرفر
+            # استقبال نبضة التأكيد من السيرفر
             sync_response = client.recv(1024).decode('utf-8')
             if sync_response:
-                try:
-                    sync_data = json.loads(sync_response)
-                    print(f"[SERVER SYNC] C++ Engine Result: {sync_data.get('cpp_verification', 'Active')}")
-                except Exception:
-                    pass
+                print(f"[SERVER SYNC] Data Received: {sync_response}")
             
             time.sleep(1)
     else:
-        print(f"\n[SERVER REJECTED] -> {response_data.get('message')}")
+        print(f"\n[SERVER REJECTED] -> {response}")
 
 except ConnectionRefusedError:
     print("Server is offline. Start master_server.py first.")
