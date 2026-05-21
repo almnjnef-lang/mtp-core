@@ -1,1 +1,5 @@
-g++ -O3 -Wall -shared -std=c++11 -fPIC $(python3 -m pybind11 --includes) core_engine.cpp -o almnjnef_core$(python3-config --extension-suffix)
+import almnjnef_core
+engine = almnjnef_core.AlmnjnefCore()
+data = [150.5, 200.0, 350.5]
+result = engine.process_player_data(data)
+print("C++ Engine Processing Result:", result)
