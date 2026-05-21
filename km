@@ -1,45 +1,74 @@
-import re
+import sqlite3
+import hashlib
+import os
 
-class AlmnjnefAuth:
-    def __init__(self):
-        print("Almnjnef Advanced Security System Initialized.")
+class AlmnjnefDatabase:
+    def __init__(self, db_name='almnjnef_master.db'):
+        self.conn = sqlite3.connect(db_name)
+        self.cursor = self.conn.cursor()
+        self.setup_tables()
 
-    def validate_username(self, username):
-        # 1. التحقق من الطول (بين 3 و 25 حرف)
-        if not (3 <= len(username) <= 25):
-            return False, "Error: Username must be between 3 and 25 characters."
+    def setup_tables(self):
+        # تحديث الجدول ليتحمل الحجم الكبير لكلمات المرور المشفرة
+        self.cursor.execute('''
+        CREATE TABLE IF NOT EXISTS secure_players (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT UNIQUE NOT NULL,
+            password_hash BLOB NOT NULL,
+            salt BLOB NOT NULL,
+            almnjnef_coins INTEGER DEFAULT 0
+        )
+        ''')
+        self.conn.commit()
 
-        # 2. منع الإيموجي والمسافات والرموز (يُسمح بالحروف الإنجليزية، الأرقام، والشرطة السفلية فقط)
-        # التعبير النمطي (Regex) هذا يرفض أي إيموجي تلقائياً
-        if not re.match(r'^[A-Za-z0-9_]+$', username):
-            return False, "Error: Invalid characters or Emojis detected."
+    def hash_password(self, password, salt=None):
+        # إنشاء "ملح" عشوائي إذا كان هذا تسجيلاً جديداً
+        if salt is None:
+            salt = os.urandom(16)
+        # استخدام خوارزمية pbkdf2_hmac الاحترافية بـ 100 ألف دورة تشفير
+        pwd_hash = hashlib.pbkdf2_hmac('sha256', password.encode('utf-8'), salt, 100000)
+        return pwd_hash, salt
 
-        return True, "Username Validated."
+    def register_player(self, username, password):
+        try:
+            pwd_hash, salt = self.hash_password(password)
+            self.cursor.execute('''
+            INSERT INTO secure_players (username, password_hash, salt, almnjnef_coins) 
+            VALUES (?, ?, ?, ?)
+            ''', (username, pwd_hash, salt, 500)) # منح 500 عملة كهدية ترحيبية
+            self.conn.commit()
+            return True, f"Player '{username}' registered securely!"
+        except sqlite3.IntegrityError:
+            return False, f"Username '{username}' is already taken."
 
-    def send_real_sms(self, phone_number):
-        # ملاحظة معمارية: لإرسال SMS حقيقي، سنحتاج لاحقاً لدمج مفتاح API من شركات مثل Twilio أو Etisalat/Du
-        print(f"[SYSTEM] Connecting to SMS Gateway for {phone_number}...")
-        print(f"[SMS SENT] Verification code sent to {phone_number} successfully.")
-        return True
+    def verify_login(self, username, password):
+        self.cursor.execute('SELECT password_hash, salt FROM secure_players WHERE username = ?', (username,))
+        record = self.cursor.fetchone()
+        
+        if record is None:
+            return False, "Login Failed: Username not found."
+            
+        stored_hash, salt = record
+        # تشفير الكلمة المدخلة بنفس الملح القديم ومقارنتها
+        input_hash, _ = self.hash_password(password, salt)
+        
+        if input_hash == stored_hash:
+            return True, "Login Successful! Welcome to Almnjnef."
+        else:
+            return False, "Login Failed: Incorrect password."
 
-    def google_oauth_login(self, google_token):
-        # هنا يتم التحقق من التوكن القادم من زر "تسجيل الدخول عبر جوجل" في واجهة الـ 3D
-        print(f"[GOOGLE API] Verifying token securely with Google Servers...")
-        print("[SUCCESS] Real Google Login Confirmed.")
-        return True
+# --- اختبار نظام التشفير ---
+db = AlmnjnefDatabase()
 
-# --- تجربة النظام ---
-auth = AlmnjnefAuth()
+print("--- Registering New Player ---")
+success, msg = db.register_player("ProGamer2026", "MySecretPassword123!")
+print(msg)
 
-print("\n--- Testing Username Rules ---")
-# تجربة اسم مستخدم بإيموجي (سيرفضه النظام)
-status, msg = auth.validate_username("Ali😊")
-print(f"Test 'Ali😊': {msg}")
+print("\n--- Testing Logins ---")
+# محاولة صحيحة
+success, msg = db.verify_login("ProGamer2026", "MySecretPassword123!")
+print(f"Correct Attempt: {msg}")
 
-# تجربة اسم مستخدم صحيح
-status, msg = auth.validate_username("Almnjnef_Pro")
-print(f"Test 'Almnjnef_Pro': {msg}")
-
-print("\n--- Testing External Services ---")
-auth.send_real_sms("+971501234567")
-auth.google_oauth_login("Google_Encrypted_Token_123xyz")
+# محاولة خاطئة (مخترق)
+success, msg = db.verify_login("ProGamer2026", "WrongPass!!!")
+print(f"Hacker Attempt: {msg}")
