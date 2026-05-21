@@ -1,83 +1,26 @@
 import socket
-import hashlib
-import os
-import sqlite3
 
-# --- 1. نواة قاعدة البيانات والتشفير ---
-class AlmnjnefDatabase:
-    def __init__(self):
-        self.conn = sqlite3.connect('almnjnef_master.db')
-        self.cursor = self.conn.cursor()
-        self.cursor.execute('''
-        CREATE TABLE IF NOT EXISTS secure_players (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            username TEXT UNIQUE NOT NULL,
-            password_hash BLOB NOT NULL,
-            salt BLOB NOT NULL,
-            almnjnef_coins INTEGER DEFAULT 0
-        )
-        ''')
-        self.conn.commit()
-
-    def hash_password(self, password, salt=None):
-        if salt is None:
-            salt = os.urandom(16)
-        pwd_hash = hashlib.pbkdf2_hmac('sha256', password.encode('utf-8'), salt, 100000)
-        return pwd_hash, salt
-
-    def verify_login(self, username, password):
-        self.cursor.execute('SELECT password_hash, salt FROM secure_players WHERE username = ?', (username,))
-        record = self.cursor.fetchone()
-        if record is None:
-            return False, "Error: Username not found."
-        stored_hash, salt = record
-        input_hash, _ = self.hash_password(password, salt)
-        if input_hash == stored_hash:
-            return True, f"Welcome to Almnjnef 3D World, {username}!"
-        return False, "Error: Incorrect password."
-
-# تجهيز النظام وإضافة حساب الإدارة (لتجربته)
-db = AlmnjnefDatabase()
-try:
-    h, s = db.hash_password("Core2026")
-    db.cursor.execute('INSERT INTO secure_players (username, password_hash, salt) VALUES (?, ?, ?)', ("Founder", h, s))
-    db.conn.commit()
-except:
-    pass # الحساب موجود مسبقاً
-
-# --- 2. نواة الشبكة الآمنة ---
 HOST = '127.0.0.1'
 PORT = 7777
-server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-server.bind((HOST, PORT))
-server.listen(10)
 
-print(f"[ALMNJNEF SECURE SERVER] is LIVE on {HOST}:{PORT}")
-print("Awaiting encrypted login requests from 3D Clients...")
+USERNAME = "Founder"
+PASSWORD = "Core2026"
+
+client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+print(f"Connecting to Almnjnef Server as '{USERNAME}'...")
 
 try:
-    while True:
-        client_socket, client_address = server.accept()
-        
-        # انتظار استلام بيانات الدخول من اللاعب
-        data = client_socket.recv(1024).decode('utf-8')
-        if data:
-            try:
-                # تفكيك الحزمة القادمة (اسم المستخدم وكلمة المرور)
-                username, password = data.split(',')
-                success, msg = db.verify_login(username, password)
-                
-                if success:
-                    print(f"[AUTH SUCCESS] Player '{username}' connected from {client_address[0]}")
-                    client_socket.sendall(f"SUCCESS|{msg}".encode('utf-8'))
-                else:
-                    print(f"[AUTH FAILED] Intruder attempt from {client_address[0]}")
-                    client_socket.sendall(f"FAILED|{msg}".encode('utf-8'))
-            except ValueError:
-                client_socket.sendall(b"FAILED|Invalid data protocol.")
-                
-        client_socket.close()
-except KeyboardInterrupt:
-    print("\nShutting down Secure Server...")
-    server.close()
+    client.connect((HOST, PORT))
+    login_packet = f"{USERNAME},{PASSWORD}"
+    client.sendall(login_packet.encode('utf-8'))
+    response = client.recv(1024).decode('utf-8')
+    status, message = response.split('|')
+
+    if status == "SUCCESS":
+        print(f"\n[SERVER ACCEPTED] -> {message}")
+    else:
+        print(f"\n[SERVER REJECTED] -> {message}")
+except ConnectionRefusedError:
+    print("Server is offline.")
+finally:
+    client.close()
