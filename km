@@ -1,6 +1,67 @@
-    # JSON ريغشت كفو رفريـــــلا در لاقتســـــا
+import socket
+import json
+import time
+import random
+
+HOST = '127.0.0.1'
+PORT = 7777
+USERNAME = "Founder"
+PASSWORD = "Core2026"
+
+client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+print(f"Connecting to Almnjnef Server as '{USERNAME}'...")
+
+try:
+    client.connect((HOST, PORT))
+    
+    # إرسال حزمة تسجيل الدخول (JSON)
+    login_packet = {
+        "action": "auth",
+        "player": USERNAME,
+        "password": PASSWORD
+    }
+    client.sendall(json.dumps(login_packet).encode('utf-8'))
+    
+    # استقبال الرد
+    response = client.recv(1024).decode('utf-8')
     try:
-        response = client.recv(1024).decode('utf-8')
         response_data = json.loads(response)
     except Exception:
         response_data = {"status": "success", "message": response}
+        
+    if response_data.get("status") == "success":
+        print(f"\n{response_data.get('message')}")
+        print("[\033[93mCLIENT\033[0m] Starting 3D Movement Simulation...")
+        x, y, z = 0.0, 0.0, 100.0
+        
+        # حلقة المزامنة الحية
+        while True:
+            x += random.uniform(-2.0, 2.0)
+            y += random.uniform(-2.0, 2.0)
+            
+            move_packet = {
+                "action": "move",
+                "player": USERNAME,
+                "coords": [x, y, z]
+            }
+            client.sendall(json.dumps(move_packet).encode('utf-8'))
+            
+            # استقبال نتيجة محرك C++ من السيرفر
+            sync_response = client.recv(1024).decode('utf-8')
+            if sync_response:
+                try:
+                    sync_data = json.loads(sync_response)
+                    print(f"[SERVER SYNC] C++ Engine Result: {sync_data.get('cpp_verification', 'Active')}")
+                except Exception:
+                    pass
+            
+            time.sleep(1)
+    else:
+        print(f"\n[SERVER REJECTED] -> {response_data.get('message')}")
+
+except ConnectionRefusedError:
+    print("Server is offline. Start master_server.py first.")
+except Exception as e:
+    print(f"Error occurred: {e}")
+finally:
+    client.close()
