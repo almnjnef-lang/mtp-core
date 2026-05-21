@@ -1,6 +1,26 @@
-    response = client.recv(1024).decode('utf-8')
-    
-    try:
-        response_data = json.loads(response)
-    except Exception:
-        response_data = {"status": "success", "message": response}
+                    # === طبقة حلقة اللعب (Game Loop) المضافة ===
+                    import json
+                    while True:
+                        try:
+                            # السيرفر يبقى مستيقظاً وينتظر الإحداثيات
+                            move_data = client_socket.recv(1024).decode('utf-8')
+                            
+                            # إذا اللاعب أغلق اللعبة، اخرج من الحلقة بأمان
+                            if not move_data:
+                                print(f"[DISCONNECT] Player '{username}' left the world.")
+                                break
+                                
+                            # قراءة حزمة الحركة
+                            packet = json.loads(move_data)
+                            if packet.get("action") == "move":
+                                coords = packet.get("coords")
+                                print(f"[\033[96mCORE SYNC\033[0m] {username} Location -> X:{coords[0]:.1f}, Y:{coords[1]:.1f}")
+                                
+                                # إرسال نبضة التأكيد للعميل ليستمر بالعمل
+                                sync_reply = '{"status": "synced", "cpp_verification": "Active"}'
+                                client_socket.sendall(sync_reply.encode('utf-8'))
+                                
+                        except Exception as e:
+                            # حماية السيرفر من الانهيار إذا أرسل اللاعب بيانات خاطئة
+                            break
+                    # === نهاية طبقة حلقة اللعب ===
