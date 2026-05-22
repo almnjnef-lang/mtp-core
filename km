@@ -1,2 +1,1 @@
-
 ‏login_defender = account_defender.AccountDefender(max_failed_attempts=10)
