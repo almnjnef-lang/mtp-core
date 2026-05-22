@@ -1,60 +1,70 @@
-import hashlib
-import hmac
 import time
+from collections import defaultdict
 
 # ==========================================
-# ALMNJNEF ECONOMY SHIELD - MIDDLEWARE
+# ALMNJNEF NETWORK FIREWALL & RATE LIMITER
 # ==========================================
-# This file intercepts all financial requests 
-# to validate, decrypt, and sanitize data 
-# before reaching the economy_core.py
+# This microservice protects the centralized API 
+# from DDoS attacks, buffer overflows, and packet spamming.
 
-SECRET_KEY = b"almnjnef_super_secret_key_2026"
+class NetworkFirewall:
+    def __init__(self, max_packets_per_second=10, max_packet_size=2048):
+        self.max_packets = max_packets_per_second
+        self.max_size = max_packet_size
+        self.packet_records = defaultdict(list)
+        self.blacklisted_ips = set()
 
-def generate_secure_token(player_id):
-    """Generates a time-based secure token for valid transactions."""
-    timestamp = str(int(time.time())).encode('utf-8')
-    message = player_id.encode('utf-8') + timestamp
-    signature = hmac.new(SECRET_KEY, message, hashlib.sha256).hexdigest()
-    return f"{signature}.{timestamp.decode('utf-8')}"
+    def analyze_packet(self, ip_address, packet_size):
+        """
+        Analyzes incoming packets. 
+        Returns True if allowed, False if blocked.
+        """
+        current_time = time.time()
 
-def validate_transaction_request(player_id, provided_token):
-    """Validates if the incoming financial request is genuine and not replayed."""
-    try:
-        signature, timestamp_str = provided_token.split('.')
-        request_time = int(timestamp_str)
-        current_time = int(time.time())
-        
-        # Check if token is expired (e.g., older than 30 seconds -> Replay Attack)
-        if current_time - request_time > 30:
-            print(f"[SECURITY ALERT] Expired token from {player_id}. Possible replay attack blocked.")
+        # 1. Check if IP is already in the blacklist
+        if ip_address in self.blacklisted_ips:
             return False
-            
-        # Verify the signature
-        expected_message = player_id.encode('utf-8') + timestamp_str.encode('utf-8')
-        expected_signature = hmac.new(SECRET_KEY, expected_message, hashlib.sha256).hexdigest()
-        
-        if hmac.compare_digest(expected_signature, signature):
-            print(f"[SHIELD PASSED] Verified secure transaction for {player_id}.")
-            return True
-        else:
-            print(f"[SECURITY ALERT] Invalid signature from {player_id}. Transaction rejected.")
-            return False
-            
-    except Exception as e:
-        print(f"[SECURITY ERROR] Malformed token format: {e}")
-        return False
 
-# Test the shield internally
+        # 2. Clean up old packet records (older than 1 second window)
+        self.packet_records[ip_address] = [
+            timestamp for timestamp in self.packet_records[ip_address] 
+            if current_time - timestamp < 1.0
+        ]
+
+        # 3. Add the new packet timestamp
+        self.packet_records[ip_address].append(current_time)
+
+        # 4. Check against the threshold (Rate Limiting)
+        if len(self.packet_records[ip_address]) > self.max_packets:
+            print(f"[FIREWALL WARNING] IP {ip_address} exceeded packet limit! Blacklisting...")
+            self.blacklisted_ips.add(ip_address)
+            return False
+
+        # 5. Prevent oversized anomalous packets (Buffer Overflow protection)
+        if packet_size > self.max_size:
+            print(f"[FIREWALL ALERT] Dropped oversized packet ({packet_size} bytes) from {ip_address}.")
+            return False
+
+        return True
+
+# ==========================================
+# INTERNAL TESTING MODULE
+# ==========================================
 if __name__ == "__main__":
-    print("[SYSTEM] Booting Economy Shield...")
-    test_player = "Founder"
-    
-    # 1. Generate a valid token (Simulating the Client)
-    valid_token = generate_secure_token(test_player)
-    
-    # 2. Validate the incoming request (Simulating the Server Shield)
-    is_valid = validate_transaction_request(test_player, valid_token)
-    
-    if is_valid:
-        print(">>> SUCCESS: Forwarding data to economy_core.py")
+    print("[SYSTEM] Booting Almnjnef Network Firewall...")
+    # Setting a strict limit of 5 packets per second for testing
+    firewall = NetworkFirewall(max_packets_per_second=5)
+    test_ip = "192.168.1.100"
+
+    print(f"\n[TEST] Simulating normal traffic from {test_ip}...")
+    for _ in range(3):
+        is_safe = firewall.analyze_packet(test_ip, 256)
+        print(f"Packet Allowed: {is_safe}")
+        time.sleep(0.2)
+
+    print(f"\n[TEST] Simulating DDoS/Spam attack from {test_ip}...")
+    # Sending 6 rapid packets in under a second
+    for _ in range(6):
+        is_safe = firewall.analyze_packet(test_ip, 256)
+        if not is_safe:
+            print(f"CONNECTION DROPPED. IP {test_ip} is BLOCKED.")
