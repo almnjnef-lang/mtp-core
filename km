@@ -1,107 +1,78 @@
+import math
 import time
-import hmac
-import hashlib
-import os
 
 # ==========================================
-# ALMNJNEF UNIFIED AUTH & TOKEN WARDEN
+# ALMNJNEF ANTI-CHEAT WARDEN (PHYSICS ENGINE)
 # ==========================================
-# This microservice handles secure session token 
-# generation and validation to prevent Session Hijacking.
+# This microservice acts as the authoritative judge for 3D player movement,
+# preventing Speedhacks, Teleportation, and invalid coordinate exploits.
 
-class TokenWarden:
-    def __init__(self, token_expiry_seconds=900):
-        # Default expiry is 900 seconds (15 minutes)
-        self.expiry_time = token_expiry_seconds
-        # In a real production environment, this secret must be hidden in an environment variable (.env)
-        self.server_secret = b"almnjnef_core_engine_secret_2026_xyz"
-        self.active_sessions = {}
+class PhysicsAntiCheat:
+    def __init__(self, max_speed_per_second=15.0):
+        # Maximum allowed distance units a player can move in exactly 1.0 second
+        self.max_speed = max_speed_per_second
+        # Stores the last verified state: {username: {"x": 0.0, "y": 0.0, "z": 0.0, "time": timestamp}}
+        self.player_states = {}
 
-    def generate_session_token(self, username):
-        """Generates a secure, time-limited token for a verified user."""
-        timestamp = int(time.time())
-        # Add random salt to make every token unique even for the same user
-        salt = os.urandom(8).hex()
+    def validate_movement(self, username, new_x, new_y, new_z):
+        """
+        Calculates the 3D distance between the old and new coordinates over the time delta.
+        Returns True if physics are valid, False if a hack is detected.
+        """
+        current_time = time.time()
         
-        # Build the payload
-        payload = f"{username}:{timestamp}:{salt}"
+        # 1. Initial Spawn (No previous data to compare)
+        if username not in self.player_states:
+            self.player_states[username] = {"x": new_x, "y": new_y, "z": new_z, "time": current_time}
+            return True
+
+        last_state = self.player_states[username]
+        time_delta = current_time - last_state["time"]
         
-        # Create a cryptographic signature
-        signature = hmac.new(
-            self.server_secret, 
-            payload.encode('utf-8'), 
-            hashlib.sha256
-        ).hexdigest()
-        
-        # Combine payload and signature to form the final token
-        final_token = f"{payload}:{signature}"
-        
-        # Store in active memory
-        self.active_sessions[username] = final_token
-        print(f"[AUTH WARDEN] Generated new secure token for user: {username}")
-        return final_token
-
-    def validate_token(self, username, client_token):
-        """Validates if the provided token is authentic, belongs to the user, and is not expired."""
-        try:
-            # Check if user actually has an active session
-            if username not in self.active_sessions or self.active_sessions[username] != client_token:
-                print(f"[AUTH ALERT] Token mismatch or no active session for {username}!")
-                return False
-
-            parts = client_token.split(':')
-            if len(parts) != 4:
-                return False
-                
-            token_user, token_time_str, token_salt, token_signature = parts
-            token_time = int(token_time_str)
-            current_time = int(time.time())
-
-            # 1. Check Expiry
-            if current_time - token_time > self.expiry_time:
-                print(f"[AUTH ALERT] Expired token used by {username}. Forcing re-login.")
-                del self.active_sessions[username]
-                return False
-
-            # 2. Verify Cryptographic Signature (Anti-Tamper)
-            expected_payload = f"{token_user}:{token_time_str}:{token_salt}"
-            expected_signature = hmac.new(
-                self.server_secret, 
-                expected_payload.encode('utf-8'), 
-                hashlib.sha256
-            ).hexdigest()
-
-            if hmac.compare_digest(expected_signature, token_signature):
-                return True
-            else:
-                print(f"[AUTH ALERT] Forged token signature detected from {username}!")
-                return False
-
-        except Exception as e:
-            print(f"[AUTH ERROR] Token processing failed: {e}")
+        # Prevent division by zero if packets arrive at the exact same microsecond
+        if time_delta <= 0:
             return False
+
+        # 2. Mathematical 3D Distance Calculation (Euclidean distance)
+        distance = math.sqrt(
+            (new_x - last_state["x"])**2 + 
+            (new_y - last_state["y"])**2 + 
+            (new_z - last_state["z"])**2
+        )
+
+        # 3. Speed Calculation (Units per Second)
+        speed = distance / time_delta
+
+        # 4. The Verdict
+        if speed > self.max_speed:
+            print(f"[WARDEN ALERT] Speedhack or Teleport detected for {username}! Speed: {speed:.2f} (Max: {self.max_speed})")
+            # We do NOT update the state, effectively rubber-banding the cheater back to their last valid position
+            return False
+
+        # Update to the new valid state
+        self.player_states[username] = {"x": new_x, "y": new_y, "z": new_z, "time": current_time}
+        return True
 
 # ==========================================
 # INTERNAL TESTING MODULE
 # ==========================================
 if __name__ == "__main__":
-    print("[SYSTEM] Booting Auth Token Warden...")
+    print("[SYSTEM] Booting Almnjnef Anti-Cheat Warden...")
     
-    # We set a 2-second expiry just for quick testing
-    warden = TokenWarden(token_expiry_seconds=2)
+    # Setting max speed to 10 units per second for the test
+    warden = PhysicsAntiCheat(max_speed_per_second=10.0)
     test_user = "Founder"
 
-    print("\n[TEST 1] Generating valid token...")
-    my_token = warden.generate_session_token(test_user)
-    print(f"Token Data: {my_token}")
+    print("\n[TEST 1] Player Spawns at Origin (0,0,0)")
+    is_valid = warden.validate_movement(test_user, 0.0, 0.0, 0.0)
+    print(f"Movement Accepted: {is_valid}")
 
-    print("\n[TEST 2] Validating token immediately...")
-    is_valid = warden.validate_token(test_user, my_token)
-    print(f"Is Token Valid? {is_valid}")
+    print("\n[TEST 2] Normal Walking (Moving 5 units in 1 second)")
+    time.sleep(1.0)
+    is_valid = warden.validate_movement(test_user, 5.0, 0.0, 0.0)
+    print(f"Movement Accepted: {is_valid}")
 
-    print("\n[TEST 3] Simulating time passing (Waiting 3 seconds)...")
-    time.sleep(3)
-    
-    print("\n[TEST 4] Validating the same token after expiration...")
-    is_valid_now = warden.validate_token(test_user, my_token)
-    print(f"Is Token Valid Now? {is_valid_now}")
+    print("\n[TEST 3] Simulating Speedhack / Teleportation (Moving 50 units in 0.5 seconds)")
+    time.sleep(0.5)
+    is_valid = warden.validate_movement(test_user, 55.0, 0.0, 0.0)
+    print(f"Movement Accepted: {is_valid} -> VIOLATION LOGGED")
