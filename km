@@ -1,70 +1,107 @@
 import time
-from collections import defaultdict
+import hmac
+import hashlib
+import os
 
 # ==========================================
-# ALMNJNEF NETWORK FIREWALL & RATE LIMITER
+# ALMNJNEF UNIFIED AUTH & TOKEN WARDEN
 # ==========================================
-# This microservice protects the centralized API 
-# from DDoS attacks, buffer overflows, and packet spamming.
+# This microservice handles secure session token 
+# generation and validation to prevent Session Hijacking.
 
-class NetworkFirewall:
-    def __init__(self, max_packets_per_second=10, max_packet_size=2048):
-        self.max_packets = max_packets_per_second
-        self.max_size = max_packet_size
-        self.packet_records = defaultdict(list)
-        self.blacklisted_ips = set()
+class TokenWarden:
+    def __init__(self, token_expiry_seconds=900):
+        # Default expiry is 900 seconds (15 minutes)
+        self.expiry_time = token_expiry_seconds
+        # In a real production environment, this secret must be hidden in an environment variable (.env)
+        self.server_secret = b"almnjnef_core_engine_secret_2026_xyz"
+        self.active_sessions = {}
 
-    def analyze_packet(self, ip_address, packet_size):
-        """
-        Analyzes incoming packets. 
-        Returns True if allowed, False if blocked.
-        """
-        current_time = time.time()
+    def generate_session_token(self, username):
+        """Generates a secure, time-limited token for a verified user."""
+        timestamp = int(time.time())
+        # Add random salt to make every token unique even for the same user
+        salt = os.urandom(8).hex()
+        
+        # Build the payload
+        payload = f"{username}:{timestamp}:{salt}"
+        
+        # Create a cryptographic signature
+        signature = hmac.new(
+            self.server_secret, 
+            payload.encode('utf-8'), 
+            hashlib.sha256
+        ).hexdigest()
+        
+        # Combine payload and signature to form the final token
+        final_token = f"{payload}:{signature}"
+        
+        # Store in active memory
+        self.active_sessions[username] = final_token
+        print(f"[AUTH WARDEN] Generated new secure token for user: {username}")
+        return final_token
 
-        # 1. Check if IP is already in the blacklist
-        if ip_address in self.blacklisted_ips:
+    def validate_token(self, username, client_token):
+        """Validates if the provided token is authentic, belongs to the user, and is not expired."""
+        try:
+            # Check if user actually has an active session
+            if username not in self.active_sessions or self.active_sessions[username] != client_token:
+                print(f"[AUTH ALERT] Token mismatch or no active session for {username}!")
+                return False
+
+            parts = client_token.split(':')
+            if len(parts) != 4:
+                return False
+                
+            token_user, token_time_str, token_salt, token_signature = parts
+            token_time = int(token_time_str)
+            current_time = int(time.time())
+
+            # 1. Check Expiry
+            if current_time - token_time > self.expiry_time:
+                print(f"[AUTH ALERT] Expired token used by {username}. Forcing re-login.")
+                del self.active_sessions[username]
+                return False
+
+            # 2. Verify Cryptographic Signature (Anti-Tamper)
+            expected_payload = f"{token_user}:{token_time_str}:{token_salt}"
+            expected_signature = hmac.new(
+                self.server_secret, 
+                expected_payload.encode('utf-8'), 
+                hashlib.sha256
+            ).hexdigest()
+
+            if hmac.compare_digest(expected_signature, token_signature):
+                return True
+            else:
+                print(f"[AUTH ALERT] Forged token signature detected from {username}!")
+                return False
+
+        except Exception as e:
+            print(f"[AUTH ERROR] Token processing failed: {e}")
             return False
-
-        # 2. Clean up old packet records (older than 1 second window)
-        self.packet_records[ip_address] = [
-            timestamp for timestamp in self.packet_records[ip_address] 
-            if current_time - timestamp < 1.0
-        ]
-
-        # 3. Add the new packet timestamp
-        self.packet_records[ip_address].append(current_time)
-
-        # 4. Check against the threshold (Rate Limiting)
-        if len(self.packet_records[ip_address]) > self.max_packets:
-            print(f"[FIREWALL WARNING] IP {ip_address} exceeded packet limit! Blacklisting...")
-            self.blacklisted_ips.add(ip_address)
-            return False
-
-        # 5. Prevent oversized anomalous packets (Buffer Overflow protection)
-        if packet_size > self.max_size:
-            print(f"[FIREWALL ALERT] Dropped oversized packet ({packet_size} bytes) from {ip_address}.")
-            return False
-
-        return True
 
 # ==========================================
 # INTERNAL TESTING MODULE
 # ==========================================
 if __name__ == "__main__":
-    print("[SYSTEM] Booting Almnjnef Network Firewall...")
-    # Setting a strict limit of 5 packets per second for testing
-    firewall = NetworkFirewall(max_packets_per_second=5)
-    test_ip = "192.168.1.100"
+    print("[SYSTEM] Booting Auth Token Warden...")
+    
+    # We set a 2-second expiry just for quick testing
+    warden = TokenWarden(token_expiry_seconds=2)
+    test_user = "Founder"
 
-    print(f"\n[TEST] Simulating normal traffic from {test_ip}...")
-    for _ in range(3):
-        is_safe = firewall.analyze_packet(test_ip, 256)
-        print(f"Packet Allowed: {is_safe}")
-        time.sleep(0.2)
+    print("\n[TEST 1] Generating valid token...")
+    my_token = warden.generate_session_token(test_user)
+    print(f"Token Data: {my_token}")
 
-    print(f"\n[TEST] Simulating DDoS/Spam attack from {test_ip}...")
-    # Sending 6 rapid packets in under a second
-    for _ in range(6):
-        is_safe = firewall.analyze_packet(test_ip, 256)
-        if not is_safe:
-            print(f"CONNECTION DROPPED. IP {test_ip} is BLOCKED.")
+    print("\n[TEST 2] Validating token immediately...")
+    is_valid = warden.validate_token(test_user, my_token)
+    print(f"Is Token Valid? {is_valid}")
+
+    print("\n[TEST 3] Simulating time passing (Waiting 3 seconds)...")
+    time.sleep(3)
+    
+    print("\n[TEST 4] Validating the same token after expiration...")
+    is_valid_now = warden.validate_token(test_user, my_token)
+    print(f"Is Token Valid Now? {is_valid_now}")
