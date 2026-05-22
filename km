@@ -1,2 +1,2 @@
-import password_recovery
-recovery_engine = password_recovery.PasswordRecoveryWarden(otp_expiry_seconds=600)
+import account_defender
+login_defender = account_defender.AccountDefender(max_failed_attempts=10)
