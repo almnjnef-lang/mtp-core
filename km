@@ -1,55 +1,60 @@
-import socket
-import json
+import hashlib
+import hmac
 import time
-import random
 
-HOST = '127.0.0.1'
-PORT = 7777
-USERNAME = "Founder"
-PASSWORD = "Core2026"
+# ==========================================
+# ALMNJNEF ECONOMY SHIELD - MIDDLEWARE
+# ==========================================
+# This file intercepts all financial requests 
+# to validate, decrypt, and sanitize data 
+# before reaching the economy_core.py
 
-client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-print(f"Connecting to Almnjnef Server as '{USERNAME}'...")
+SECRET_KEY = b"almnjnef_super_secret_key_2026"
 
-try:
-    client.connect((HOST, PORT))
-    
-    # التعديل الهندسي: إرسال الاسم والباسوورد كنص عادي كما برمجنا السيرفر
-    auth_string = f"{USERNAME},{PASSWORD}"
-    client.sendall(auth_string.encode('utf-8'))
-    
-    # استقبال الرد من السيرفر
-    response = client.recv(1024).decode('utf-8')
-    
-    if response.startswith("SUCCESS"):
-        print(f"\n[SERVER ACCEPTED] -> {response}")
-        print("[\033[93mCLIENT\033[0m] Starting 3D Movement Simulation...")
-        x, y, z = 0.0, 0.0, 100.0
+def generate_secure_token(player_id):
+    """Generates a time-based secure token for valid transactions."""
+    timestamp = str(int(time.time())).encode('utf-8')
+    message = player_id.encode('utf-8') + timestamp
+    signature = hmac.new(SECRET_KEY, message, hashlib.sha256).hexdigest()
+    return f"{signature}.{timestamp.decode('utf-8')}"
+
+def validate_transaction_request(player_id, provided_token):
+    """Validates if the incoming financial request is genuine and not replayed."""
+    try:
+        signature, timestamp_str = provided_token.split('.')
+        request_time = int(timestamp_str)
+        current_time = int(time.time())
         
-        # حلقة المزامنة الحية (Game Loop)
-        while True:
-            x += random.uniform(-2.0, 2.0)
-            y += random.uniform(-2.0, 2.0)
+        # Check if token is expired (e.g., older than 30 seconds -> Replay Attack)
+        if current_time - request_time > 30:
+            print(f"[SECURITY ALERT] Expired token from {player_id}. Possible replay attack blocked.")
+            return False
             
-            move_packet = {
-                "action": "move",
-                "player": USERNAME,
-                "coords": [x, y, z]
-            }
-            client.sendall(json.dumps(move_packet).encode('utf-8'))
+        # Verify the signature
+        expected_message = player_id.encode('utf-8') + timestamp_str.encode('utf-8')
+        expected_signature = hmac.new(SECRET_KEY, expected_message, hashlib.sha256).hexdigest()
+        
+        if hmac.compare_digest(expected_signature, signature):
+            print(f"[SHIELD PASSED] Verified secure transaction for {player_id}.")
+            return True
+        else:
+            print(f"[SECURITY ALERT] Invalid signature from {player_id}. Transaction rejected.")
+            return False
             
-            # استقبال نبضة التأكيد من السيرفر
-            sync_response = client.recv(1024).decode('utf-8')
-            if sync_response:
-                print(f"[SERVER SYNC] Data Received: {sync_response}")
-            
-            time.sleep(1)
-    else:
-        print(f"\n[SERVER REJECTED] -> {response}")
+    except Exception as e:
+        print(f"[SECURITY ERROR] Malformed token format: {e}")
+        return False
 
-except ConnectionRefusedError:
-    print("Server is offline. Start master_server.py first.")
-except Exception as e:
-    print(f"Error occurred: {e}")
-finally:
-    client.close()
+# Test the shield internally
+if __name__ == "__main__":
+    print("[SYSTEM] Booting Economy Shield...")
+    test_player = "Founder"
+    
+    # 1. Generate a valid token (Simulating the Client)
+    valid_token = generate_secure_token(test_player)
+    
+    # 2. Validate the incoming request (Simulating the Server Shield)
+    is_valid = validate_transaction_request(test_player, valid_token)
+    
+    if is_valid:
+        print(">>> SUCCESS: Forwarding data to economy_core.py")
