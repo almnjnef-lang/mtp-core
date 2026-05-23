@@ -1,2 +1,14 @@
-#pragma warning(disable: 4582)
-#pragma warning(disable: 4583)
+// Copyright Epic Games, Inc. All Rights Reserved.
+
+using UnrealBuildTool;
+using System.Collections.Generic;
+
+public class AlmnjnefServerTarget : TargetRules
+{
+    public AlmnjnefServerTarget(TargetInfo Target) : base(Target)
+    {
+        Type = TargetType.Server;
+        DefaultBuildSettings = BuildSettingsVersion.V2;
+        ExtraModuleNames.Add("Almnjnef");
+    }
+}
