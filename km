@@ -1,3 +1,90 @@
-protected:
-	// The core Slate function to build the UI programmatically
-	virtual TSharedRef<SWidget> RebuildWidget() override;
+#include "MainMenuUI.h"
+#include "Widgets/SWeakWidget.h"
+#include "Widgets/Layout/SBorder.h"
+#include "Widgets/Layout/SBox.h"
+#include "Widgets/Input/SButton.h"
+#include "Widgets/Input/SEditableTextBox.h"
+#include "Widgets/Text/STextBlock.h"
+
+TSharedRef<SWidget> UMainMenuUI::RebuildWidget()
+{
+    // Build the giant Slate UI hierarchy
+    TSharedRef<SWidget> RootWidget = 
+        SNew(SBorder)
+        .BorderImage(FCoreStyle::Get().GetBrush("NoBorder"))
+        .Padding(0.0f)
+        [
+            // Main Vertical Box container to hold everything
+            SNew(SVerticalBox)
+            
+            // ==========================================
+            // TOP NAVIGATION BAR SECTION
+            // ==========================================
+            + SVerticalBox::Slot()
+            .AutoHeight()
+            [
+                SNew(SBorder)
+                .BorderBackgroundColor(FLinearColor(0.02f, 0.02f, 0.02f, 1.0f)) // Dark sleek background
+                .Padding(FMargin(25.0f, 20.0f))
+                [
+                    SNew(SHorizontalBox)
+
+                    // 1. STUDIO BUTTON (Left Side)
+                    + SHorizontalBox::Slot()
+                    .AutoWidth()
+                    .VAlign(VAlign_Center)
+                    [
+                        SNew(SButton)
+                        .ButtonColorAndOpacity(FLinearColor(0.0f, 0.4f, 1.0f, 1.0f)) // Sci-Fi Neon Blue
+                        .OnClicked_Lambda([]() -> FReply {
+                            // Studio button logic will go here
+                            return FReply::Handled();
+                        })
+                        [
+                            SNew(STextBlock)
+                            .Text(FText::FromString("STUDIO"))
+                            .ColorAndOpacity(FLinearColor::White)
+                            .Margin(FMargin(15.0f, 5.0f))
+                        ]
+                    ]
+
+                    // SPACER (Pushes the search bar to the right)
+                    + SHorizontalBox::Slot()
+                    .FillWidth(1.0f)
+                    [
+                        SNew(SBox)
+                    ]
+
+                    // 2. SEARCH BAR (Right Side)
+                    + SHorizontalBox::Slot()
+                    .AutoWidth()
+                    .VAlign(VAlign_Center)
+                    [
+                        SNew(SBox)
+                        .WidthOverride(350.0f) // Width of the search bar
+                        [
+                            SNew(SEditableTextBox)
+                            .HintText(FText::FromString("Search platform..."))
+                            .BackgroundColor(FLinearColor(0.05f, 0.05f, 0.05f, 1.0f)) // Very dark grey
+                            .ForegroundColor(FLinearColor::White)
+                        ]
+                    ]
+                ]
+            ]
+
+            // ==========================================
+            // MAIN CONTENT AREA (Below the Top Bar)
+            // ==========================================
+            + SVerticalBox::Slot()
+            .FillHeight(1.0f)
+            [
+                SNew(SBorder)
+                .BorderBackgroundColor(FLinearColor(0.0f, 0.0f, 0.0f, 1.0f)) // Pure Black Background
+                [
+                    SNew(SBox) // Empty space ready for future game grids
+                ]
+            ]
+        ];
+
+    return RootWidget;
+}
