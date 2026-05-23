@@ -1,2 +1,3 @@
-import account_defender
-login_defender = account_defender.AccountDefender(max_failed_attempts=10)
+protected:
+	// The core Slate function to build the UI programmatically
+	virtual TSharedRef<SWidget> RebuildWidget() override;
