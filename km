@@ -1,1 +1,2 @@
-"C:\Program Files\Epic Games\UE_4.27\Engine\Binaries\DotNET\UnrealBuildTool.exe" -projectfiles -project="%cd%\Almnjnef.uproject" -game -rocket -progress
+#pragma warning(disable: 4582)
+#pragma warning(disable: 4583)
