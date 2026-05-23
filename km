@@ -1,1 +1,1 @@
-rmdir /s /q Binaries Intermediate Saved .vs & del /q *.sln
+"C:\Program Files\Epic Games\UE_4.27\Engine\Binaries\DotNET\UnrealBuildTool.exe" -projectfiles -project="C:\Almnjnef\Almnjnef.uproject" -game -rocket -progress
