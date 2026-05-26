@@ -1,1 +1,1 @@
-"C:\Program Files\Epic Games\UE_4.27\Engine\Binaries\DotNET\UnrealBuildTool.exe" -projectfiles -project="C:\Almnjnef\Almnjnef\Almnjnef.uproject" -game -rocket -progress
+pacman -S --needed base-devel mingw-w64-ucrt-x86_64-toolchain
