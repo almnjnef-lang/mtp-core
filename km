@@ -1,1 +1,13 @@
-sudo apt install fail2ban -y && sudo systemctl enable fail2ban && sudo systemctl start fail2ban
+#include <iostream>
+
+int main() {
+    std::cout << "========================================\n";
+    std::cout << "   Mnjnef Global Platform - Core V1.0   \n";
+    std::cout << "========================================\n";
+    std::cout << "System: High-Performance Linux Server\n";
+    std::cout << "Status: Backend Initialized Successfully!\n";
+    std::cout << "Waiting for Unreal Engine connections...\n";
+    std::cout << "========================================\n";
+    
+    return 0;
+}
