@@ -1,1 +1,1 @@
-#endif // #ifndef NETWORKMANAGER_H
+g++ main.cpp NetworkManager.cpp -o mnjnef_server -pthread
