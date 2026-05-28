@@ -1,1 +1,1 @@
-C:\Users\SUPERB\.ssh\id_rsa
+ssh -i C:\Users\SUPERB\.ssh\id_rsa -p 31525 ubuntu@64.247.196.38
