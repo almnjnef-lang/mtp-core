@@ -1,16 +1,1 @@
-#include <iostream>
-#include "NetworkManager.h"
-
-int main() {
-    // Phase 1: Core V1.0 (Your Original Architecture)
-    std::cout << "========================================\n";
-    std::cout << "   Mnjnef Global Platform - Core V3.0   \n";
-    std::cout << "========================================\n";
-    std::cout << "[SYSTEM] Initializing Modular Architecture...\n";
-    
-    // Phase 2: Booting the Network Engine
-    NetworkManager network;
-    network.StartServer();
-
-    return 0;
-}
+g++ main.cpp NetworkManager.cpp -o mnjnef_server -pthread
