@@ -1,1 +1,1 @@
-sudo apt update && sudo apt install ufw -y
+sudo ufw allow 32397/tcp
