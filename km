@@ -1,1 +1,1 @@
-sudo ufw allow 32397/tcp
+sudo ufw allow 'Nginx Full'
