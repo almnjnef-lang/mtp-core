@@ -1,1 +1,1 @@
-sudo ufw enable
+sudo apt install fail2ban -y && sudo systemctl enable fail2ban && sudo systemctl start fail2ban
