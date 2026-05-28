@@ -1,1 +1,9 @@
-./mnjnef_server
+#ifndef NETWORKMANAGER_H
+#define NETWORKMANAGER_H
+
+class NetworkManager {
+public:
+    void StartServer();
+};
+
+#endif
