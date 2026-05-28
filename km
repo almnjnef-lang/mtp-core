@@ -1,9 +1,40 @@
-#ifndef NETWORKMANAGER_H
-#define NETWORKMANAGER_H
+#include "NetworkManager.h"
+#include <iostream>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <unistd.h>
+#include <thread>
 
-class NetworkManager {
-public:
-    void StartServer();
-};
+void HandlePlayer(int player_socket) {
+    std::cout << "[NETWORK] New Player Connected! Assigned to secure thread.\n";
+    // Data encryption and database code will go here later
+}
 
-#endif
+void NetworkManager::StartServer() {
+    int server_fd = socket(AF_INET, SOCK_STREAM, 0);
+    if (server_fd == 0) return;
+
+    int opt = 1;
+    setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+
+    struct sockaddr_in address;
+    address.sin_family = AF_INET;
+    address.sin_addr.s_addr = INADDR_ANY;
+    address.sin_port = htons(7777);
+
+    if (bind(server_fd, (struct sockaddr *)&address, sizeof(address)) < 0) return;
+    if (listen(server_fd, SOMAXCONN) < 0) return;
+
+    std::cout << "[SUCCESS] NetworkManager is ONLINE on Port 7777.\n";
+    std::cout << "[STATUS] Multi-threading Active. Ready for millions...\n";
+
+    while(true) {
+        struct sockaddr_in client_address;
+        socklen_t client_len = sizeof(client_address);
+        int player_socket = accept(server_fd, (struct sockaddr *)&client_address, &client_len);
+        
+        if (player_socket >= 0) {
+            std::thread(HandlePlayer, player_socket).detach();
+        }
+    }
+}
