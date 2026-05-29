@@ -1,1 +1,12 @@
-nohup ./mnjnef_server > server_log.txt 2>&1 &
+#ifndef AUTHMANAGER_H
+#define AUTHMANAGER_H
+
+#include <string>
+
+class AuthManager {
+public:
+    // Validates username based on Mnjnef platform rules
+    static bool ValidateUsername(const std::string& username);
+};
+
+#endif
