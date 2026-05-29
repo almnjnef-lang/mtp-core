@@ -3,186 +3,209 @@
 export default function Home() {
   return (
     <>
-      {/* كود التصميم المفروض بالقوة داخل الصفحة */}
       <style dangerouslySetInnerHTML={{__html: `
-        .mnjnef-bg {
-          background-color: #050505;
-          min-height: 100vh;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-          color: white;
-          overflow: hidden;
-          position: relative;
+        /* الإعدادات الأساسية للصفحة */
+        body, html { 
+          margin: 0; 
+          padding: 0; 
+          background-color: #030305; 
+          color: white; 
+          font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; 
+          overflow: hidden; 
         }
-        .glow-orb {
-          position: absolute;
-          top: 20%;
-          left: 50%;
-          transform: translateX(-50%);
-          width: 400px;
-          height: 400px;
-          background: rgba(37, 99, 235, 0.15);
-          border-radius: 50%;
-          filter: blur(80px);
-          pointer-events: none;
+
+        /* خلفية العوالم المتعددة (الكون) */
+        .universe-bg { 
+          position: fixed; 
+          top: 0; 
+          left: 0; 
+          width: 100vw; 
+          height: 100vh; 
+          z-index: 0; 
+          background: radial-gradient(circle at center, #0f172a 0%, #000000 100%); 
         }
-        .login-box {
-          background: rgba(17, 17, 17, 0.85);
-          backdrop-filter: blur(10px);
-          border: 1px solid rgba(55, 65, 81, 0.5);
-          border-radius: 16px;
-          padding: 40px;
-          width: 100%;
-          max-width: 420px;
-          box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-          z-index: 10;
+        
+        /* الأجرام السماوية (تمثل عوالم الألعاب المختلفة) */
+        .world { 
+          position: absolute; 
+          border-radius: 50%; 
+          filter: blur(80px); 
+          animation: float 25s infinite alternate ease-in-out; 
+          opacity: 0.5; 
         }
-        .logo-text {
-          font-size: 3.5rem;
-          font-weight: 900;
-          letter-spacing: 0.2em;
-          text-align: center;
-          margin-bottom: 5px;
-          background: linear-gradient(to right, #3b82f6, #a855f7);
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
+        .world-sci-fi { 
+          width: 600px; height: 600px; background: #3b82f6; top: -15%; left: -10%; 
         }
-        .subtitle {
-          text-align: center;
-          color: #9ca3af;
-          font-size: 0.875rem;
-          letter-spacing: 0.05em;
-          margin-bottom: 30px;
+        .world-fantasy { 
+          width: 500px; height: 500px; background: #8b5cf6; bottom: -10%; right: -5%; animation-delay: -7s; 
         }
-        .status-bar {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 10px;
-          background: rgba(0, 0, 0, 0.4);
-          padding: 10px;
-          border-radius: 8px;
-          border: 1px solid rgba(55, 65, 81, 0.5);
-          margin-bottom: 30px;
+        .world-nature { 
+          width: 400px; height: 400px; background: #10b981; top: 30%; left: 50%; animation-delay: -14s; 
         }
-        .status-dot {
-          width: 10px;
-          height: 10px;
-          background-color: #22c55e;
-          border-radius: 50%;
-          box-shadow: 0 0 10px #22c55e;
-          animation: pulse 2s infinite;
+        
+        @keyframes float {
+          0% { transform: translate(0, 0) scale(1); }
+          100% { transform: translate(120px, 80px) scale(1.2); }
         }
-        @keyframes pulse {
-          0% { opacity: 1; }
-          50% { opacity: 0.4; }
-          100% { opacity: 1; }
+
+        /* حاوية تسجيل الدخول الرئيسية */
+        .login-wrapper { 
+          position: relative; 
+          z-index: 10; 
+          display: flex; 
+          justify-content: center; 
+          align-items: center; 
+          min-height: 100vh; 
+          padding: 20px; 
         }
-        .status-text {
-          color: #4ade80;
-          font-size: 0.75rem;
-          text-transform: uppercase;
-          letter-spacing: 0.1em;
-          font-family: monospace;
+
+        /* اللوحة الزجاجية الفاخرة (Glassmorphism) */
+        .glass-panel { 
+          background: rgba(17, 24, 39, 0.4); 
+          backdrop-filter: blur(25px); 
+          -webkit-backdrop-filter: blur(25px);
+          border: 1px solid rgba(255, 255, 255, 0.08); 
+          border-radius: 24px; 
+          padding: 50px 45px; 
+          width: 100%; 
+          max-width: 460px; 
+          box-shadow: 0 30px 60px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.1); 
         }
-        .input-group {
-          margin-bottom: 20px;
-          text-align: left;
+        
+        /* تصميم شعار المنصة */
+        .logo-text { 
+          font-size: 3.5rem; 
+          font-weight: 900; 
+          text-align: center; 
+          color: #ffffff; 
+          letter-spacing: 3px; 
+          margin-bottom: 5px; 
+          text-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
         }
-        .input-label {
-          display: block;
-          font-size: 0.75rem;
-          font-weight: 600;
-          color: #6b7280;
-          text-transform: uppercase;
-          letter-spacing: 0.1em;
-          margin-bottom: 8px;
+        .tagline { 
+          text-align: center; 
+          color: #9ca3af; 
+          font-size: 0.95rem; 
+          letter-spacing: 1px;
+          margin-bottom: 45px; 
         }
-        .custom-input {
-          width: 100%;
-          background-color: #0a0a0a;
-          border: 1px solid #1f2937;
-          border-radius: 8px;
-          padding: 14px;
-          color: white;
-          outline: none;
-          transition: all 0.3s;
-          box-sizing: border-box;
+
+        /* تنسيق حقول الإدخال */
+        .input-group { 
+          margin-bottom: 22px; 
         }
-        .custom-input:focus {
-          border-color: #3b82f6;
-          box-shadow: 0 0 0 1px #3b82f6;
+        .input-label { 
+          display: block; 
+          font-size: 0.75rem; 
+          color: #9ca3af; 
+          text-transform: uppercase; 
+          letter-spacing: 1.5px; 
+          margin-bottom: 8px; 
+          font-weight: 600; 
         }
-        .submit-btn {
-          width: 100%;
-          background-color: #2563eb;
-          color: white;
-          font-weight: bold;
-          padding: 16px;
-          border-radius: 8px;
-          border: none;
-          margin-top: 10px;
-          text-transform: uppercase;
-          letter-spacing: 0.2em;
-          cursor: pointer;
-          transition: all 0.3s;
-          box-shadow: 0 0 20px rgba(37, 99, 235, 0.3);
+        .custom-input { 
+          width: 100%; 
+          background: rgba(0, 0, 0, 0.4); 
+          border: 1px solid rgba(255, 255, 255, 0.1); 
+          border-radius: 12px; 
+          padding: 16px; 
+          color: white; 
+          font-size: 1rem; 
+          box-sizing: border-box; 
+          transition: all 0.3s ease; 
         }
-        .submit-btn:hover {
-          background-color: #1d4ed8;
-          box-shadow: 0 0 30px rgba(37, 99, 235, 0.5);
+        .custom-input:focus { 
+          outline: none; 
+          border-color: #3b82f6; 
+          background: rgba(0, 0, 0, 0.7); 
+          box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15); 
         }
-        .footer-links {
-          display: flex;
-          justify-content: space-between;
-          margin-top: 30px;
-          font-size: 0.75rem;
+        .custom-input::placeholder {
           color: #4b5563;
-          font-family: monospace;
         }
-        .footer-links a {
-          color: #4b5563;
-          text-decoration: none;
-          transition: color 0.3s;
+
+        /* زر المصادقة والدخول */
+        .auth-btn { 
+          width: 100%; 
+          background: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%); 
+          color: white; 
+          border: none; 
+          padding: 18px; 
+          border-radius: 12px; 
+          font-size: 1rem; 
+          font-weight: bold; 
+          text-transform: uppercase; 
+          letter-spacing: 2px; 
+          cursor: pointer; 
+          transition: all 0.3s ease; 
+          margin-top: 15px; 
+          box-shadow: 0 10px 25px rgba(37, 99, 235, 0.4); 
         }
-        .footer-links a:hover {
-          color: white;
+        .auth-btn:hover { 
+          transform: translateY(-2px); 
+          box-shadow: 0 15px 35px rgba(37, 99, 235, 0.6); 
+        }
+
+        /* الروابط السفلية */
+        .footer-links { 
+          display: flex; 
+          justify-content: space-between; 
+          margin-top: 35px; 
+          font-size: 0.8rem; 
+          letter-spacing: 0.5px;
+        }
+        .footer-links a { 
+          color: #6b7280; 
+          text-decoration: none; 
+          transition: color 0.3s; 
+        }
+        .footer-links a:hover { 
+          color: #ffffff; 
         }
       `}} />
 
-      {/* الواجهة الفعلية - تم إجبارها على الاتجاه الإنجليزي عشان ما تخرب الترجمة التلقائية التنسيق */}
-      <div className="mnjnef-bg" dir="ltr">
-        <div className="glow-orb"></div>
-        
-        <div className="login-box">
-          <div className="logo-text">MNJNEF</div>
-          <div className="subtitle">The Next Reality Awaits</div>
+      {/* خلفية العوالم المتعددة */}
+      <div className="universe-bg">
+        <div className="world world-sci-fi"></div>
+        <div className="world world-fantasy"></div>
+        <div className="world world-nature"></div>
+      </div>
 
-          <div className="status-bar">
-            <div className="status-dot"></div>
-            <div className="status-text">Core Engine Online</div>
-          </div>
+      {/* الواجهة الرئيسية */}
+      <div className="login-wrapper" dir="ltr">
+        <div className="glass-panel">
+          
+          <div className="logo-text">Mnjnef</div>
+          <div className="tagline">The Next Reality Awaits</div>
 
           <form onSubmit={(e) => e.preventDefault()}>
-            <div className="input-group">
-              <label className="input-label">Player ID / Email</label>
-              <input type="text" className="custom-input" placeholder="Enter your ID..." />
-            </div>
             
+            {/* القسم الأول: اسم المستخدم */}
             <div className="input-group">
-              <label className="input-label">Access Key</label>
-              <input type="password" className="custom-input" placeholder="••••••••" />
+              <label className="input-label">Username</label>
+              <input type="text" className="custom-input" placeholder="Enter creator name..." />
             </div>
 
-            <button className="submit-btn">Authenticate</button>
+            {/* القسم الثاني: البريد الإلكتروني */}
+            <div className="input-group">
+              <label className="input-label">Email Address</label>
+              <input type="email" className="custom-input" placeholder="player@mnjnef.com" />
+            </div>
+            
+            {/* القسم الثالث: كلمة المرور */}
+            <div className="input-group">
+              <label className="input-label">Password</label>
+              <input type="password" className="custom-input" placeholder="••••••••••••" />
+            </div>
+
+            <button className="auth-btn">Enter Universe</button>
           </form>
 
           <div className="footer-links">
             <a href="#">Create Account</a>
-            <a href="#">Recovery Protocol</a>
+            <a href="#">Lost Access?</a>
           </div>
+
         </div>
       </div>
     </>
