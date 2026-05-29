@@ -1,10 +1,36 @@
 "use client";
+import { useEffect } from "react";
 
 export default function SecureAuth() {
+  
+  // استدعاء وتفعيل محرك الترجمة من Google تلقائياً بصيغة متوافقة مع Next.js
+  useEffect(() => {
+    const addGoogleTranslateScript = () => {
+      if (!document.getElementById("google-translate-script")) {
+        const script = document.createElement("script");
+        script.src = "//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit";
+        script.id = "google-translate-script";
+        document.body.appendChild(script);
+
+        // تشغيل دالة التفعيل وحقنها في نافذة المتصفح بدون أخطاء تيب سكربت
+        (window as any).googleTranslateElementInit = () => {
+          new (window as any).google.translate.TranslateElement(
+            { 
+              pageLanguage: "en", 
+              layout: (window as any).google.translate.TranslateElement.InlineLayout.SIMPLE 
+            }, 
+            "google_translate_element"
+          );
+        };
+      }
+    };
+
+    addGoogleTranslateScript();
+  }, []);
+
   return (
     <>
       <style dangerouslySetInnerHTML={{__html: `
-        /* تفعيل ميزة السحب (Scrolling) للصفحة */
         body, html { 
           margin: 0; 
           padding: 0; 
@@ -14,7 +40,7 @@ export default function SecureAuth() {
           overflow-y: auto; 
         }
 
-        /* خلفية عالم الألعاب (سايبربانك / نيون داكن) */
+        /* خلفية عالم الألعاب المتحركة */
         .epic-bg {
           position: fixed;
           top: 0;
@@ -33,15 +59,26 @@ export default function SecureAuth() {
           100% { transform: scale(1.08); }
         }
 
-        /* طبقة التظليل الاحترافية المتدرجة */
         .dark-overlay {
           position: fixed; 
           top: 0; left: 0; width: 100vw; height: 100vh;
-          background: linear-gradient(to bottom, rgba(9, 9, 14, 0.6), rgba(5, 5, 10, 0.95));
+          background: linear-gradient(to bottom, rgba(9, 9, 14, 0.5), rgba(5, 5, 10, 0.9));
           z-index: 1;
         }
 
-        /* الحاوية الرئيسية */
+        /* حاوية أداة ترجمة جوجل في أعلى الشاشة */
+        .translate-container {
+          position: absolute;
+          top: 20px;
+          right: 20px;
+          z-index: 100;
+          background: rgba(15, 15, 25, 0.6);
+          backdrop-filter: blur(10px);
+          padding: 6px 12px;
+          border-radius: 8px;
+          border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
         .secure-wrapper {
           position: relative; 
           z-index: 10; 
@@ -49,11 +86,10 @@ export default function SecureAuth() {
           justify-content: center; 
           align-items: flex-start; 
           min-height: 100vh; 
-          padding: 60px 20px; 
+          padding: 80px 20px; 
           box-sizing: border-box;
         }
 
-        /* اللوحة الزجاجية */
         .fortress-panel {
           background: rgba(15, 15, 25, 0.55); 
           backdrop-filter: blur(20px); 
@@ -81,7 +117,6 @@ export default function SecureAuth() {
           margin-bottom: 30px; 
         }
 
-        /* تم إزالة أمر التكبير الإجباري (uppercase) وتقليل تباعد الأحرف لتناسب الحروف الصغيرة */
         .input-label { 
           display: block; 
           font-size: 0.9rem; 
@@ -129,38 +164,79 @@ export default function SecureAuth() {
           box-shadow: 0 10px 25px rgba(37, 99, 235, 0.7); 
           background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); 
         }
+
+        /* تنسيق روابط السياسات والتواصل في الأسفل */
+        .system-footer {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-top: 40px;
+          padding-top: 25px;
+          border-top: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .footer-link {
+          color: #9ca3af;
+          text-decoration: none;
+          font-size: 0.85rem;
+          font-weight: 500;
+          transition: color 0.2s ease;
+        }
+        .footer-link:hover {
+          color: #3b82f6;
+        }
+        .footer-divider {
+          color: rgba(255, 255, 255, 0.1);
+          font-size: 0.85rem;
+        }
+        
+        /* إخفاء شريط جوجل العلوي الإجباري المزعج للحفاظ على فخامة التصميم */
+        .skiptranslate > iframe { display: none !important; }
+        body { top: 0px !important; }
       `}} />
 
       <div className="epic-bg"></div>
       <div className="dark-overlay"></div>
 
+      {/* صندوق ترجمة جوجل الذكي */}
+      <div className="translate-container">
+        <div id="google_translate_element"></div>
+      </div>
+
       <div className="secure-wrapper" dir="ltr">
         <div className="fortress-panel">
           <div className="brand-title">Mnjnef</div>
           <div style={{ textAlign: "center", color: "#9ca3af", fontSize: "0.95rem", letterSpacing: "1px", marginBottom: "50px", fontWeight: "500" }}>
-            Universal Authentication
+            The Next Reality Awaits
           </div>
 
           <form onSubmit={(e) => e.preventDefault()}>
             <div className="input-group">
-              <label className="input-label">Creator Username</label>
+              <label className="input-label">Username</label>
               <input type="text" className="secure-input" placeholder="e.g. MasterDev99" />
             </div>
 
             <div className="input-group">
-              <label className="input-label">Secure Email</label>
+              <label className="input-label">Email Address</label>
               <input type="email" className="secure-input" placeholder="player@mnjnef.com" />
             </div>
             
             <div className="input-group">
-              <label className="input-label">Access Key</label>
+              <label className="input-label">Password</label>
               <input type="password" className="secure-input" placeholder="••••••••••••" />
             </div>
 
             <button type="submit" className="auth-btn">
-              تسجيل الدخول
+              Login
             </button>
           </form>
+
+          {/* روابط سياسة الخصوصية واتصل بنا النظامية */}
+          <div className="system-footer">
+            <a href="#" className="footer-link">Privacy Policy</a>
+            <span className="footer-divider">|</span>
+            <a href="#" className="footer-link">Contact Us</a>
+          </div>
+
         </div>
       </div>
     </>
