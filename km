@@ -1,1 +1,1 @@
-sudo apt update && sudo apt install build-essential cmake gdb -y
+cd Mnjnef && ls
