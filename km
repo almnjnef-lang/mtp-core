@@ -1,390 +1,412 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 
 /**
  * ============================================================================
- * MNJNEF CORE AUTHENTICATION MODULE - ENTERPRISE EDITION
- * Architecture: Monolithic UI with Embedded State & CSS Engine
- * Environment: Next.js / React Strict Mode
+ * MNJNEF CORE AUTHENTICATION ENGINE - AAA OPEN WORLD EDITION
+ * Version: 5.7.0 (Aligned with Advanced Engine Standards)
+ * Architecture: Monolithic React Component with Integrated Audio & Particle Systems
  * ============================================================================
  */
 
+// 1. Interfaces & Type Definitions (بنية البيانات الصارمة)
+interface Particle {
+  id: number;
+  x: number;
+  y: number;
+  size: number;
+  speed: number;
+  opacity: number;
+  animationDuration: number;
+  delay: number;
+}
+
 export default function SecureAuth() {
-  // --------------------------------------------------------------------------
-  // 1. Core State Infrastructure (إدارة حالة البيانات والبنية التحتية)
-  // --------------------------------------------------------------------------
+  // ==========================================================================
+  // 2. STATE MANAGEMENT (إدارة الذاكرة والحالة اللحظية)
+  // ==========================================================================
+  const [hasInteracted, setHasInteracted] = useState(false); // للتحقق من تفاعل المستخدم لتشغيل الصوت
+  const [isAudioPlaying, setIsAudioPlaying] = useState(false);
+  const [particles, setParticles] = useState<Particle[]>([]);
+  
+  // Form States (الحقول الثلاثة اللي طلبتها بالضبط)
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   
-  // أنظمة الحماية والمراقبة اللحظية
-  const [securityLevel, setSecurityLevel] = useState(0);
+  // System States
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [systemMessage, setSystemMessage] = useState({ text: "", type: "" });
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  // --------------------------------------------------------------------------
-  // 2. Dynamic Environment Tracking (تتبع حركة الماوس لربطها بالخلفية المعقدة)
-  // --------------------------------------------------------------------------
+  // ==========================================================================
+  // 3. AUDIO ENGINE (محرك الصوت - رياح الصحراء)
+  // ==========================================================================
   useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      // حساب موقع الماوس لعمل تأثير تفاعلي 3D في الخلفية
-      setMousePosition({
-        x: (e.clientX / window.innerWidth) * 100,
-        y: (e.clientY / window.innerHeight) * 100,
+    // إنشاء كائن الصوت في الخلفية (صوت رياح صحراوية عالية الجودة)
+    const audio = new Audio("https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3");
+    audio.loop = true; // تكرار الصوت
+    audio.volume = 0.4; // مستوى الصوت 40% عشان ما يكون مزعج
+    audioRef.current = audio;
+
+    return () => {
+      audio.pause();
+      audio.src = "";
+    };
+  }, []);
+
+  const initializeWorld = () => {
+    setHasInteracted(true);
+    if (audioRef.current) {
+      audioRef.current.play().then(() => {
+        setIsAudioPlaying(true);
+      }).catch((err) => {
+        console.error("Audio playback restricted by browser:", err);
       });
-    };
-    window.addEventListener("mousemove", handleMouseMove);
-    return () => window.removeEventListener("mousemove", handleMouseMove);
-  }, []);
+    }
+  };
 
-  // --------------------------------------------------------------------------
-  // 3. Global Translation Engine Initialization (تهيئة محرك الترجمة)
-  // --------------------------------------------------------------------------
-  useEffect(() => {
-    const initTranslationLayer = () => {
-      if (!document.getElementById("google-translate-script")) {
-        const script = document.createElement("script");
-        script.src = "//translate.google.com/translate_a/element.js?cb=mnjnefTranslateInit";
-        script.id = "google-translate-script";
-        script.async = true;
-        document.body.appendChild(script);
-
-        // إنشاء دالة الترجمة في الـ Window Object
-        (window as any).mnjnefTranslateInit = () => {
-          new (window as any).google.translate.TranslateElement(
-            { 
-              pageLanguage: "en", 
-              layout: (window as any).google.translate.TranslateElement.InlineLayout.SIMPLE,
-            }, 
-            "google_translate_nexus"
-          );
-        };
+  const toggleAudio = () => {
+    if (audioRef.current) {
+      if (isAudioPlaying) {
+        audioRef.current.pause();
+      } else {
+        audioRef.current.play();
       }
+      setIsAudioPlaying(!isAudioPlaying);
+    }
+  };
+
+  // ==========================================================================
+  // 4. PARTICLE PHYSICS ENGINE (محرك جزيئات رمال الصحراء)
+  // يولد 60 جزيئة تتطاير عشوائياً لمحاكاة حركة الرياح
+  // ==========================================================================
+  useEffect(() => {
+    const generateParticles = () => {
+      const particleArray: Particle[] = [];
+      for (let i = 0; i < 60; i++) {
+        particleArray.push({
+          id: i,
+          x: Math.random() * 100, // موقع عشوائي أفقي
+          y: Math.random() * 100, // موقع عشوائي عمودي
+          size: Math.random() * 3 + 1, // حجم حبة الرمل
+          speed: Math.random() * 15 + 10, // سرعة الرياح
+          opacity: Math.random() * 0.5 + 0.1, // شفافية
+          animationDuration: Math.random() * 10 + 10, // مدة الحركة
+          delay: Math.random() * -20, // تأخير عشوائي
+        });
+      }
+      setParticles(particleArray);
     };
-    initTranslationLayer();
+    generateParticles();
   }, []);
 
-  // --------------------------------------------------------------------------
-  // 4. Cryptographic Real-time Analyzer (محلل قوة التشفير اللحظي)
-  // --------------------------------------------------------------------------
-  useEffect(() => {
-    let entropy = 0;
-    if (password.length >= 8) entropy += 25;
-    if (password.length >= 16) entropy += 15; // مكافأة للكلمات الطويلة
-    if (password.match(/[A-Z]/)) entropy += 15;
-    if (password.match(/[a-z]/)) entropy += 15;
-    if (password.match(/[0-9]/)) entropy += 15;
-    if (password.match(/[^a-zA-Z0-9]/)) entropy += 15;
-    setSecurityLevel(Math.min(entropy, 100)); // الحد الأقصى 100
-  }, [password]);
-
-  // --------------------------------------------------------------------------
-  // 5. Authentication Gateway Logic (منطق بوابة الدخول والتحقق)
-  // --------------------------------------------------------------------------
-  const executeAuthentication = (e: React.FormEvent) => {
+  // ==========================================================================
+  // 5. AUTHENTICATION PROTOCOL (نظام تسجيل الدخول)
+  // ==========================================================================
+  const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     setSystemMessage({ text: "", type: "" });
 
-    // Level 1: Syntax Validation
     if (!username || !email || !password) {
-      setSystemMessage({ text: "[SYSTEM_ERR_01]: Incomplete credentials.", type: "error" });
-      return;
-    }
-    
-    // Level 2: Strict Email Pattern Matching
-    const strictEmailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-    if (!strictEmailRegex.test(email)) {
-      setSystemMessage({ text: "[SYSTEM_ERR_02]: Email format rejected by node.", type: "error" });
+      setSystemMessage({ text: "Please fill all required fields.", type: "error" });
       return;
     }
 
-    // Level 3: Security Threshold Enforcement
-    if (securityLevel < 55) {
-      setSystemMessage({ text: "[SYSTEM_ERR_03]: Access Key vulnerability detected. Increase complexity.", type: "error" });
-      return;
-    }
-
-    // Execution Phase
     setIsAuthenticating(true);
-    setSystemMessage({ text: "Establishing secure handshake with Mnjnef Core...", type: "info" });
+    setSystemMessage({ text: "Connecting to Mnjnef servers...", type: "info" });
     
     // محاكاة الاتصال بالسيرفر
     setTimeout(() => {
       setIsAuthenticating(false);
-      setSystemMessage({ text: "Handshake verified. Welcome to the Mnjnef Network.", type: "success" });
+      setSystemMessage({ text: "Welcome to the Open World.", type: "success" });
     }, 2500);
   };
 
-  // --------------------------------------------------------------------------
-  // 6. Neural Graphics Engine (محرك الجرافيكس المعقد والمبني برمجياً)
-  // --------------------------------------------------------------------------
-  const mnjnefGraphicsEngine = `
-    /* =======================================================
-       MNJNEF QUANTUM UI - STYLESHEET
-       ======================================================= */
-    
+  // ==========================================================================
+  // 6. ENTERPRISE STYLESHEET (محرك التصميم الضخم والمستقل)
+  // ==========================================================================
+  const enterpriseCSS = `
+    /* التهيئة الأساسية للمتصفح */
+    * { box-sizing: border-box; }
     body, html { 
-      margin: 0; 
-      padding: 0; 
-      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; 
-      background-color: #030305;
-      color: #ffffff;
-      overflow-x: hidden;
-      overflow-y: auto; 
+      margin: 0; padding: 0; width: 100%; height: 100%;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+      background-color: #000; color: #fff; overflow: hidden;
     }
 
-    /* إخفاء شريط الترجمة الإجباري للحفاظ على بيئة الواجهة نظيفة */
-    .skiptranslate > iframe { display: none !important; }
-    body { top: 0px !important; }
-
-    /* تأثير الجرافيكس المعقد: The Neural Nexus
-       بدون استخدام أي صور، فقط رياضيات برمجية لإنشاء عالم متداخل
-    */
-    .nexus-background {
-      position: fixed;
-      top: 0; left: 0; width: 100vw; height: 100vh;
-      z-index: 0;
-      /* دمج عدة طبقات من التدرجات الشعاعية لإنشاء ضباب وسديم فضائي */
-      background: 
-        radial-gradient(circle at ${mousePosition.x}% ${mousePosition.y}%, rgba(30, 58, 138, 0.15) 0%, transparent 40%),
-        radial-gradient(circle at ${100 - mousePosition.x}% ${100 - mousePosition.y}%, rgba(76, 29, 149, 0.15) 0%, transparent 50%),
-        linear-gradient(180deg, #020205 0%, #0a0a15 100%);
-      background-size: 200% 200%;
-      animation: ambientShift 20s ease-in-out infinite alternate;
+    /* ----------------------------------------------------------- */
+    /* THE OPEN WORLD BACKGROUND (خلفية الصحراء والعالم المفتوح) */
+    /* ----------------------------------------------------------- */
+    .open-world-bg {
+      position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 0;
+      /* صورة صحراء وعالم مفتوح فخمة جداً */
+      background-image: url('https://images.unsplash.com/photo-1473580044384-7ba9967e16a0?q=80&w=2500&auto=format&fit=crop'); 
+      background-size: cover; background-position: center bottom;
+      animation: slowPan 60s ease-in-out infinite alternate;
+      filter: brightness(0.7) contrast(1.1) saturate(1.2);
+    }
+    @keyframes slowPan {
+      0% { transform: scale(1.05) translate(0px, 0px); }
+      100% { transform: scale(1.15) translate(-20px, 10px); }
     }
 
-    /* شبكة العوالم الرقمية (Grid Overlay) */
-    .quantum-grid {
-      position: fixed;
-      top: 0; left: 0; width: 100vw; height: 100vh;
-      z-index: 1;
-      background-image: 
-        linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
-      background-size: 50px 50px;
-      transform: perspective(500px) rotateX(60deg) translateY(-100px) translateZ(-200px);
-      animation: gridMove 15s linear infinite;
-      opacity: 0.6;
+    /* طبقة التظليل لإبراز واجهة الدخول */
+    .vignette-overlay {
+      position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1;
+      background: radial-gradient(circle at 50% 50%, rgba(20, 10, 0, 0.2) 0%, rgba(5, 2, 0, 0.85) 100%);
     }
 
-    @keyframes ambientShift {
-      0% { background-position: 0% 0%; }
-      100% { background-position: 100% 100%; }
+    /* ----------------------------------------------------------- */
+    /* SAND PARTICLE PHYSICS (جزيئات الرمال المتطايرة) */
+    /* ----------------------------------------------------------- */
+    .particle-container {
+      position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 2; pointer-events: none;
+    }
+    .sand-particle {
+      position: absolute; background-color: #d4af37; border-radius: 50%;
+      box-shadow: 0 0 4px #d4af37;
+      animation-name: blowWind;
+      animation-timing-function: linear;
+      animation-iteration-count: infinite;
+    }
+    @keyframes blowWind {
+      0% { transform: translate(0, 0) rotate(0deg); }
+      100% { transform: translate(100vw, -20vh) rotate(360deg); }
     }
 
-    @keyframes gridMove {
-      0% { transform: perspective(500px) rotateX(60deg) translateY(0px) translateZ(-200px); }
-      100% { transform: perspective(500px) rotateX(60deg) translateY(50px) translateZ(-200px); }
+    /* ----------------------------------------------------------- */
+    /* INITIALIZATION SCREEN (شاشة الدخول السينمائية للصوت) */
+    /* ----------------------------------------------------------- */
+    .init-screen {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 9999;
+      display: flex; flex-direction: column; justify-content: center; align-items: center;
+      background: #000; cursor: pointer; transition: opacity 1.5s ease-in-out;
+    }
+    .init-screen.fade-out { opacity: 0; pointer-events: none; }
+    .init-text {
+      font-size: 1.5rem; letter-spacing: 5px; text-transform: uppercase;
+      color: #fff; animation: pulse 2s infinite; font-weight: 300;
+    }
+    @keyframes pulse { 0% { opacity: 0.5; } 50% { opacity: 1; text-shadow: 0 0 20px rgba(255,255,255,0.5); } 100% { opacity: 0.5; } }
+
+    /* ----------------------------------------------------------- */
+    /* MAIN INTERFACE (الواجهة الرئيسية) */
+    /* ----------------------------------------------------------- */
+    .master-wrapper {
+      position: relative; z-index: 10; display: flex; justify-content: center; align-items: center;
+      min-height: 100vh; padding: 20px; overflow-y: auto;
     }
 
-    /* وحدة الترجمة العالمية
-    */
-    .translation-module {
+    .glass-panel {
+      background: rgba(15, 10, 5, 0.45); 
+      backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px);
+      border: 1px solid rgba(255, 200, 100, 0.15); 
+      border-radius: 20px; padding: 50px 45px; 
+      width: 100%; max-width: 460px; 
+      box-shadow: 0 30px 60px rgba(0,0,0,0.8), inset 0 0 30px rgba(255,200,100,0.05);
+      transform: translateY(20px); opacity: 0;
+      animation: riseUp 1.5s cubic-bezier(0.16, 1, 0.3, 1) 0.5s forwards;
+    }
+    @keyframes riseUp {
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    /* ----------------------------------------------------------- */
+    /* TYPOGRAPHY & BRANDING (الخطوط واسم المنصة الدقيق) */
+    /* تم إزالة أمر uppercase نهائياً بناءً على طلبك */
+    /* ----------------------------------------------------------- */
+    .brand-name {
+      font-size: 4rem; font-weight: 900; text-align: center; letter-spacing: 2px; margin: 0;
+      color: #ffffff; text-shadow: 0 5px 25px rgba(255, 255, 255, 0.4);
+    }
+    .brand-subtitle {
+      text-align: center; color: #d4af37; font-size: 0.85rem; letter-spacing: 4px; 
+      margin-top: 5px; margin-bottom: 40px; font-weight: 600; text-transform: uppercase;
+    }
+
+    /* ----------------------------------------------------------- */
+    /* FORM ELEMENTS (عناصر الإدخال) */
+    /* ----------------------------------------------------------- */
+    .input-group { margin-bottom: 25px; position: relative; }
+    
+    .input-label { 
+      display: block; font-size: 0.8rem; color: #e2e8f0; 
+      letter-spacing: 1px; margin-bottom: 8px; font-weight: 600; 
+    }
+    
+    .input-icon-wrapper { position: relative; display: flex; align-items: center; }
+    
+    /* أكواد الأيقونات المدمجة */
+    .svg-icon {
+      position: absolute; left: 18px; width: 20px; height: 20px; fill: #94a3b8; transition: fill 0.3s ease;
+    }
+
+    .form-input {
+      width: 100%; background: rgba(0, 0, 0, 0.6); 
+      border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; 
+      padding: 16px 16px 16px 50px; /* مسافة للأيقونة */
+      color: #fff; font-size: 1.05rem; transition: all 0.3s ease;
+    }
+    .form-input:focus { 
+      outline: none; border-color: #d4af37; background: rgba(20, 15, 0, 0.8); 
+      box-shadow: 0 0 15px rgba(212, 175, 55, 0.2); 
+    }
+    .form-input:focus + .svg-icon { fill: #d4af37; }
+
+    /* ----------------------------------------------------------- */
+    /* BUTTONS & CONTROLS (الأزرار) */
+    /* ----------------------------------------------------------- */
+    .login-btn {
+      width: 100%; background: linear-gradient(135deg, #d4af37 0%, #b8860b 100%); 
+      color: #000; border: none; padding: 18px; border-radius: 12px;
+      font-size: 1.15rem; font-weight: 900; letter-spacing: 1px;
+      cursor: pointer; transition: all 0.3s ease; margin-top: 10px;
+    }
+    .login-btn:hover:not(:disabled) { 
+      transform: translateY(-2px); box-shadow: 0 10px 25px rgba(212, 175, 55, 0.4); 
+      background: linear-gradient(135deg, #f1c40f 0%, #d4af37 100%); 
+    }
+    .login-btn:disabled { background: #333; color: #777; cursor: not-allowed; }
+
+    .audio-control {
       position: absolute; top: 30px; right: 30px; z-index: 100;
-      background: rgba(10, 10, 15, 0.8); backdrop-filter: blur(15px);
-      padding: 8px 16px; border-radius: 8px; 
-      border: 1px solid rgba(255, 255, 255, 0.05);
-      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 50%; width: 45px; height: 45px; display: flex;
+      justify-content: center; align-items: center; cursor: pointer;
+      color: white; transition: all 0.3s;
     }
+    .audio-control:hover { background: rgba(212, 175, 55, 0.3); border-color: #d4af37; }
 
-    /* واجهة الدخول والمصادقة الرئيسية
-    */
-    .auth-container {
-      position: relative; z-index: 10; display: flex; justify-content: center; align-items: center; 
-      min-height: 100vh; padding: 60px 20px; box-sizing: border-box;
+    /* ----------------------------------------------------------- */
+    /* SYSTEM ALERTS (الرسائل النظامية) */
+    /* ----------------------------------------------------------- */
+    .alert-box {
+      padding: 14px; border-radius: 8px; margin-bottom: 25px; font-size: 0.85rem; font-weight: bold; text-align: center;
     }
-
-    .glass-fortress {
-      background: rgba(8, 8, 12, 0.7); 
-      backdrop-filter: blur(40px); -webkit-backdrop-filter: blur(40px);
-      border: 1px solid rgba(255, 255, 255, 0.06); 
-      border-top: 1px solid rgba(255, 255, 255, 0.12);
-      border-radius: 24px; 
-      padding: 60px 50px; 
-      width: 100%; max-width: 480px; 
-      box-shadow: 0 40px 100px rgba(0,0,0,0.95);
-      margin: auto; 
-    }
-
-    /* الهوية البصرية للمنصة
-    */
-    .brand-core {
-      font-size: 3.5rem; 
-      font-weight: 900; text-align: center; letter-spacing: 6px; margin-bottom: 0px;
-      background: linear-gradient(135deg, #ffffff 0%, #64748b 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      text-transform: uppercase;
-    }
-    .brand-sub {
-      text-align: center; color: #475569; font-size: 0.9rem; letter-spacing: 4px; 
-      margin-top: 5px; margin-bottom: 50px; font-weight: 600; text-transform: uppercase;
-    }
-
-    /* نظام الإشعارات المدمج
-    */
-    .log-panel {
-      padding: 16px; border-radius: 8px; margin-bottom: 30px; font-size: 0.8rem; font-family: monospace; letter-spacing: 0.5px;
-    }
-    .log-error { background: rgba(220, 38, 38, 0.05); border-left: 3px solid #ef4444; color: #fca5a5; }
-    .log-success { background: rgba(34, 197, 94, 0.05); border-left: 3px solid #22c55e; color: #86efac; }
-    .log-info { background: rgba(59, 130, 246, 0.05); border-left: 3px solid #3b82f6; color: #93c5fd; }
-
-    /* حقول إدخال البيانات المتقدمة
-    */
-    .data-field { margin-bottom: 25px; }
-    .data-label { 
-      display: block; font-size: 0.75rem; color: #94a3b8; 
-      letter-spacing: 2px; margin-bottom: 10px; font-weight: 600; text-transform: uppercase;
-    }
-    .data-input {
-      width: 100%; background: rgba(0, 0, 0, 0.5); 
-      border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 8px; 
-      padding: 18px; color: white; font-size: 1rem; box-sizing: border-box; 
-      transition: all 0.3s ease;
-    }
-    .data-input:focus { 
-      outline: none; border-color: #3b82f6; background: rgba(0, 0, 0, 0.8); 
-      box-shadow: 0 0 20px rgba(59, 130, 246, 0.15); 
-    }
-
-    /* مقياس قوة المفتاح السري (Password Entropy)
-    */
-    .entropy-bar {
-      width: 100%; height: 4px; background: rgba(255, 255, 255, 0.05);
-      border-radius: 4px; margin-top: 12px; overflow: hidden;
-    }
-    .entropy-fill {
-      height: 100%; border-radius: 4px; transition: width 0.4s ease, background-color 0.4s ease;
-    }
-
-    /* زر تنفيذ المصادقة
-    */
-    .execute-btn {
-      width: 100%; background: #ffffff; 
-      color: #000000; border: none; padding: 20px; border-radius: 8px;
-      font-size: 1.1rem; font-weight: 900; letter-spacing: 2px; text-transform: uppercase;
-      cursor: pointer; transition: all 0.3s ease; margin-top: 20px; 
-    }
-    .execute-btn:hover:not(:disabled) { 
-      transform: translateY(-2px); box-shadow: 0 10px 30px rgba(255, 255, 255, 0.2); 
-    }
-    .execute-btn:disabled {
-      background: #1e293b; color: #475569; cursor: not-allowed;
-    }
-
-    /* تأثير التحميل الداخلي */
-    .processing-ring {
-      display: inline-block; width: 20px; height: 20px; 
-      border: 2px solid rgba(0,0,0,0.2); border-radius: 50%; 
-      border-top-color: #000; animation: rotate 1s linear infinite;
-    }
-    @keyframes rotate { to { transform: rotate(360deg); } }
-
-    /* روابط التذييل النظامية
-    */
-    .footer-nav {
-      display: flex; justify-content: space-between; align-items: center;
-      margin-top: 50px; padding-top: 25px; border-top: 1px solid rgba(255, 255, 255, 0.05);
-    }
-    .nav-node { color: #475569; text-decoration: none; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; transition: color 0.3s ease; }
-    .nav-node:hover { color: #f8fafc; }
+    .alert-error { background: rgba(220, 38, 38, 0.15); border: 1px solid #ef4444; color: #fca5a5; }
+    .alert-success { background: rgba(34, 197, 94, 0.15); border: 1px solid #22c55e; color: #86efac; }
+    .alert-info { background: rgba(212, 175, 55, 0.15); border: 1px solid #d4af37; color: #fde047; }
   `;
 
-  // --------------------------------------------------------------------------
-  // 7. Render Output (إخراج الواجهة النهائية)
-  // --------------------------------------------------------------------------
+  // ==========================================================================
+  // 7. RENDER OUTPUT (رسم الواجهة النهائية)
+  // ==========================================================================
   return (
     <>
-      {/* حقن محرك الجرافيكس والتصميم في الصفحة 
-         (آمن تماماً ولا يسبب أخطاء React) 
-      */}
-      <style dangerouslySetInnerHTML={{ __html: mnjnefGraphicsEngine }} />
+      {/* 1. حقن التصميم بأمان */}
+      <style dangerouslySetInnerHTML={{ __html: enterpriseCSS }} />
 
-      {/* جرافيكس الخلفية الرياضي (بدون صور) */}
-      <div className="nexus-background"></div>
-      <div className="quantum-grid"></div>
-
-      {/* وحدة الترجمة العائمة */}
-      <div className="translation-module">
-        <div id="google_translate_nexus"></div>
+      {/* 2. شاشة التهيئة السينمائية لتفعيل الصوت (يختفي بعد الضغط) */}
+      <div className={`init-screen ${hasInteracted ? 'fade-out' : ''}`} onClick={initializeWorld}>
+        <div className="init-text">Click anywhere to enter the world</div>
       </div>
 
-      {/* الدرع الزجاجي للمصادقة */}
-      <div className="auth-container" dir="ltr" translate="no">
-        <div className="glass-fortress">
-          
-          <h1 className="brand-core">Mnjnef</h1>
-          <div className="brand-sub">Creator Authentication</div>
+      {/* 3. عالم الألعاب المفتوح والرياح */}
+      <div className="open-world-bg"></div>
+      <div className="vignette-overlay"></div>
+      
+      <div className="particle-container">
+        {particles.map((p) => (
+          <div 
+            key={p.id} 
+            className="sand-particle"
+            style={{
+              left: `${p.x}vw`,
+              top: `${p.y}vh`,
+              width: `${p.size}px`,
+              height: `${p.size}px`,
+              opacity: p.opacity,
+              animationDuration: `${p.animationDuration}s`,
+              animationDelay: `${p.delay}s`
+            }}
+          ></div>
+        ))}
+      </div>
 
-          {/* وحدة عرض رسائل النظام */}
+      {/* زر التحكم بالصوت (كتم/تشغيل) */}
+      {hasInteracted && (
+        <button className="audio-control" onClick={toggleAudio} title="Toggle Wind Sound">
+          {isAudioPlaying ? (
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
+          ) : (
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/></svg>
+          )}
+        </button>
+      )}
+
+      {/* 4. لوحة تسجيل الدخول */}
+      <div className="master-wrapper" dir="ltr" translate="no">
+        <div className="glass-panel">
+          
+          {/* اسم المشروع بالضبط كما طلبت بدون كابيتال إجباري */}
+          <h1 className="brand-name">Mnjnef</h1>
+          <div className="brand-subtitle">Universal Access</div>
+
           {systemMessage.text && (
-            <div className={`log-panel log-${systemMessage.type}`}>
+            <div className={`alert-box alert-${systemMessage.type}`}>
               {systemMessage.text}
             </div>
           )}
 
-          <form onSubmit={executeAuthentication}>
+          <form onSubmit={handleLogin}>
             
-            <div className="data-field">
-              <label className="data-label">Creator ID</label>
-              <input 
-                type="text" 
-                className="data-input" 
-                placeholder="Enter Username" 
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                disabled={isAuthenticating}
-              />
+            {/* Section 1: Username */}
+            <div className="input-group">
+              <label className="input-label">Username</label>
+              <div className="input-icon-wrapper">
+                <input 
+                  type="text" 
+                  className="form-input" 
+                  placeholder="MasterDev99" 
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  disabled={isAuthenticating}
+                />
+                {/* SVG Icon for User */}
+                <svg className="svg-icon" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+              </div>
             </div>
 
-            <div className="data-field">
-              <label className="data-label">Network Email</label>
-              <input 
-                type="email" 
-                className="data-input" 
-                placeholder="system@mnjnef.com" 
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                disabled={isAuthenticating}
-              />
+            {/* Section 2: Email */}
+            <div className="input-group">
+              <label className="input-label">Email</label>
+              <div className="input-icon-wrapper">
+                <input 
+                  type="email" 
+                  className="form-input" 
+                  placeholder="player@mnjnef.com" 
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  disabled={isAuthenticating}
+                />
+                {/* SVG Icon for Email */}
+                <svg className="svg-icon" viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
+              </div>
             </div>
             
-            <div className="data-field">
-              <label className="data-label">Access Key</label>
-              <input 
-                type="password" 
-                className="data-input" 
-                placeholder="Enter Secure Password" 
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                disabled={isAuthenticating}
-              />
-              
-              {/* شريط الأمان يظهر فقط عند البدء بالكتابة */}
-              {password.length > 0 && (
-                <div className="entropy-bar">
-                  <div className="entropy-fill" style={{ 
-                    width: `${securityLevel}%`, 
-                    backgroundColor: securityLevel < 50 ? '#ef4444' : securityLevel < 80 ? '#f59e0b' : '#22c55e' 
-                  }}></div>
-                </div>
-              )}
+            {/* Section 3: Password */}
+            <div className="input-group">
+              <label className="input-label">Password</label>
+              <div className="input-icon-wrapper">
+                <input 
+                  type="password" 
+                  className="form-input" 
+                  placeholder="••••••••••••" 
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  disabled={isAuthenticating}
+                />
+                {/* SVG Icon for Password */}
+                <svg className="svg-icon" viewBox="0 0 24 24"><path d="M12 17c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm6-9h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zM8.9 6c0-1.71 1.39-3.1 3.1-3.1s3.1 1.39 3.1 3.1v2H8.9V6z"/></svg>
+              </div>
             </div>
 
-            <button type="submit" className="execute-btn" disabled={isAuthenticating}>
-              {isAuthenticating ? <span className="processing-ring"></span> : "Initialize"}
+            <button type="submit" className="login-btn" disabled={isAuthenticating}>
+              {isAuthenticating ? "Connecting..." : "Login"}
             </button>
 
           </form>
-
-          {/* روابط النظام للخصوصية والدعم */}
-          <div className="footer-nav">
-            <a href="#" className="nav-node">Privacy</a>
-            <a href="#" className="nav-node">Support</a>
-          </div>
-
         </div>
       </div>
     </>
