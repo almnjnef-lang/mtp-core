@@ -1,1 +1,1 @@
-sudo npx next dev -p 80 -H 0.0.0.0
+rm -rf node_modules package-lock.json .next
