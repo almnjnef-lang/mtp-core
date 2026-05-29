@@ -1,1 +1,1 @@
-rm -rf node_modules package-lock.json .next
+sudo rm -rf .next node_modules package-lock.json
