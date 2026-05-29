@@ -1,1 +1,1 @@
-sudo systemctl stop nginx
+sudo npx next dev -p 80 -H 0.0.0.0
