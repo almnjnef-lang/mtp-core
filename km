@@ -1,36 +1,3 @@
-"use client";
-import { useEffect } from "react";
-
-export default function SecureAuth() {
-  
-  // استدعاء وتفعيل محرك الترجمة من Google تلقائياً بصيغة متوافقة مع Next.js
-  useEffect(() => {
-    const addGoogleTranslateScript = () => {
-      if (!document.getElementById("google-translate-script")) {
-        const script = document.createElement("script");
-        script.src = "//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit";
-        script.id = "google-translate-script";
-        document.body.appendChild(script);
-
-        // تشغيل دالة التفعيل وحقنها في نافذة المتصفح بدون أخطاء تيب سكربت
-        (window as any).googleTranslateElementInit = () => {
-          new (window as any).google.translate.TranslateElement(
-            { 
-              pageLanguage: "en", 
-              layout: (window as any).google.translate.TranslateElement.InlineLayout.SIMPLE 
-            }, 
-            "google_translate_element"
-          );
-        };
-      }
-    };
-
-    addGoogleTranslateScript();
-  }, []);
-
-  return (
-    <>
-      <style dangerouslySetInnerHTML={{__html: `
         body, html { 
           margin: 0; 
           padding: 0; 
@@ -40,7 +7,7 @@ export default function SecureAuth() {
           overflow-y: auto; 
         }
 
-        /* خلفية عالم الألعاب المتحركة */
+        /* خلفية الجيمنج الاحترافية مع أنيميشن الحركة البطيئة */
         .epic-bg {
           position: fixed;
           top: 0;
@@ -48,197 +15,94 @@ export default function SecureAuth() {
           width: 100vw;
           height: 100vh;
           z-index: 0;
-          background-image: url('https://images.unsplash.com/photo-1605810230434-7631ac76ec81?q=80&w=2000&auto=format&fit=crop'); 
+          /* صورة جيمنج نيون احترافية */
+          background-image: url('https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=2000&auto=format&fit=crop'); 
           background-size: cover;
           background-position: center;
-          animation: slowZoom 35s infinite alternate ease-in-out;
+          animation: panBackground 40s linear infinite alternate;
         }
 
-        @keyframes slowZoom {
-          0% { transform: scale(1); }
-          100% { transform: scale(1.08); }
+        /* أنيميشن يخلي الخلفية تتحرك يمين ويسار ببطء لتعطي عمق للمكان */
+        @keyframes panBackground {
+          0% { background-position: 0% 50%; transform: scale(1.05); }
+          100% { background-position: 100% 50%; transform: scale(1.15); }
         }
 
         .dark-overlay {
           position: fixed; 
           top: 0; left: 0; width: 100vw; height: 100vh;
-          background: linear-gradient(to bottom, rgba(9, 9, 14, 0.5), rgba(5, 5, 10, 0.9));
+          background: linear-gradient(to bottom, rgba(5, 5, 10, 0.4), rgba(5, 5, 10, 0.95));
           z-index: 1;
         }
 
-        /* حاوية أداة ترجمة جوجل في أعلى الشاشة */
         .translate-container {
-          position: absolute;
-          top: 20px;
-          right: 20px;
-          z-index: 100;
-          background: rgba(15, 15, 25, 0.6);
-          backdrop-filter: blur(10px);
-          padding: 6px 12px;
-          border-radius: 8px;
-          border: 1px solid rgba(255, 255, 255, 0.1);
+          position: absolute; top: 20px; right: 20px; z-index: 100;
+          background: rgba(15, 15, 25, 0.8); backdrop-filter: blur(10px);
+          padding: 6px 12px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
         .secure-wrapper {
-          position: relative; 
-          z-index: 10; 
-          display: flex; 
-          justify-content: center; 
-          align-items: flex-start; 
-          min-height: 100vh; 
-          padding: 80px 20px; 
-          box-sizing: border-box;
+          position: relative; z-index: 10; display: flex; justify-content: center; align-items: flex-start; 
+          min-height: 100vh; padding: 80px 15px; box-sizing: border-box;
         }
 
+        /* اللوحة الزجاجية: تم توسيعها وتدوير حوافها لتبدو كتطبيق فخم */
         .fortress-panel {
-          background: rgba(15, 15, 25, 0.55); 
-          backdrop-filter: blur(20px); 
-          -webkit-backdrop-filter: blur(20px);
-          border: 1px solid rgba(255, 255, 255, 0.08); 
-          border-radius: 24px; 
-          padding: 60px 45px; 
-          width: 100%; 
-          max-width: 480px; 
-          box-shadow: 0 30px 60px rgba(0,0,0,0.9);
+          background: rgba(12, 12, 18, 0.75); 
+          backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px);
+          border: 1px solid rgba(255, 255, 255, 0.05); 
+          border-radius: 32px; /* حواف دائرية أنعم وأكبر */
+          padding: 60px 30px; /* مساحة داخلية أوسع للتنفس */
+          width: 100%; max-width: 500px; /* عرض أكبر للوحة */
+          box-shadow: 0 40px 80px rgba(0,0,0,0.9);
           margin: auto; 
         }
 
         .brand-title {
-          font-size: 3.8rem; 
-          font-weight: 900; 
-          text-align: center; 
-          letter-spacing: 3px; 
-          margin-bottom: 5px;
-          color: #ffffff; 
-          text-shadow: 0 0 25px rgba(255, 255, 255, 0.4);
+          font-size: 4rem; /* تكبير اسم المنصة */
+          font-weight: 900; text-align: center; letter-spacing: 4px; margin-bottom: 5px;
+          color: #ffffff; text-shadow: 0 0 30px rgba(255, 255, 255, 0.5);
         }
 
         .input-group {
-          margin-bottom: 30px; 
+          margin-bottom: 35px; /* مساحة أكبر بين الأقسام */
         }
 
         .input-label { 
-          display: block; 
-          font-size: 0.9rem; 
-          color: #d1d5db; 
-          letter-spacing: 0.5px; 
-          margin-bottom: 10px; 
-          font-weight: 600; 
+          display: block; font-size: 0.85rem; color: #9ca3af; 
+          letter-spacing: 1px; margin-bottom: 12px; font-weight: 600; 
         }
 
+        /* حقول إدخال واسعة ومريحة للعين */
         .secure-input {
-          width: 100%; 
-          background: rgba(0, 0, 0, 0.6); 
-          border: 1px solid rgba(255, 255, 255, 0.15); 
-          border-radius: 12px; 
-          padding: 16px; 
-          color: white; 
-          font-size: 1.05rem; 
-          box-sizing: border-box; 
-          transition: all 0.3s ease; 
+          width: 100%; background: rgba(255, 255, 255, 0.03); 
+          border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 16px; 
+          padding: 20px; /* زيادة الطول للحقل */
+          color: white; font-size: 1.1rem; box-sizing: border-box; transition: all 0.3s ease; 
         }
         .secure-input:focus { 
-          outline: none; 
-          border-color: #3b82f6; 
-          background: rgba(0, 0, 0, 0.8); 
+          outline: none; border-color: #3b82f6; background: rgba(0, 0, 0, 0.8); 
           box-shadow: 0 0 20px rgba(59, 130, 246, 0.2); 
         }
 
         .auth-btn {
-          width: 100%; 
-          background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%); 
-          color: #ffffff; 
-          border: none; 
-          padding: 18px; 
-          border-radius: 12px;
-          font-size: 1.2rem; 
-          font-weight: 900; 
-          letter-spacing: 1px; 
-          cursor: pointer; 
-          transition: all 0.3s ease; 
-          margin-top: 15px; 
-          box-shadow: 0 4px 15px rgba(37, 99, 235, 0.4); 
+          width: 100%; background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%); 
+          color: #ffffff; border: none; padding: 20px; border-radius: 16px;
+          font-size: 1.25rem; font-weight: 900; letter-spacing: 2px; cursor: pointer; 
+          transition: all 0.3s ease; margin-top: 20px; box-shadow: 0 10px 20px rgba(37, 99, 235, 0.3); 
         }
         .auth-btn:hover { 
-          transform: translateY(-2px); 
-          box-shadow: 0 10px 25px rgba(37, 99, 235, 0.7); 
+          transform: translateY(-3px); box-shadow: 0 15px 30px rgba(37, 99, 235, 0.6); 
           background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); 
         }
 
-        /* تنسيق روابط السياسات والتواصل في الأسفل */
         .system-footer {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-top: 40px;
-          padding-top: 25px;
-          border-top: 1px solid rgba(255, 255, 255, 0.05);
+          display: flex; justify-content: space-between; align-items: center;
+          margin-top: 45px; padding-top: 25px; border-top: 1px solid rgba(255, 255, 255, 0.05);
         }
-        .footer-link {
-          color: #9ca3af;
-          text-decoration: none;
-          font-size: 0.85rem;
-          font-weight: 500;
-          transition: color 0.2s ease;
-        }
-        .footer-link:hover {
-          color: #3b82f6;
-        }
-        .footer-divider {
-          color: rgba(255, 255, 255, 0.1);
-          font-size: 0.85rem;
-        }
+        .footer-link { color: #6b7280; text-decoration: none; font-size: 0.9rem; font-weight: 500; transition: color 0.2s ease; }
+        .footer-link:hover { color: #3b82f6; }
+        .footer-divider { color: rgba(255, 255, 255, 0.05); }
         
-        /* إخفاء شريط جوجل العلوي الإجباري المزعج للحفاظ على فخامة التصميم */
         .skiptranslate > iframe { display: none !important; }
         body { top: 0px !important; }
-      `}} />
-
-      <div className="epic-bg"></div>
-      <div className="dark-overlay"></div>
-
-      {/* صندوق ترجمة جوجل الذكي */}
-      <div className="translate-container">
-        <div id="google_translate_element"></div>
-      </div>
-
-      <div className="secure-wrapper" dir="ltr">
-        <div className="fortress-panel">
-          <div className="brand-title">Mnjnef</div>
-          <div style={{ textAlign: "center", color: "#9ca3af", fontSize: "0.95rem", letterSpacing: "1px", marginBottom: "50px", fontWeight: "500" }}>
-            The Next Reality Awaits
-          </div>
-
-          <form onSubmit={(e) => e.preventDefault()}>
-            <div className="input-group">
-              <label className="input-label">Username</label>
-              <input type="text" className="secure-input" placeholder="e.g. MasterDev99" />
-            </div>
-
-            <div className="input-group">
-              <label className="input-label">Email Address</label>
-              <input type="email" className="secure-input" placeholder="player@mnjnef.com" />
-            </div>
-            
-            <div className="input-group">
-              <label className="input-label">Password</label>
-              <input type="password" className="secure-input" placeholder="••••••••••••" />
-            </div>
-
-            <button type="submit" className="auth-btn">
-              Login
-            </button>
-          </form>
-
-          {/* روابط سياسة الخصوصية واتصل بنا النظامية */}
-          <div className="system-footer">
-            <a href="#" className="footer-link">Privacy Policy</a>
-            <span className="footer-divider">|</span>
-            <a href="#" className="footer-link">Contact Us</a>
-          </div>
-
-        </div>
-      </div>
-    </>
-  );
-}
