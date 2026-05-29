@@ -11,7 +11,7 @@ export default function SecureAuth() {
           font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
           background-color: #050505;
           overflow-x: hidden;
-          overflow-y: auto; /* السماح بالسحب العمودي */
+          overflow-y: auto; 
         }
 
         /* خلفية عالم الألعاب (سايبربانك / نيون داكن) */
@@ -41,62 +41,61 @@ export default function SecureAuth() {
           z-index: 1;
         }
 
-        /* الحاوية الرئيسية (أوسع وتسمح بالسحب) */
+        /* الحاوية الرئيسية */
         .secure-wrapper {
           position: relative; 
           z-index: 10; 
           display: flex; 
           justify-content: center; 
-          align-items: flex-start; /* عشان السحب يكون منطقي من فوق لتحت */
+          align-items: flex-start; 
           min-height: 100vh; 
-          padding: 60px 20px; /* مساحات أوسع فوق وتحت */
+          padding: 60px 20px; 
           box-sizing: border-box;
         }
 
-        /* اللوحة الزجاجية (تم توسيعها وترتيبها) */
+        /* اللوحة الزجاجية */
         .fortress-panel {
           background: rgba(15, 15, 25, 0.55); 
           backdrop-filter: blur(20px); 
           -webkit-backdrop-filter: blur(20px);
           border: 1px solid rgba(255, 255, 255, 0.08); 
           border-radius: 24px; 
-          padding: 60px 45px; /* زيادة المساحة الداخلية (أوسع) */
+          padding: 60px 45px; 
           width: 100%; 
-          max-width: 480px; /* اللوحة صارت أعرض شوي */
+          max-width: 480px; 
           box-shadow: 0 30px 60px rgba(0,0,0,0.9);
-          margin: auto; /* تتمركز تلقائياً مع السحب */
+          margin: auto; 
         }
 
         .brand-title {
-          font-size: 3.8rem; /* الاسم صار أكبر وأبرز */
+          font-size: 3.8rem; 
           font-weight: 900; 
           text-align: center; 
-          letter-spacing: 5px; 
+          letter-spacing: 3px; 
           margin-bottom: 5px;
           color: #ffffff; 
           text-shadow: 0 0 25px rgba(255, 255, 255, 0.4);
         }
 
-        /* مسافات أوسع بين أقسام التسجيل */
         .input-group {
-          margin-bottom: 30px; /* مساحة أكبر بين المربعات */
+          margin-bottom: 30px; 
         }
 
+        /* تم إزالة أمر التكبير الإجباري (uppercase) وتقليل تباعد الأحرف لتناسب الحروف الصغيرة */
         .input-label { 
           display: block; 
-          font-size: 0.8rem; 
+          font-size: 0.9rem; 
           color: #d1d5db; 
-          text-transform: uppercase; 
-          letter-spacing: 2px; 
+          letter-spacing: 0.5px; 
           margin-bottom: 10px; 
-          font-weight: bold; 
+          font-weight: 600; 
         }
 
         .secure-input {
           width: 100%; 
           background: rgba(0, 0, 0, 0.6); 
           border: 1px solid rgba(255, 255, 255, 0.15); 
-          border-radius: 12px; /* أطراف دائرية أكثر نعومة */
+          border-radius: 12px; 
           padding: 16px; 
           color: white; 
           font-size: 1.05rem; 
@@ -122,7 +121,7 @@ export default function SecureAuth() {
           letter-spacing: 1px; 
           cursor: pointer; 
           transition: all 0.3s ease; 
-          margin-top: 15px; /* مسافة أوسع للزر */
+          margin-top: 15px; 
           box-shadow: 0 4px 15px rgba(37, 99, 235, 0.4); 
         }
         .auth-btn:hover { 
@@ -138,8 +137,8 @@ export default function SecureAuth() {
       <div className="secure-wrapper" dir="ltr">
         <div className="fortress-panel">
           <div className="brand-title">Mnjnef</div>
-          <div style={{ textAlign: "center", color: "#9ca3af", fontSize: "0.85rem", letterSpacing: "2px", marginBottom: "50px" }}>
-            UNIVERSAL AUTHENTICATION
+          <div style={{ textAlign: "center", color: "#9ca3af", fontSize: "0.95rem", letterSpacing: "1px", marginBottom: "50px", fontWeight: "500" }}>
+            Universal Authentication
           </div>
 
           <form onSubmit={(e) => e.preventDefault()}>
