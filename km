@@ -1,184 +1,163 @@
-"use client";
-import { useState, useEffect } from "react";
+@import "tailwindcss";
 
-export default function SecureAuth() {
-  // حالات الأمان وإدارة البيانات
-  const [username, setUsername] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [securityLevel, setSecurityLevel] = useState(0);
-  const [isAuthenticating, setIsAuthenticating] = useState(false);
-  const [errorMsg, setErrorMsg] = useState("");
+/* الإعدادات الأساسية */
+body, html {
+  margin: 0;
+  padding: 0;
+  background-color: #020205; /* لون الفضاء العميق */
+  color: white;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  overflow: hidden;
+}
 
-  // خوارزمية فحص قوة كلمة المرور (تحديث حي)
-  useEffect(() => {
-    let strength = 0;
-    if (password.length > 7) strength += 25;
-    if (password.match(/[A-Z]/)) strength += 25;
-    if (password.match(/[0-9]/)) strength += 25;
-    if (password.match(/[^a-zA-Z0-9]/)) strength += 25;
-    setSecurityLevel(strength);
-  }, [password]);
+/* -------------------------------------- */
+/* محرك الجرافيكس: العوالم والدخان المتحرك */
+/* -------------------------------------- */
 
-  // دالة الحماية والفلترة قبل إرسال البيانات للسيرفر
-  const handleSecureLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    setErrorMsg("");
+/* حاوية الكون */
+.mnjnef-universe {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 0;
+  background: radial-gradient(circle at center, #0a0a1a 0%, #000000 100%);
+}
 
-    // 1. حماية من المدخلات الفارغة
-    if (!username || !email || !password) {
-      setErrorMsg("Security Alert: All fields are required for authentication.");
-      return;
-    }
+/* حركة الدخان والهواء (الأنيميشن) */
+@keyframes smoke-drift {
+  0% { transform: translate(0, 0) scale(1) rotate(0deg); opacity: 0.3; }
+  33% { transform: translate(3vw, -5vh) scale(1.1) rotate(2deg); opacity: 0.5; }
+  66% { transform: translate(-2vw, 4vh) scale(0.95) rotate(-1deg); opacity: 0.4; }
+  100% { transform: translate(0, 0) scale(1) rotate(0deg); opacity: 0.3; }
+}
 
-    // 2. فلترة البريد الإلكتروني (Regex) لمنع الأكواد الخبيثة
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      setErrorMsg("Security Alert: Invalid email format detected.");
-      return;
-    }
+/* طبقات العوالم (دوائر عملاقة مضببة تتحرك مثل الدخان) */
+.smoke-layer {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(120px); /* هذا اللي يعطي تأثير الدخان الناعم */
+  animation: smoke-drift 25s infinite ease-in-out alternate;
+  pointer-events: none;
+}
 
-    // 3. فلترة اسم المستخدم (أحرف وأرقام فقط) لمنع XSS
-    const usernameRegex = /^[a-zA-Z0-9_]{3,20}$/;
-    if (!usernameRegex.test(username)) {
-      setErrorMsg("Security Alert: Username contains illegal characters or is too short.");
-      return;
-    }
+/* العالم الأزرق (يمثل التكنولوجيا والخيال العلمي) */
+.world-sci-fi {
+  width: 70vw;
+  height: 70vw;
+  background: #1e3a8a; /* أزرق داكن */
+  top: -20%;
+  left: -20%;
+}
 
-    // 4. التأكد من قوة كلمة المرور
-    if (securityLevel < 75) {
-      setErrorMsg("Security Alert: Access Key is too weak. Requires symbols and numbers.");
-      return;
-    }
+/* العالم البنفسجي (يمثل الفانتازيا والسحر) */
+.world-fantasy {
+  width: 60vw;
+  height: 60vw;
+  background: #4c1d95; /* بنفسجي غامق */
+  bottom: -10%;
+  right: -15%;
+  animation-delay: -7s;
+  animation-duration: 30s;
+}
 
-    // محاكاة الاتصال المشفر بالسيرفر (يمنع هجمات الـ Brute Force)
-    setIsAuthenticating(true);
-    setTimeout(() => {
-      setIsAuthenticating(false);
-      // هنا سيتم ربط الكود بملفات الـ Backend لاحقاً
-      alert("Secure Connection Established. Welcome to Mnjnef.");
-    }, 2500);
-  };
+/* العالم الزمردي (يمثل الطبيعة والواقعية) */
+.world-nature {
+  width: 50vw;
+  height: 50vw;
+  background: #064e3b; /* أخضر زمردي داكن */
+  top: 30%;
+  left: 30%;
+  animation-delay: -15s;
+  animation-duration: 35s;
+  opacity: 0.2;
+}
 
-  return (
-    <>
-      <style dangerouslySetInnerHTML={{__html: `
-        body, html { margin: 0; padding: 0; background-color: #020202; color: white; font-family: 'Inter', system-ui, sans-serif; overflow: hidden; }
-        
-        .matrix-bg {
-          position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 0;
-          background: radial-gradient(circle at 50% 50%, #0a0a1a 0%, #000000 100%);
-        }
-        
-        .core-grid {
-          position: absolute; width: 200%; height: 200%; top: -50%; left: -50%;
-          background-image: 
-            linear-gradient(rgba(37, 99, 235, 0.05) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(37, 99, 235, 0.05) 1px, transparent 1px);
-          background-size: 40px 40px;
-          transform: perspective(500px) rotateX(60deg);
-          animation: gridMove 20s linear infinite;
-        }
+/* -------------------------------------- */
+/* تصميم واجهة المصادقة الزجاجية الفاخرة */
+/* -------------------------------------- */
 
-        @keyframes gridMove {
-          0% { transform: perspective(500px) rotateX(60deg) translateY(0); }
-          100% { transform: perspective(500px) rotateX(60deg) translateY(40px); }
-        }
+.secure-wrapper {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  padding: 20px;
+}
 
-        .secure-wrapper { position: relative; z-index: 10; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
-        
-        .fortress-panel {
-          background: rgba(5, 5, 10, 0.7); backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px);
-          border: 1px solid rgba(59, 130, 246, 0.2); border-top: 1px solid rgba(139, 92, 246, 0.4);
-          border-radius: 16px; padding: 40px; width: 100%; max-width: 440px;
-          box-shadow: 0 0 40px rgba(0,0,0,0.8), inset 0 0 20px rgba(59, 130, 246, 0.05);
-        }
+.fortress-panel {
+  background: rgba(10, 10, 15, 0.65);
+  backdrop-filter: blur(25px);
+  -webkit-backdrop-filter: blur(25px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-top: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 20px;
+  padding: 50px 40px;
+  width: 100%;
+  max-width: 480px;
+  box-shadow: 0 40px 80px rgba(0,0,0,0.8), inset 0 0 20px rgba(255, 255, 255, 0.02);
+}
 
-        .brand-title {
-          font-size: 3.5rem; font-weight: 900; text-align: center; letter-spacing: 4px; margin-bottom: 5px;
-          color: white; text-shadow: 0 0 15px rgba(255,255,255,0.4);
-        }
+.brand-title {
+  font-size: 3.5rem;
+  font-weight: 900;
+  text-align: center;
+  letter-spacing: 5px;
+  margin-bottom: 5px;
+  color: #ffffff; /* الاسم باللون الأبيض الساطع */
+  text-shadow: 0 0 30px rgba(255, 255, 255, 0.5);
+}
 
-        .error-box {
-          background: rgba(220, 38, 38, 0.1); border-left: 4px solid #ef4444; color: #fca5a5;
-          padding: 12px; font-size: 0.8rem; border-radius: 4px; margin-bottom: 20px;
-          font-family: monospace; animation: fadeIn 0.3s ease;
-        }
+.input-label {
+  display: block;
+  font-size: 0.75rem;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  margin-bottom: 8px;
+  font-weight: 700;
+}
 
-        .input-group { margin-bottom: 20px; }
-        .input-label { display: block; font-size: 0.7rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 8px; font-weight: bold; }
-        
-        .secure-input {
-          width: 100%; background: rgba(0, 0, 0, 0.6); border: 1px solid #1e293b; border-radius: 8px;
-          padding: 14px; color: white; font-size: 0.95rem; box-sizing: border-box; transition: all 0.3s;
-          font-family: monospace;
-        }
-        .secure-input:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 15px rgba(59, 130, 246, 0.3); }
+.secure-input {
+  width: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 16px;
+  color: white;
+  font-size: 1rem;
+  box-sizing: border-box;
+  transition: all 0.3s ease;
+  margin-bottom: 24px;
+}
 
-        .security-bar-bg { width: 100%; height: 6px; background: #1e293b; border-radius: 3px; margin-top: 10px; overflow: hidden; }
-        .security-bar-fill { height: 100%; transition: width 0.4s ease, background-color 0.4s ease; }
+.secure-input:focus {
+  outline: none;
+  border-color: #ffffff;
+  background: rgba(0, 0, 0, 0.8);
+  box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
+}
 
-        .auth-btn {
-          width: 100%; background: #2563eb; color: white; border: none; padding: 16px; border-radius: 8px;
-          font-size: 0.9rem; font-weight: bold; text-transform: uppercase; letter-spacing: 3px; cursor: pointer;
-          transition: all 0.3s; margin-top: 10px; position: relative; overflow: hidden;
-        }
-        .auth-btn:hover:not(:disabled) { background: #1d4ed8; box-shadow: 0 0 25px rgba(37, 99, 235, 0.5); }
-        .auth-btn:disabled { background: #1e293b; color: #64748b; cursor: not-allowed; }
+.auth-btn {
+  width: 100%;
+  background: #ffffff;
+  color: #000000;
+  border: none;
+  padding: 18px;
+  border-radius: 10px;
+  font-size: 1.1rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 3px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-top: 10px;
+}
 
-        .loading-spinner {
-          display: inline-block; width: 20px; height: 20px; border: 3px solid rgba(255,255,255,0.3);
-          border-radius: 50%; border-top-color: white; animation: spin 1s ease-in-out infinite;
-        }
-
-        @keyframes spin { to { transform: rotate(360deg); } }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
-      `}} />
-
-      <div className="matrix-bg"><div className="core-grid"></div></div>
-
-      <div className="secure-wrapper" dir="ltr">
-        <div className="fortress-panel">
-          <div className="brand-title">Mnjnef</div>
-          <div style={{ textAlign: "center", color: "#64748b", fontSize: "0.85rem", letterSpacing: "1px", marginBottom: "30px" }}>
-            ENCRYPTED CONNECTION
-          </div>
-
-          {errorMsg && <div className="error-box">{errorMsg}</div>}
-
-          <form onSubmit={handleSecureLogin}>
-            <div className="input-group">
-              <label className="input-label">Creator Username</label>
-              <input type="text" className="secure-input" placeholder="e.g. MasterDev99" value={username} onChange={(e) => setUsername(e.target.value)} disabled={isAuthenticating} />
-            </div>
-
-            <div className="input-group">
-              <label className="input-label">Secure Email</label>
-              <input type="email" className="secure-input" placeholder="player@mnjnef.com" value={email} onChange={(e) => setEmail(e.target.value)} disabled={isAuthenticating} />
-            </div>
-            
-            <div className="input-group">
-              <label className="input-label">Access Key (Password)</label>
-              <input type="password" className="secure-input" placeholder="••••••••••••" value={password} onChange={(e) => setPassword(e.target.value)} disabled={isAuthenticating} />
-              
-              {/* شريط قوة كلمة المرور */}
-              {password.length > 0 && (
-                <div className="security-bar-bg">
-                  <div className="security-bar-fill" style={{ 
-                    width: \`\${securityLevel}%\`, 
-                    backgroundColor: securityLevel < 50 ? '#ef4444' : securityLevel < 75 ? '#f59e0b' : '#22c55e' 
-                  }}></div>
-                </div>
-              )}
-            </div>
-
-            <button type="submit" className="auth-btn" disabled={isAuthenticating}>
-              {isAuthenticating ? <span className="loading-spinner"></span> : "Establish Uplink"}
-            </button>
-          </form>
-
-        </div>
-      </div>
-    </>
-  );
+.auth-btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 15px 30px rgba(255, 255, 255, 0.2);
 }
