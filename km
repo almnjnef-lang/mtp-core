@@ -1,1 +1,1 @@
-sudo apt update && sudo apt install nodejs npm -y
+npx create-next-app@latest mnjnef_frontend --typescript --tailwind --eslint --app --src-dir --import-alias "@/*" --use-npm
