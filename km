@@ -1,1 +1,7 @@
-sudo npx next dev -p 80 -H 0.0.0.0
+import type { NextConfig } from "next";
+
+const nextConfig: NextConfig = {
+  allowedDevOrigins: ['mnjnef.com', 'www.mnjnef.com'],
+};
+
+export default nextConfig;
