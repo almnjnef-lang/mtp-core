@@ -1,1 +1,15 @@
-sudo apt update && sudo apt install libcurl4-openssl-dev -y
+#ifndef AUTHMANAGER_H
+#define AUTHMANAGER_H
+
+#include <string>
+
+class AuthManager {
+public:
+    // Validates username based on Mnjnef platform rules
+    static bool ValidateUsername(const std::string& username);
+    
+    // Registers a new user to Supabase
+    static bool RegisterUser(const std::string& email, const std::string& password, const std::string& username);
+};
+
+#endif
