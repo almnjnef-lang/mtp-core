@@ -1,108 +1,392 @@
-        body, html { 
-          margin: 0; 
-          padding: 0; 
-          font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-          background-color: #050505;
-          overflow-x: hidden;
-          overflow-y: auto; 
-        }
+"use client";
+import React, { useState, useEffect } from "react";
 
-        /* خلفية الجيمنج الاحترافية مع أنيميشن الحركة البطيئة */
-        .epic-bg {
-          position: fixed;
-          top: 0;
-          left: 0;
-          width: 100vw;
-          height: 100vh;
-          z-index: 0;
-          /* صورة جيمنج نيون احترافية */
-          background-image: url('https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=2000&auto=format&fit=crop'); 
-          background-size: cover;
-          background-position: center;
-          animation: panBackground 40s linear infinite alternate;
-        }
+/**
+ * ============================================================================
+ * MNJNEF CORE AUTHENTICATION MODULE - ENTERPRISE EDITION
+ * Architecture: Monolithic UI with Embedded State & CSS Engine
+ * Environment: Next.js / React Strict Mode
+ * ============================================================================
+ */
 
-        /* أنيميشن يخلي الخلفية تتحرك يمين ويسار ببطء لتعطي عمق للمكان */
-        @keyframes panBackground {
-          0% { background-position: 0% 50%; transform: scale(1.05); }
-          100% { background-position: 100% 50%; transform: scale(1.15); }
-        }
+export default function SecureAuth() {
+  // --------------------------------------------------------------------------
+  // 1. Core State Infrastructure (إدارة حالة البيانات والبنية التحتية)
+  // --------------------------------------------------------------------------
+  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  
+  // أنظمة الحماية والمراقبة اللحظية
+  const [securityLevel, setSecurityLevel] = useState(0);
+  const [isAuthenticating, setIsAuthenticating] = useState(false);
+  const [systemMessage, setSystemMessage] = useState({ text: "", type: "" });
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
 
-        .dark-overlay {
-          position: fixed; 
-          top: 0; left: 0; width: 100vw; height: 100vh;
-          background: linear-gradient(to bottom, rgba(5, 5, 10, 0.4), rgba(5, 5, 10, 0.95));
-          z-index: 1;
-        }
+  // --------------------------------------------------------------------------
+  // 2. Dynamic Environment Tracking (تتبع حركة الماوس لربطها بالخلفية المعقدة)
+  // --------------------------------------------------------------------------
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      // حساب موقع الماوس لعمل تأثير تفاعلي 3D في الخلفية
+      setMousePosition({
+        x: (e.clientX / window.innerWidth) * 100,
+        y: (e.clientY / window.innerHeight) * 100,
+      });
+    };
+    window.addEventListener("mousemove", handleMouseMove);
+    return () => window.removeEventListener("mousemove", handleMouseMove);
+  }, []);
 
-        .translate-container {
-          position: absolute; top: 20px; right: 20px; z-index: 100;
-          background: rgba(15, 15, 25, 0.8); backdrop-filter: blur(10px);
-          padding: 6px 12px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.1);
-        }
+  // --------------------------------------------------------------------------
+  // 3. Global Translation Engine Initialization (تهيئة محرك الترجمة)
+  // --------------------------------------------------------------------------
+  useEffect(() => {
+    const initTranslationLayer = () => {
+      if (!document.getElementById("google-translate-script")) {
+        const script = document.createElement("script");
+        script.src = "//translate.google.com/translate_a/element.js?cb=mnjnefTranslateInit";
+        script.id = "google-translate-script";
+        script.async = true;
+        document.body.appendChild(script);
 
-        .secure-wrapper {
-          position: relative; z-index: 10; display: flex; justify-content: center; align-items: flex-start; 
-          min-height: 100vh; padding: 80px 15px; box-sizing: border-box;
-        }
+        // إنشاء دالة الترجمة في الـ Window Object
+        (window as any).mnjnefTranslateInit = () => {
+          new (window as any).google.translate.TranslateElement(
+            { 
+              pageLanguage: "en", 
+              layout: (window as any).google.translate.TranslateElement.InlineLayout.SIMPLE,
+            }, 
+            "google_translate_nexus"
+          );
+        };
+      }
+    };
+    initTranslationLayer();
+  }, []);
 
-        /* اللوحة الزجاجية: تم توسيعها وتدوير حوافها لتبدو كتطبيق فخم */
-        .fortress-panel {
-          background: rgba(12, 12, 18, 0.75); 
-          backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px);
-          border: 1px solid rgba(255, 255, 255, 0.05); 
-          border-radius: 32px; /* حواف دائرية أنعم وأكبر */
-          padding: 60px 30px; /* مساحة داخلية أوسع للتنفس */
-          width: 100%; max-width: 500px; /* عرض أكبر للوحة */
-          box-shadow: 0 40px 80px rgba(0,0,0,0.9);
-          margin: auto; 
-        }
+  // --------------------------------------------------------------------------
+  // 4. Cryptographic Real-time Analyzer (محلل قوة التشفير اللحظي)
+  // --------------------------------------------------------------------------
+  useEffect(() => {
+    let entropy = 0;
+    if (password.length >= 8) entropy += 25;
+    if (password.length >= 16) entropy += 15; // مكافأة للكلمات الطويلة
+    if (password.match(/[A-Z]/)) entropy += 15;
+    if (password.match(/[a-z]/)) entropy += 15;
+    if (password.match(/[0-9]/)) entropy += 15;
+    if (password.match(/[^a-zA-Z0-9]/)) entropy += 15;
+    setSecurityLevel(Math.min(entropy, 100)); // الحد الأقصى 100
+  }, [password]);
 
-        .brand-title {
-          font-size: 4rem; /* تكبير اسم المنصة */
-          font-weight: 900; text-align: center; letter-spacing: 4px; margin-bottom: 5px;
-          color: #ffffff; text-shadow: 0 0 30px rgba(255, 255, 255, 0.5);
-        }
+  // --------------------------------------------------------------------------
+  // 5. Authentication Gateway Logic (منطق بوابة الدخول والتحقق)
+  // --------------------------------------------------------------------------
+  const executeAuthentication = (e: React.FormEvent) => {
+    e.preventDefault();
+    setSystemMessage({ text: "", type: "" });
 
-        .input-group {
-          margin-bottom: 35px; /* مساحة أكبر بين الأقسام */
-        }
+    // Level 1: Syntax Validation
+    if (!username || !email || !password) {
+      setSystemMessage({ text: "[SYSTEM_ERR_01]: Incomplete credentials.", type: "error" });
+      return;
+    }
+    
+    // Level 2: Strict Email Pattern Matching
+    const strictEmailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    if (!strictEmailRegex.test(email)) {
+      setSystemMessage({ text: "[SYSTEM_ERR_02]: Email format rejected by node.", type: "error" });
+      return;
+    }
 
-        .input-label { 
-          display: block; font-size: 0.85rem; color: #9ca3af; 
-          letter-spacing: 1px; margin-bottom: 12px; font-weight: 600; 
-        }
+    // Level 3: Security Threshold Enforcement
+    if (securityLevel < 55) {
+      setSystemMessage({ text: "[SYSTEM_ERR_03]: Access Key vulnerability detected. Increase complexity.", type: "error" });
+      return;
+    }
 
-        /* حقول إدخال واسعة ومريحة للعين */
-        .secure-input {
-          width: 100%; background: rgba(255, 255, 255, 0.03); 
-          border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 16px; 
-          padding: 20px; /* زيادة الطول للحقل */
-          color: white; font-size: 1.1rem; box-sizing: border-box; transition: all 0.3s ease; 
-        }
-        .secure-input:focus { 
-          outline: none; border-color: #3b82f6; background: rgba(0, 0, 0, 0.8); 
-          box-shadow: 0 0 20px rgba(59, 130, 246, 0.2); 
-        }
+    // Execution Phase
+    setIsAuthenticating(true);
+    setSystemMessage({ text: "Establishing secure handshake with Mnjnef Core...", type: "info" });
+    
+    // محاكاة الاتصال بالسيرفر
+    setTimeout(() => {
+      setIsAuthenticating(false);
+      setSystemMessage({ text: "Handshake verified. Welcome to the Mnjnef Network.", type: "success" });
+    }, 2500);
+  };
 
-        .auth-btn {
-          width: 100%; background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%); 
-          color: #ffffff; border: none; padding: 20px; border-radius: 16px;
-          font-size: 1.25rem; font-weight: 900; letter-spacing: 2px; cursor: pointer; 
-          transition: all 0.3s ease; margin-top: 20px; box-shadow: 0 10px 20px rgba(37, 99, 235, 0.3); 
-        }
-        .auth-btn:hover { 
-          transform: translateY(-3px); box-shadow: 0 15px 30px rgba(37, 99, 235, 0.6); 
-          background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); 
-        }
+  // --------------------------------------------------------------------------
+  // 6. Neural Graphics Engine (محرك الجرافيكس المعقد والمبني برمجياً)
+  // --------------------------------------------------------------------------
+  const mnjnefGraphicsEngine = `
+    /* =======================================================
+       MNJNEF QUANTUM UI - STYLESHEET
+       ======================================================= */
+    
+    body, html { 
+      margin: 0; 
+      padding: 0; 
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; 
+      background-color: #030305;
+      color: #ffffff;
+      overflow-x: hidden;
+      overflow-y: auto; 
+    }
 
-        .system-footer {
-          display: flex; justify-content: space-between; align-items: center;
-          margin-top: 45px; padding-top: 25px; border-top: 1px solid rgba(255, 255, 255, 0.05);
-        }
-        .footer-link { color: #6b7280; text-decoration: none; font-size: 0.9rem; font-weight: 500; transition: color 0.2s ease; }
-        .footer-link:hover { color: #3b82f6; }
-        .footer-divider { color: rgba(255, 255, 255, 0.05); }
-        
-        .skiptranslate > iframe { display: none !important; }
-        body { top: 0px !important; }
+    /* إخفاء شريط الترجمة الإجباري للحفاظ على بيئة الواجهة نظيفة */
+    .skiptranslate > iframe { display: none !important; }
+    body { top: 0px !important; }
+
+    /* تأثير الجرافيكس المعقد: The Neural Nexus
+       بدون استخدام أي صور، فقط رياضيات برمجية لإنشاء عالم متداخل
+    */
+    .nexus-background {
+      position: fixed;
+      top: 0; left: 0; width: 100vw; height: 100vh;
+      z-index: 0;
+      /* دمج عدة طبقات من التدرجات الشعاعية لإنشاء ضباب وسديم فضائي */
+      background: 
+        radial-gradient(circle at ${mousePosition.x}% ${mousePosition.y}%, rgba(30, 58, 138, 0.15) 0%, transparent 40%),
+        radial-gradient(circle at ${100 - mousePosition.x}% ${100 - mousePosition.y}%, rgba(76, 29, 149, 0.15) 0%, transparent 50%),
+        linear-gradient(180deg, #020205 0%, #0a0a15 100%);
+      background-size: 200% 200%;
+      animation: ambientShift 20s ease-in-out infinite alternate;
+    }
+
+    /* شبكة العوالم الرقمية (Grid Overlay) */
+    .quantum-grid {
+      position: fixed;
+      top: 0; left: 0; width: 100vw; height: 100vh;
+      z-index: 1;
+      background-image: 
+        linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+      background-size: 50px 50px;
+      transform: perspective(500px) rotateX(60deg) translateY(-100px) translateZ(-200px);
+      animation: gridMove 15s linear infinite;
+      opacity: 0.6;
+    }
+
+    @keyframes ambientShift {
+      0% { background-position: 0% 0%; }
+      100% { background-position: 100% 100%; }
+    }
+
+    @keyframes gridMove {
+      0% { transform: perspective(500px) rotateX(60deg) translateY(0px) translateZ(-200px); }
+      100% { transform: perspective(500px) rotateX(60deg) translateY(50px) translateZ(-200px); }
+    }
+
+    /* وحدة الترجمة العالمية
+    */
+    .translation-module {
+      position: absolute; top: 30px; right: 30px; z-index: 100;
+      background: rgba(10, 10, 15, 0.8); backdrop-filter: blur(15px);
+      padding: 8px 16px; border-radius: 8px; 
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }
+
+    /* واجهة الدخول والمصادقة الرئيسية
+    */
+    .auth-container {
+      position: relative; z-index: 10; display: flex; justify-content: center; align-items: center; 
+      min-height: 100vh; padding: 60px 20px; box-sizing: border-box;
+    }
+
+    .glass-fortress {
+      background: rgba(8, 8, 12, 0.7); 
+      backdrop-filter: blur(40px); -webkit-backdrop-filter: blur(40px);
+      border: 1px solid rgba(255, 255, 255, 0.06); 
+      border-top: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 24px; 
+      padding: 60px 50px; 
+      width: 100%; max-width: 480px; 
+      box-shadow: 0 40px 100px rgba(0,0,0,0.95);
+      margin: auto; 
+    }
+
+    /* الهوية البصرية للمنصة
+    */
+    .brand-core {
+      font-size: 3.5rem; 
+      font-weight: 900; text-align: center; letter-spacing: 6px; margin-bottom: 0px;
+      background: linear-gradient(135deg, #ffffff 0%, #64748b 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-transform: uppercase;
+    }
+    .brand-sub {
+      text-align: center; color: #475569; font-size: 0.9rem; letter-spacing: 4px; 
+      margin-top: 5px; margin-bottom: 50px; font-weight: 600; text-transform: uppercase;
+    }
+
+    /* نظام الإشعارات المدمج
+    */
+    .log-panel {
+      padding: 16px; border-radius: 8px; margin-bottom: 30px; font-size: 0.8rem; font-family: monospace; letter-spacing: 0.5px;
+    }
+    .log-error { background: rgba(220, 38, 38, 0.05); border-left: 3px solid #ef4444; color: #fca5a5; }
+    .log-success { background: rgba(34, 197, 94, 0.05); border-left: 3px solid #22c55e; color: #86efac; }
+    .log-info { background: rgba(59, 130, 246, 0.05); border-left: 3px solid #3b82f6; color: #93c5fd; }
+
+    /* حقول إدخال البيانات المتقدمة
+    */
+    .data-field { margin-bottom: 25px; }
+    .data-label { 
+      display: block; font-size: 0.75rem; color: #94a3b8; 
+      letter-spacing: 2px; margin-bottom: 10px; font-weight: 600; text-transform: uppercase;
+    }
+    .data-input {
+      width: 100%; background: rgba(0, 0, 0, 0.5); 
+      border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 8px; 
+      padding: 18px; color: white; font-size: 1rem; box-sizing: border-box; 
+      transition: all 0.3s ease;
+    }
+    .data-input:focus { 
+      outline: none; border-color: #3b82f6; background: rgba(0, 0, 0, 0.8); 
+      box-shadow: 0 0 20px rgba(59, 130, 246, 0.15); 
+    }
+
+    /* مقياس قوة المفتاح السري (Password Entropy)
+    */
+    .entropy-bar {
+      width: 100%; height: 4px; background: rgba(255, 255, 255, 0.05);
+      border-radius: 4px; margin-top: 12px; overflow: hidden;
+    }
+    .entropy-fill {
+      height: 100%; border-radius: 4px; transition: width 0.4s ease, background-color 0.4s ease;
+    }
+
+    /* زر تنفيذ المصادقة
+    */
+    .execute-btn {
+      width: 100%; background: #ffffff; 
+      color: #000000; border: none; padding: 20px; border-radius: 8px;
+      font-size: 1.1rem; font-weight: 900; letter-spacing: 2px; text-transform: uppercase;
+      cursor: pointer; transition: all 0.3s ease; margin-top: 20px; 
+    }
+    .execute-btn:hover:not(:disabled) { 
+      transform: translateY(-2px); box-shadow: 0 10px 30px rgba(255, 255, 255, 0.2); 
+    }
+    .execute-btn:disabled {
+      background: #1e293b; color: #475569; cursor: not-allowed;
+    }
+
+    /* تأثير التحميل الداخلي */
+    .processing-ring {
+      display: inline-block; width: 20px; height: 20px; 
+      border: 2px solid rgba(0,0,0,0.2); border-radius: 50%; 
+      border-top-color: #000; animation: rotate 1s linear infinite;
+    }
+    @keyframes rotate { to { transform: rotate(360deg); } }
+
+    /* روابط التذييل النظامية
+    */
+    .footer-nav {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-top: 50px; padding-top: 25px; border-top: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    .nav-node { color: #475569; text-decoration: none; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; transition: color 0.3s ease; }
+    .nav-node:hover { color: #f8fafc; }
+  `;
+
+  // --------------------------------------------------------------------------
+  // 7. Render Output (إخراج الواجهة النهائية)
+  // --------------------------------------------------------------------------
+  return (
+    <>
+      {/* حقن محرك الجرافيكس والتصميم في الصفحة 
+         (آمن تماماً ولا يسبب أخطاء React) 
+      */}
+      <style dangerouslySetInnerHTML={{ __html: mnjnefGraphicsEngine }} />
+
+      {/* جرافيكس الخلفية الرياضي (بدون صور) */}
+      <div className="nexus-background"></div>
+      <div className="quantum-grid"></div>
+
+      {/* وحدة الترجمة العائمة */}
+      <div className="translation-module">
+        <div id="google_translate_nexus"></div>
+      </div>
+
+      {/* الدرع الزجاجي للمصادقة */}
+      <div className="auth-container" dir="ltr" translate="no">
+        <div className="glass-fortress">
+          
+          <h1 className="brand-core">Mnjnef</h1>
+          <div className="brand-sub">Creator Authentication</div>
+
+          {/* وحدة عرض رسائل النظام */}
+          {systemMessage.text && (
+            <div className={`log-panel log-${systemMessage.type}`}>
+              {systemMessage.text}
+            </div>
+          )}
+
+          <form onSubmit={executeAuthentication}>
+            
+            <div className="data-field">
+              <label className="data-label">Creator ID</label>
+              <input 
+                type="text" 
+                className="data-input" 
+                placeholder="Enter Username" 
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                disabled={isAuthenticating}
+              />
+            </div>
+
+            <div className="data-field">
+              <label className="data-label">Network Email</label>
+              <input 
+                type="email" 
+                className="data-input" 
+                placeholder="system@mnjnef.com" 
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                disabled={isAuthenticating}
+              />
+            </div>
+            
+            <div className="data-field">
+              <label className="data-label">Access Key</label>
+              <input 
+                type="password" 
+                className="data-input" 
+                placeholder="Enter Secure Password" 
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                disabled={isAuthenticating}
+              />
+              
+              {/* شريط الأمان يظهر فقط عند البدء بالكتابة */}
+              {password.length > 0 && (
+                <div className="entropy-bar">
+                  <div className="entropy-fill" style={{ 
+                    width: `${securityLevel}%`, 
+                    backgroundColor: securityLevel < 50 ? '#ef4444' : securityLevel < 80 ? '#f59e0b' : '#22c55e' 
+                  }}></div>
+                </div>
+              )}
+            </div>
+
+            <button type="submit" className="execute-btn" disabled={isAuthenticating}>
+              {isAuthenticating ? <span className="processing-ring"></span> : "Initialize"}
+            </button>
+
+          </form>
+
+          {/* روابط النظام للخصوصية والدعم */}
+          <div className="footer-nav">
+            <a href="#" className="nav-node">Privacy</a>
+            <a href="#" className="nav-node">Support</a>
+          </div>
+
+        </div>
+      </div>
+    </>
+  );
+}
