@@ -1,1 +1,1 @@
-https://every-paws-switch.loca.lt
+sudo npx next dev -p 80 -H 0.0.0.0
