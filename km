@@ -1,7 +1,1 @@
-import type { NextConfig } from "next";
-
-const nextConfig: NextConfig = {
-  allowedDevOrigins: ['mnjnef.com', 'www.mnjnef.com'],
-};
-
-export default nextConfig;
+rm -rf .next node_modules package-lock.json
