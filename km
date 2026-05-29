@@ -3,47 +3,118 @@
 export default function SecureAuth() {
   return (
     <>
-      {/* استدعاء محرك الجرافيكس في الخلفية */}
-      <div className="mnjnef-universe">
-        <div className="smoke-layer world-sci-fi"></div>
-        <div className="smoke-layer world-fantasy"></div>
-        <div className="smoke-layer world-nature"></div>
+      <style dangerouslySetInnerHTML={{__html: `
+        body, html { margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; overflow: hidden; }
+
+        /* حاوية الخلفية اللي تسحب الصورة الاحترافية */
+        .epic-bg {
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100vw;
+          height: 100vh;
+          z-index: 0;
+          background-image: url('https://images.unsplash.com/photo-1614730321146-b6fa6a46bcb4?q=80&w=2000&auto=format&fit=crop'); 
+          background-size: cover;
+          background-position: center;
+          animation: slowZoom 30s infinite alternate;
+        }
+
+        @keyframes slowZoom {
+          0% { transform: scale(1); }
+          100% { transform: scale(1.05); }
+        }
+
+        /* طبقة تظليل فوق الصورة */
+        .dark-overlay {
+          position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+          background: linear-gradient(to bottom, rgba(0,0,0,0.3), rgba(0,0,0,0.8));
+        }
+
+        .secure-wrapper {
+          position: relative; z-index: 10; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px;
+        }
+
+        /* اللوحة الزجاجية */
+        .fortress-panel {
+          background: rgba(10, 10, 15, 0.4); 
+          backdrop-filter: blur(15px); 
+          -webkit-backdrop-filter: blur(15px);
+          border: 1px solid rgba(255, 255, 255, 0.1); 
+          border-radius: 16px; 
+          padding: 50px 40px; 
+          width: 100%; 
+          max-width: 440px;
+          box-shadow: 0 25px 50px rgba(0,0,0,0.8);
+        }
+
+        .brand-title {
+          font-size: 3.5rem; font-weight: 900; text-align: center; letter-spacing: 5px; margin-bottom: 5px;
+          color: #ffffff; text-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+        }
+
+        .input-label { display: block; font-size: 0.75rem; color: #d1d5db; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 8px; font-weight: bold; }
+
+        .secure-input {
+          width: 100%; background: rgba(0, 0, 0, 0.6); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 8px;
+          padding: 14px; color: white; font-size: 1rem; box-sizing: border-box; transition: all 0.3s ease; margin-bottom: 24px;
+        }
+        .secure-input:focus { outline: none; border-color: #3b82f6; background: rgba(0, 0, 0, 0.8); }
+
+        /* تصميم الزر الأزرق الاحترافي */
+        .auth-btn {
+          width: 100%; 
+          background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%); /* تدرج أزرق فخم */
+          color: #ffffff; /* نص أبيض */
+          border: none; 
+          padding: 16px; 
+          border-radius: 8px;
+          font-size: 1.1rem; 
+          font-weight: 900; 
+          letter-spacing: 1px; 
+          cursor: pointer; 
+          transition: all 0.3s ease; 
+          margin-top: 10px;
+          box-shadow: 0 4px 15px rgba(37, 99, 235, 0.4); /* توهج أزرق خفيف */
+        }
+        .auth-btn:hover { 
+          transform: translateY(-2px); 
+          box-shadow: 0 10px 25px rgba(37, 99, 235, 0.7); /* توهج أزرق قوي عند اللمس */
+          background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); /* تفتيح اللون عند اللمس */
+        }
+      `}} />
+
+      <div className="epic-bg">
+        <div className="dark-overlay"></div>
       </div>
 
-      {/* واجهة المستخدم الفعالة */}
       <div className="secure-wrapper" dir="ltr">
         <div className="fortress-panel">
-          
           <div className="brand-title">Mnjnef</div>
-          <div style={{ textAlign: "center", color: "#64748b", fontSize: "0.85rem", letterSpacing: "2px", marginBottom: "40px" }}>
+          <div style={{ textAlign: "center", color: "#9ca3af", fontSize: "0.85rem", letterSpacing: "2px", marginBottom: "40px" }}>
             UNIVERSAL AUTHENTICATION
           </div>
 
           <form onSubmit={(e) => e.preventDefault()}>
-            
-            {/* القسم 1: اسم المستخدم */}
             <div>
               <label className="input-label">Creator Username</label>
               <input type="text" className="secure-input" placeholder="e.g. MasterDev99" />
             </div>
 
-            {/* القسم 2: البريد الإلكتروني */}
             <div>
               <label className="input-label">Secure Email</label>
               <input type="email" className="secure-input" placeholder="player@mnjnef.com" />
             </div>
             
-            {/* القسم 3: مفتاح الوصول (الباسورد) */}
             <div>
               <label className="input-label">Access Key</label>
               <input type="password" className="secure-input" placeholder="••••••••••••" />
             </div>
 
             <button type="submit" className="auth-btn">
-              Enter Universe
+              تسجيل الدخول
             </button>
           </form>
-
         </div>
       </div>
     </>
