@@ -1,1 +1,10 @@
-sudo npx next dev -p 80 -H 0.0.0.0
+export default function Home() {
+  return (
+    <div style={{ backgroundColor: '#000', color: '#fff', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'sans-serif' }}>
+      <div style={{ textAlign: 'center' }}>
+        <h1 style={{ fontSize: '3rem', marginBottom: '1rem' }}>Mnjnef</h1>
+        <p style={{ fontSize: '1.5rem', color: '#888' }}>The Next Reality is Online</p>
+      </div>
+    </div>
+  );
+}
