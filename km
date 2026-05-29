@@ -1,163 +1,51 @@
-@import "tailwindcss";
+"use client";
 
-/* الإعدادات الأساسية */
-body, html {
-  margin: 0;
-  padding: 0;
-  background-color: #020205; /* لون الفضاء العميق */
-  color: white;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  overflow: hidden;
-}
+export default function SecureAuth() {
+  return (
+    <>
+      {/* استدعاء محرك الجرافيكس في الخلفية */}
+      <div className="mnjnef-universe">
+        <div className="smoke-layer world-sci-fi"></div>
+        <div className="smoke-layer world-fantasy"></div>
+        <div className="smoke-layer world-nature"></div>
+      </div>
 
-/* -------------------------------------- */
-/* محرك الجرافيكس: العوالم والدخان المتحرك */
-/* -------------------------------------- */
+      {/* واجهة المستخدم الفعالة */}
+      <div className="secure-wrapper" dir="ltr">
+        <div className="fortress-panel">
+          
+          <div className="brand-title">Mnjnef</div>
+          <div style={{ textAlign: "center", color: "#64748b", fontSize: "0.85rem", letterSpacing: "2px", marginBottom: "40px" }}>
+            UNIVERSAL AUTHENTICATION
+          </div>
 
-/* حاوية الكون */
-.mnjnef-universe {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  z-index: 0;
-  background: radial-gradient(circle at center, #0a0a1a 0%, #000000 100%);
-}
+          <form onSubmit={(e) => e.preventDefault()}>
+            
+            {/* القسم 1: اسم المستخدم */}
+            <div>
+              <label className="input-label">Creator Username</label>
+              <input type="text" className="secure-input" placeholder="e.g. MasterDev99" />
+            </div>
 
-/* حركة الدخان والهواء (الأنيميشن) */
-@keyframes smoke-drift {
-  0% { transform: translate(0, 0) scale(1) rotate(0deg); opacity: 0.3; }
-  33% { transform: translate(3vw, -5vh) scale(1.1) rotate(2deg); opacity: 0.5; }
-  66% { transform: translate(-2vw, 4vh) scale(0.95) rotate(-1deg); opacity: 0.4; }
-  100% { transform: translate(0, 0) scale(1) rotate(0deg); opacity: 0.3; }
-}
+            {/* القسم 2: البريد الإلكتروني */}
+            <div>
+              <label className="input-label">Secure Email</label>
+              <input type="email" className="secure-input" placeholder="player@mnjnef.com" />
+            </div>
+            
+            {/* القسم 3: مفتاح الوصول (الباسورد) */}
+            <div>
+              <label className="input-label">Access Key</label>
+              <input type="password" className="secure-input" placeholder="••••••••••••" />
+            </div>
 
-/* طبقات العوالم (دوائر عملاقة مضببة تتحرك مثل الدخان) */
-.smoke-layer {
-  position: absolute;
-  border-radius: 50%;
-  filter: blur(120px); /* هذا اللي يعطي تأثير الدخان الناعم */
-  animation: smoke-drift 25s infinite ease-in-out alternate;
-  pointer-events: none;
-}
+            <button type="submit" className="auth-btn">
+              Enter Universe
+            </button>
+          </form>
 
-/* العالم الأزرق (يمثل التكنولوجيا والخيال العلمي) */
-.world-sci-fi {
-  width: 70vw;
-  height: 70vw;
-  background: #1e3a8a; /* أزرق داكن */
-  top: -20%;
-  left: -20%;
-}
-
-/* العالم البنفسجي (يمثل الفانتازيا والسحر) */
-.world-fantasy {
-  width: 60vw;
-  height: 60vw;
-  background: #4c1d95; /* بنفسجي غامق */
-  bottom: -10%;
-  right: -15%;
-  animation-delay: -7s;
-  animation-duration: 30s;
-}
-
-/* العالم الزمردي (يمثل الطبيعة والواقعية) */
-.world-nature {
-  width: 50vw;
-  height: 50vw;
-  background: #064e3b; /* أخضر زمردي داكن */
-  top: 30%;
-  left: 30%;
-  animation-delay: -15s;
-  animation-duration: 35s;
-  opacity: 0.2;
-}
-
-/* -------------------------------------- */
-/* تصميم واجهة المصادقة الزجاجية الفاخرة */
-/* -------------------------------------- */
-
-.secure-wrapper {
-  position: relative;
-  z-index: 10;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 100vh;
-  padding: 20px;
-}
-
-.fortress-panel {
-  background: rgba(10, 10, 15, 0.65);
-  backdrop-filter: blur(25px);
-  -webkit-backdrop-filter: blur(25px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-top: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 20px;
-  padding: 50px 40px;
-  width: 100%;
-  max-width: 480px;
-  box-shadow: 0 40px 80px rgba(0,0,0,0.8), inset 0 0 20px rgba(255, 255, 255, 0.02);
-}
-
-.brand-title {
-  font-size: 3.5rem;
-  font-weight: 900;
-  text-align: center;
-  letter-spacing: 5px;
-  margin-bottom: 5px;
-  color: #ffffff; /* الاسم باللون الأبيض الساطع */
-  text-shadow: 0 0 30px rgba(255, 255, 255, 0.5);
-}
-
-.input-label {
-  display: block;
-  font-size: 0.75rem;
-  color: #94a3b8;
-  text-transform: uppercase;
-  letter-spacing: 2px;
-  margin-bottom: 8px;
-  font-weight: 700;
-}
-
-.secure-input {
-  width: 100%;
-  background: rgba(0, 0, 0, 0.5);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 10px;
-  padding: 16px;
-  color: white;
-  font-size: 1rem;
-  box-sizing: border-box;
-  transition: all 0.3s ease;
-  margin-bottom: 24px;
-}
-
-.secure-input:focus {
-  outline: none;
-  border-color: #ffffff;
-  background: rgba(0, 0, 0, 0.8);
-  box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
-}
-
-.auth-btn {
-  width: 100%;
-  background: #ffffff;
-  color: #000000;
-  border: none;
-  padding: 18px;
-  border-radius: 10px;
-  font-size: 1.1rem;
-  font-weight: 900;
-  text-transform: uppercase;
-  letter-spacing: 3px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  margin-top: 10px;
-}
-
-.auth-btn:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 15px 30px rgba(255, 255, 255, 0.2);
+        </div>
+      </div>
+    </>
+  );
 }
