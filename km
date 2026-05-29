@@ -1,1 +1,1 @@
-g++ main.cpp NetworkManager.cpp -o mnjnef_server -pthread
+cd Mnjnef && ls
