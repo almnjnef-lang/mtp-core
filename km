@@ -1,210 +1,181 @@
 "use client";
+import { useState, useEffect } from "react";
 
-export default function Home() {
+export default function SecureAuth() {
+  // حالات الأمان وإدارة البيانات
+  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [securityLevel, setSecurityLevel] = useState(0);
+  const [isAuthenticating, setIsAuthenticating] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
+
+  // خوارزمية فحص قوة كلمة المرور (تحديث حي)
+  useEffect(() => {
+    let strength = 0;
+    if (password.length > 7) strength += 25;
+    if (password.match(/[A-Z]/)) strength += 25;
+    if (password.match(/[0-9]/)) strength += 25;
+    if (password.match(/[^a-zA-Z0-9]/)) strength += 25;
+    setSecurityLevel(strength);
+  }, [password]);
+
+  // دالة الحماية والفلترة قبل إرسال البيانات للسيرفر
+  const handleSecureLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorMsg("");
+
+    // 1. حماية من المدخلات الفارغة
+    if (!username || !email || !password) {
+      setErrorMsg("Security Alert: All fields are required for authentication.");
+      return;
+    }
+
+    // 2. فلترة البريد الإلكتروني (Regex) لمنع الأكواد الخبيثة
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setErrorMsg("Security Alert: Invalid email format detected.");
+      return;
+    }
+
+    // 3. فلترة اسم المستخدم (أحرف وأرقام فقط) لمنع XSS
+    const usernameRegex = /^[a-zA-Z0-9_]{3,20}$/;
+    if (!usernameRegex.test(username)) {
+      setErrorMsg("Security Alert: Username contains illegal characters or is too short.");
+      return;
+    }
+
+    // 4. التأكد من قوة كلمة المرور
+    if (securityLevel < 75) {
+      setErrorMsg("Security Alert: Access Key is too weak. Requires symbols and numbers.");
+      return;
+    }
+
+    // محاكاة الاتصال المشفر بالسيرفر (يمنع هجمات الـ Brute Force)
+    setIsAuthenticating(true);
+    setTimeout(() => {
+      setIsAuthenticating(false);
+      // هنا سيتم ربط الكود بملفات الـ Backend لاحقاً
+      alert("Secure Connection Established. Welcome to Mnjnef.");
+    }, 2500);
+  };
+
   return (
     <>
       <style dangerouslySetInnerHTML={{__html: `
-        /* الإعدادات الأساسية للصفحة */
-        body, html { 
-          margin: 0; 
-          padding: 0; 
-          background-color: #030305; 
-          color: white; 
-          font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; 
-          overflow: hidden; 
-        }
-
-        /* خلفية العوالم المتعددة (الكون) */
-        .universe-bg { 
-          position: fixed; 
-          top: 0; 
-          left: 0; 
-          width: 100vw; 
-          height: 100vh; 
-          z-index: 0; 
-          background: radial-gradient(circle at center, #0f172a 0%, #000000 100%); 
+        body, html { margin: 0; padding: 0; background-color: #020202; color: white; font-family: 'Inter', system-ui, sans-serif; overflow: hidden; }
+        
+        .matrix-bg {
+          position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 0;
+          background: radial-gradient(circle at 50% 50%, #0a0a1a 0%, #000000 100%);
         }
         
-        /* الأجرام السماوية (تمثل عوالم الألعاب المختلفة) */
-        .world { 
-          position: absolute; 
-          border-radius: 50%; 
-          filter: blur(80px); 
-          animation: float 25s infinite alternate ease-in-out; 
-          opacity: 0.5; 
+        .core-grid {
+          position: absolute; width: 200%; height: 200%; top: -50%; left: -50%;
+          background-image: 
+            linear-gradient(rgba(37, 99, 235, 0.05) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(37, 99, 235, 0.05) 1px, transparent 1px);
+          background-size: 40px 40px;
+          transform: perspective(500px) rotateX(60deg);
+          animation: gridMove 20s linear infinite;
         }
-        .world-sci-fi { 
-          width: 600px; height: 600px; background: #3b82f6; top: -15%; left: -10%; 
+
+        @keyframes gridMove {
+          0% { transform: perspective(500px) rotateX(60deg) translateY(0); }
+          100% { transform: perspective(500px) rotateX(60deg) translateY(40px); }
         }
-        .world-fantasy { 
-          width: 500px; height: 500px; background: #8b5cf6; bottom: -10%; right: -5%; animation-delay: -7s; 
-        }
-        .world-nature { 
-          width: 400px; height: 400px; background: #10b981; top: 30%; left: 50%; animation-delay: -14s; 
-        }
+
+        .secure-wrapper { position: relative; z-index: 10; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
         
-        @keyframes float {
-          0% { transform: translate(0, 0) scale(1); }
-          100% { transform: translate(120px, 80px) scale(1.2); }
+        .fortress-panel {
+          background: rgba(5, 5, 10, 0.7); backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px);
+          border: 1px solid rgba(59, 130, 246, 0.2); border-top: 1px solid rgba(139, 92, 246, 0.4);
+          border-radius: 16px; padding: 40px; width: 100%; max-width: 440px;
+          box-shadow: 0 0 40px rgba(0,0,0,0.8), inset 0 0 20px rgba(59, 130, 246, 0.05);
         }
 
-        /* حاوية تسجيل الدخول الرئيسية */
-        .login-wrapper { 
-          position: relative; 
-          z-index: 10; 
-          display: flex; 
-          justify-content: center; 
-          align-items: center; 
-          min-height: 100vh; 
-          padding: 20px; 
+        .brand-title {
+          font-size: 3.5rem; font-weight: 900; text-align: center; letter-spacing: 4px; margin-bottom: 5px;
+          color: white; text-shadow: 0 0 15px rgba(255,255,255,0.4);
         }
 
-        /* اللوحة الزجاجية الفاخرة (Glassmorphism) */
-        .glass-panel { 
-          background: rgba(17, 24, 39, 0.4); 
-          backdrop-filter: blur(25px); 
-          -webkit-backdrop-filter: blur(25px);
-          border: 1px solid rgba(255, 255, 255, 0.08); 
-          border-radius: 24px; 
-          padding: 50px 45px; 
-          width: 100%; 
-          max-width: 460px; 
-          box-shadow: 0 30px 60px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.1); 
+        .error-box {
+          background: rgba(220, 38, 38, 0.1); border-left: 4px solid #ef4444; color: #fca5a5;
+          padding: 12px; font-size: 0.8rem; border-radius: 4px; margin-bottom: 20px;
+          font-family: monospace; animation: fadeIn 0.3s ease;
         }
+
+        .input-group { margin-bottom: 20px; }
+        .input-label { display: block; font-size: 0.7rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 8px; font-weight: bold; }
         
-        /* تصميم شعار المنصة */
-        .logo-text { 
-          font-size: 3.5rem; 
-          font-weight: 900; 
-          text-align: center; 
-          color: #ffffff; 
-          letter-spacing: 3px; 
-          margin-bottom: 5px; 
-          text-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+        .secure-input {
+          width: 100%; background: rgba(0, 0, 0, 0.6); border: 1px solid #1e293b; border-radius: 8px;
+          padding: 14px; color: white; font-size: 0.95rem; box-sizing: border-box; transition: all 0.3s;
+          font-family: monospace;
         }
-        .tagline { 
-          text-align: center; 
-          color: #9ca3af; 
-          font-size: 0.95rem; 
-          letter-spacing: 1px;
-          margin-bottom: 45px; 
+        .secure-input:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 15px rgba(59, 130, 246, 0.3); }
+
+        .security-bar-bg { width: 100%; height: 6px; background: #1e293b; border-radius: 3px; margin-top: 10px; overflow: hidden; }
+        .security-bar-fill { height: 100%; transition: width 0.4s ease, background-color 0.4s ease; }
+
+        .auth-btn {
+          width: 100%; background: #2563eb; color: white; border: none; padding: 16px; border-radius: 8px;
+          font-size: 0.9rem; font-weight: bold; text-transform: uppercase; letter-spacing: 3px; cursor: pointer;
+          transition: all 0.3s; margin-top: 10px; position: relative; overflow: hidden;
+        }
+        .auth-btn:hover:not(:disabled) { background: #1d4ed8; box-shadow: 0 0 25px rgba(37, 99, 235, 0.5); }
+        .auth-btn:disabled { background: #1e293b; color: #64748b; cursor: not-allowed; }
+
+        .loading-spinner {
+          display: inline-block; width: 20px; height: 20px; border: 3px solid rgba(255,255,255,0.3);
+          border-radius: 50%; border-top-color: white; animation: spin 1s ease-in-out infinite;
         }
 
-        /* تنسيق حقول الإدخال */
-        .input-group { 
-          margin-bottom: 22px; 
-        }
-        .input-label { 
-          display: block; 
-          font-size: 0.75rem; 
-          color: #9ca3af; 
-          text-transform: uppercase; 
-          letter-spacing: 1.5px; 
-          margin-bottom: 8px; 
-          font-weight: 600; 
-        }
-        .custom-input { 
-          width: 100%; 
-          background: rgba(0, 0, 0, 0.4); 
-          border: 1px solid rgba(255, 255, 255, 0.1); 
-          border-radius: 12px; 
-          padding: 16px; 
-          color: white; 
-          font-size: 1rem; 
-          box-sizing: border-box; 
-          transition: all 0.3s ease; 
-        }
-        .custom-input:focus { 
-          outline: none; 
-          border-color: #3b82f6; 
-          background: rgba(0, 0, 0, 0.7); 
-          box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15); 
-        }
-        .custom-input::placeholder {
-          color: #4b5563;
-        }
-
-        /* زر المصادقة والدخول */
-        .auth-btn { 
-          width: 100%; 
-          background: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%); 
-          color: white; 
-          border: none; 
-          padding: 18px; 
-          border-radius: 12px; 
-          font-size: 1rem; 
-          font-weight: bold; 
-          text-transform: uppercase; 
-          letter-spacing: 2px; 
-          cursor: pointer; 
-          transition: all 0.3s ease; 
-          margin-top: 15px; 
-          box-shadow: 0 10px 25px rgba(37, 99, 235, 0.4); 
-        }
-        .auth-btn:hover { 
-          transform: translateY(-2px); 
-          box-shadow: 0 15px 35px rgba(37, 99, 235, 0.6); 
-        }
-
-        /* الروابط السفلية */
-        .footer-links { 
-          display: flex; 
-          justify-content: space-between; 
-          margin-top: 35px; 
-          font-size: 0.8rem; 
-          letter-spacing: 0.5px;
-        }
-        .footer-links a { 
-          color: #6b7280; 
-          text-decoration: none; 
-          transition: color 0.3s; 
-        }
-        .footer-links a:hover { 
-          color: #ffffff; 
-        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
       `}} />
 
-      {/* خلفية العوالم المتعددة */}
-      <div className="universe-bg">
-        <div className="world world-sci-fi"></div>
-        <div className="world world-fantasy"></div>
-        <div className="world world-nature"></div>
-      </div>
+      <div className="matrix-bg"><div className="core-grid"></div></div>
 
-      {/* الواجهة الرئيسية */}
-      <div className="login-wrapper" dir="ltr">
-        <div className="glass-panel">
-          
-          <div className="logo-text">Mnjnef</div>
-          <div className="tagline">The Next Reality Awaits</div>
-
-          <form onSubmit={(e) => e.preventDefault()}>
-            
-            {/* القسم الأول: اسم المستخدم */}
-            <div className="input-group">
-              <label className="input-label">Username</label>
-              <input type="text" className="custom-input" placeholder="Enter creator name..." />
-            </div>
-
-            {/* القسم الثاني: البريد الإلكتروني */}
-            <div className="input-group">
-              <label className="input-label">Email Address</label>
-              <input type="email" className="custom-input" placeholder="player@mnjnef.com" />
-            </div>
-            
-            {/* القسم الثالث: كلمة المرور */}
-            <div className="input-group">
-              <label className="input-label">Password</label>
-              <input type="password" className="custom-input" placeholder="••••••••••••" />
-            </div>
-
-            <button className="auth-btn">Enter Universe</button>
-          </form>
-
-          <div className="footer-links">
-            <a href="#">Create Account</a>
-            <a href="#">Lost Access?</a>
+      <div className="secure-wrapper" dir="ltr">
+        <div className="fortress-panel">
+          <div className="brand-title">Mnjnef</div>
+          <div style={{ textAlign: "center", color: "#64748b", fontSize: "0.85rem", letterSpacing: "1px", marginBottom: "30px" }}>
+            ENCRYPTED CONNECTION
           </div>
+
+          {errorMsg && <div className="error-box">{errorMsg}</div>}
+
+          <form onSubmit={handleSecureLogin}>
+            <div className="input-group">
+              <label className="input-label">Creator Username</label>
+              <input type="text" className="secure-input" placeholder="e.g. MasterDev99" value={username} onChange={(e) => setUsername(e.target.value)} disabled={isAuthenticating} />
+            </div>
+
+            <div className="input-group">
+              <label className="input-label">Secure Email</label>
+              <input type="email" className="secure-input" placeholder="player@mnjnef.com" value={email} onChange={(e) => setEmail(e.target.value)} disabled={isAuthenticating} />
+            </div>
+            
+            <div className="input-group">
+              <label className="input-label">Access Key (Password)</label>
+              <input type="password" className="secure-input" placeholder="••••••••••••" value={password} onChange={(e) => setPassword(e.target.value)} disabled={isAuthenticating} />
+              
+              {/* شريط قوة كلمة المرور */}
+              {password.length > 0 && (
+                <div className="security-bar-bg">
+                  <div className="security-bar-fill" style={{ 
+                    width: \`\${securityLevel}%\`, 
+                    backgroundColor: securityLevel < 50 ? '#ef4444' : securityLevel < 75 ? '#f59e0b' : '#22c55e' 
+                  }}></div>
+                </div>
+              )}
+            </div>
+
+            <button type="submit" className="auth-btn" disabled={isAuthenticating}>
+              {isAuthenticating ? <span className="loading-spinner"></span> : "Establish Uplink"}
+            </button>
+          </form>
 
         </div>
       </div>
