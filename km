@@ -1,1 +1,1 @@
-cd Mnjnef && g++ main.cpp NetworkManager.cpp AuthManager.cpp -o mnjnef_server -pthread -lcurl && ./mnjnef_server
+g++ main.cpp NetworkManager.cpp AuthManager.cpp -o mnjnef_server -pthread -lcurl && ./mnjnef_server
