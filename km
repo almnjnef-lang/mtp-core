@@ -1,45 +1,21 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+import type { Metadata } from "next";
+import "./globals.css";
 
-:root {
-  /* ألوان أساسية تناسب منصة Mnjnef */
-  --background: #0a0a0a;
-  --foreground: #ededed;
-}
+export const metadata: Metadata = {
+  title: "Mnjnef | The Next Reality",
+  description: "Global Gaming Platform",
+};
 
-/* تنسيق التحديد (لما الزائر يحدد نص في الموقع) */
-::selection {
-  background-color: #3b82f6;
-  color: #ffffff;
-}
-
-body {
-  color: var(--foreground);
-  background-color: var(--background);
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-/* حركة تنقل ناعمة في الموقع */
-html {
-  scroll-behavior: smooth;
-}
-
-/* إخفاء شريط التمرير الجانبي إذا حبيت تصميم أنظف (اختياري) */
-::-webkit-scrollbar {
-  width: 8px;
-}
-::-webkit-scrollbar-track {
-  background: #171717;
-}
-::-webkit-scrollbar-thumb {
-  background: #3f3f46;
-  border-radius: 4px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: #52525b;
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
+  return (
+    <html lang="en">
+      <body className="antialiased">
+        {children}
+      </body>
+    </html>
+  );
 }
