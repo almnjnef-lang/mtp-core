@@ -1,1 +1,1 @@
-ssh-keygen -t rsa -b 4096 -m PEM -f ~/.ssh/vs_key -N "" && cat ~/.ssh/vs_key.pub >> ~/.ssh/authorized_keys
+cat ~/.ssh/vs_key
