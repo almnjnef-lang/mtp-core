@@ -1,1 +1,1 @@
-echo "module.exports = { allowedDevOrigins: ['mnjnef.com', 'www.mnjnef.com'] }" > next.config.js
+sudo npx next dev -H 0.0.0.0 -p 80
