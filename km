@@ -1,1 +1,1 @@
-copy C:\Users\SUPERB\.thunder\keys\sk7382hc C:\Users\SUPERB\.ssh\mnjnef_vs_key.pem && ssh-keygen -p -m PEM -f C:\Users\SUPERB\.ssh\mnjnef_vs_key.pem -P "" -N ""
+C:\Users\SUPERB\.ssh\mnjnef_vs_key.pem
