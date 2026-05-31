@@ -1,1 +1,6 @@
-sudo npx next dev -H 0.0.0.0 -p 80
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  allowedDevOrigins: ['mnjnef.com', 'www.mnjnef.com']
+};
+
+module.exports = nextConfig;
