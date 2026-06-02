@@ -1,18 +1,1 @@
-أهلاً كلود. أنا أطور منصة ألعاب عالمية باسم "Mnjnef" باستخدام C++ و Qt Quick (Qt 6) ونظام البناء CMake.
-تم تجهيز البنية التحتية كالتالي:
-1. سيرفر فرنسي (لإدارة البيانات والمصادقة) مربوط بـ Cloudflare على الرابط الأساسي mnjnef.com.
-2. كمبيوتر سحابي جبار في دبي (للرندرة والألعاب) مربوط على الرابط الفرعي play.mnjnef.com.
-
-المطلوب الآن بناء "نظام وشاشة تسجيل الدخول".
-تعليمات صارمة: لا تشرح لي الخطوات ولا تجزئ الأكواد. أريد فقط 3 صناديق كود (Code Blocks) تحتوي على الملفات كاملة من السطر الأول للأخير لتكون جاهزة للنسخ واللصق مباشرة في Qt Creator:
-
-1. ملف (CMakeLists.txt) كامل:
-يجب أن يكون محدثاً ليدعم إضافة مكتبات Qt6 Quick, Network, و WebSockets.
-
-2. ملف (main.cpp) كامل:
-ينشئ نافذة الواجهة ويربطها بكلاس C++ مخصص للمصادقة (AuthManager). هذا الكلاس يحتوي على دالة ترسل بيانات الدخول كطلب (HTTP POST) إلى https://mnjnef.com/api/login. تأكد من إضافة إعدادات الـ Headers المناسبة (مثل User-Agent) حتى لا يتم حظر الطلب من قبل Cloudflare.
-
-3. ملف (Main.qml) كامل:
-واجهة مستخدم (UI) احترافية بتصميم ألعاب داكن (Dark Gaming Theme). تحتوي على حقول اسم المستخدم، كلمة المرور (مخفية)، وزر تسجيل الدخول الذي يستدعي دالة C++ مباشرة.
-
-أعطني الملفات الثلاثة كاملة الآن.
+A hyper-realistic, breathtaking 3D landscape showcasing the professional creation of multiple distinct game worlds merging into one. On one side, an ancient mystical medieval stone ruin covered in dark fog; on the other, a highly detailed enchanted dark forest. The environments are seamlessly blending, revealing complex geometry and building elements, looking exactly like a high-end professional game engine viewport (like Unreal Engine 5). Dark, moody, cinematic lighting with dramatic shadows and earthy tones. Raw photorealism, completely avoiding any sci-fi, space, or futuristic elements. Looks like an award-winning digital art masterpiece, not AI-generated. Dark vignette around the edges, soft background blur in the center to leave space for a login UI, completely text-free, no logos, no watermarks, 8k resolution.
