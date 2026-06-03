@@ -1,7 +1,2 @@
-layer.effect: MultiEffect {
-    shadowEnabled: true
-    shadowColor: "#00FFFF"
-    shadowBlur: 1.0
-    shadowHorizontalOffset: 0
-    shadowVerticalOffset: 0
-}
+border.color: "#00FFFF"
+border.width: 2
