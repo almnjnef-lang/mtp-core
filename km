@@ -1,70 +1,42 @@
 Item {
-    id: contactUsContainer
-    width: contactRow.implicitWidth + 24
-    height: 48
+    id: supportComponentRoot
     Layout.alignment: Qt.AlignRight
+    width: supportTriggerRow.implicitWidth + 20
+    height: 48
 
-    // Professional properties for dynamic state handling
-    property color normalColor: "#6f7fa0"
-    property color hoverColor: "#ffffff"
-    property bool activeState: false
-
-    // Smooth opacity transition for modern gaming platform feel
-    Behavior on opacity {
-        NumberAnimation { duration: 200; easing.type: Easing.InOutQuad }
-    }
+    property color accentColor: "#1f6feb"
+    property color textColor: "#6f7fa0"
+    property color hoverTextColor: "#ffffff"
+    property color backgroundColor: "#0a1428"
+    property color surfaceColor: "#1e3257"
 
     Row {
-        id: contactRow
-        spacing: 10
+        id: supportTriggerRow
+        spacing: 8
         anchors.centerIn: parent
 
+        Behavior on opacity {
+            NumberAnimation { duration: 200; easing.type: Easing.OutQuad }
+        }
+
         Image {
-            id: agentAvatar
-            width: 36
-            height: 36
+            id: supportIcon
+            width: 22
+            height: 22
             anchors.verticalCenter: parent.verticalCenter
             smooth: true
             antialiasing: true
-
-            // Ultra-detailed custom SVG matrix layout
-            // Layer 1: Shoulders and base gear
-            // Layer 2: Brown skin tone face layout (#c68642)
-            // Layer 3: Eyebrows and soft upper eyelashes
-            // Layer 4: Real white eyes with dark pupils
-            // Layer 5: Clean nose line definition
-            // Layer 6: Open cheerful smile with perfect white teeth row (#ffffff)
-            // Layer 7: Pro gaming headset arc, ears padding, and precise mic boom to the mouth side
-            source: "data:image/svg+xml;utf8," +
-                    "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64' fill='none'>" +
-                    "  <path d='M16 58c0-8.5 5.5-14 16-14s16 5.5 16 14' fill='%231e3257'/>" +
-                    "  <circle cx='32' cy='28' r='13' fill='%23c68642'/>" +
-                    "  <path d='M22 21q3-2 5-1M37 20q2-1 5 1' stroke='%23111111' stroke-width='1' stroke-linecap='round'/>" +
-                    "  <path d='M21 24.5l2-0.5M43 24l-2 0.5' stroke='%23111111' stroke-width='0.8'/>" +
-                    "  <circle cx='26' cy='25' r='2.5' fill='%23ffffff'/>" +
-                    "  <circle cx='26' cy='25' r='1.2' fill='%23111111'/>" +
-                    "  <circle cx='38' cy='25' r='2.5' fill='%23ffffff'/>" +
-                    "  <circle cx='38' cy='25' r='1.2' fill='%23111111'/>" +
-                    "  <path d='M32 26v4l-2 1' stroke='%237a4f3b' stroke-width='1.2' stroke-linecap='round' fill='none'/>" +
-                    "  <path d='M25 33.5q7 5 14 0' fill='%234a1212' stroke='%23111111' stroke-width='0.8'/>" +
-                    "  <path d='M25.5 33.8q6.5 1.5 13 0v1.5q-6.5 0-13-1.5z' fill='%23ffffff'/>" +
-                    "  <path d='M17 28A15 15 0 0 1 47 28' fill='none' stroke='%231f6feb' stroke-width='2.5' stroke-linecap='round'/>" +
-                    "  <rect x='15' y='24' width='4' height='9' rx='2' fill='%23111111'/>" +
-                    "  <rect x='45' y='24' width='4' height='9' rx='2' fill='%23111111'/>" +
-                    "  <path d='M17 30q3 8 10 6' fill='none' stroke='%23111111' stroke-width='1.5' stroke-linecap='round'/>" +
-                    "  <circle cx='28' cy='36' r='1.5' fill='%231f6feb'/>" +
-                    "</svg>"
+            source: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236f7fa0' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'><path d='M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2'/><circle cx='12' cy='7' r='4'/><path d='M4 11V9a8 8 0 0 1 16 0v2'/><rect x='2' y='9' width='4' height='5' rx='1'/><rect x='18' y='9' width='4' height='5' rx='1'/><path d='M19 13v2a3 3 0 0 1-3 3h-2'/><circle cx='14' cy='18' r='1' fill='%236f7fa0'/></svg>"
         }
 
         Text {
-            id: contactLabel
+            id: supportText
             text: qsTr("Contact Us")
-            color: contactUsContainer.activeState ? contactUsContainer.hoverColor : contactUsContainer.normalColor
+            color: supportComponentRoot.textColor
             font.pixelSize: 13
             font.bold: true
             anchors.verticalCenter: parent.verticalCenter
 
-            // Dynamic color fade animation for high-end feel
             Behavior on color {
                 ColorAnimation { duration: 150 }
             }
@@ -72,21 +44,205 @@ Item {
     }
 
     MouseArea {
-        id: clickArea
+        id: triggerMouseArea
         anchors.fill: parent
         cursorShape: Qt.PointingHandCursor
         hoverEnabled: true
 
         onEntered: {
-            contactUsContainer.opacity = 0.9
-            contactUsContainer.activeState = true
+            supportText.color = supportComponentRoot.hoverTextColor
+            supportTriggerRow.opacity = 0.8
         }
         onExited: {
-            contactUsContainer.opacity = 1.0
-            contactUsContainer.activeState = false
+            supportText.color = supportComponentRoot.textColor
+            supportTriggerRow.opacity = 1.0
         }
         onClicked: {
-            console.log("Contact Us support button triggered.")
+            supportPopup.open()
+        }
+    }
+
+    Popup {
+        id: supportPopup
+        width: 450
+        height: 520
+        x: (parent.width - width) / 2 - 200
+        y: -400
+        modal: true
+        focus: true
+        closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
+
+        enter: Transition {
+            ParallelAnimation {
+                NumberAnimation { property: "opacity"; from: 0.0; to: 1.0; duration: 250; easing.type: Easing.OutCubic }
+                NumberAnimation { property: "scale"; from: 0.9; to: 1.0; duration: 250; easing.type: Easing.OutBack }
+            }
+        }
+
+        exit: Transition {
+            ParallelAnimation {
+                NumberAnimation { property: "opacity"; from: 1.0; to: 0.0; duration: 200; easing.type: Easing.InCubic }
+                NumberAnimation { property: "scale"; from: 1.0; to: 0.9; duration: 200; easing.type: Easing.InCubic }
+            }
+        }
+
+        background: Rectangle {
+            color: supportComponentRoot.backgroundColor
+            radius: 12
+            border.color: supportComponentRoot.surfaceColor
+            border.width: 1
+
+            Rectangle {
+                anchors.fill: parent
+                radius: 12
+                color: "transparent"
+                border.color: "#2a2a2a"
+                border.width: 2
+                opacity: 0.3
+            }
+        }
+
+        Column {
+            anchors.fill: parent
+            anchors.margins: 24
+            spacing: 20
+
+            Row {
+                width: parent.width
+                
+                Text {
+                    text: qsTr("Mnjnef Support")
+                    color: "#ffffff"
+                    font.pixelSize: 22
+                    font.bold: true
+                    width: parent.width - closeButton.width
+                }
+
+                Rectangle {
+                    id: closeButton
+                    width: 24
+                    height: 24
+                    color: "transparent"
+                    radius: 12
+
+                    Text {
+                        anchors.centerIn: parent
+                        text: "✕"
+                        color: supportComponentRoot.textColor
+                        font.pixelSize: 16
+                        font.bold: true
+                    }
+
+                    MouseArea {
+                        anchors.fill: parent
+                        cursorShape: Qt.PointingHandCursor
+                        hoverEnabled: true
+                        onEntered: closeButton.color = "#2a3a5a"
+                        onExited: closeButton.color = "transparent"
+                        onClicked: supportPopup.close()
+                    }
+                }
+            }
+
+            Rectangle {
+                width: parent.width
+                height: 1
+                color: supportComponentRoot.surfaceColor
+            }
+
+            Text {
+                text: qsTr("How can we help you today?")
+                color: supportComponentRoot.textColor
+                font.pixelSize: 14
+            }
+
+            Rectangle {
+                width: parent.width
+                height: 48
+                color: "#111827"
+                radius: 8
+                border.color: subjectField.activeFocus ? supportComponentRoot.accentColor : supportComponentRoot.surfaceColor
+                border.width: 1
+
+                TextInput {
+                    id: subjectField
+                    anchors.fill: parent
+                    anchors.leftMargin: 12
+                    anchors.rightMargin: 12
+                    verticalAlignment: TextInput.AlignVCenter
+                    color: "#ffffff"
+                    font.pixelSize: 14
+                    clip: true
+                    
+                    Text {
+                        text: qsTr("Subject")
+                        color: "#4b5563"
+                        font.pixelSize: 14
+                        anchors.verticalCenter: parent.verticalCenter
+                        visible: !subjectField.text && !subjectField.activeFocus
+                    }
+                }
+            }
+
+            Rectangle {
+                width: parent.width
+                height: 180
+                color: "#111827"
+                radius: 8
+                border.color: messageArea.activeFocus ? supportComponentRoot.accentColor : supportComponentRoot.surfaceColor
+                border.width: 1
+
+                TextEdit {
+                    id: messageArea
+                    anchors.fill: parent
+                    anchors.margins: 12
+                    color: "#ffffff"
+                    font.pixelSize: 14
+                    wrapMode: TextEdit.WordWrap
+                    clip: true
+
+                    Text {
+                        text: qsTr("Describe your issue in detail...")
+                        color: "#4b5563"
+                        font.pixelSize: 14
+                        visible: !messageArea.text && !messageArea.activeFocus
+                    }
+                }
+            }
+
+            Rectangle {
+                id: sendBtn
+                width: parent.width
+                height: 48
+                radius: 8
+                color: supportComponentRoot.accentColor
+                
+                Behavior on opacity {
+                    NumberAnimation { duration: 150 }
+                }
+
+                Text {
+                    anchors.centerIn: parent
+                    text: qsTr("Send Message")
+                    color: "#ffffff"
+                    font.pixelSize: 15
+                    font.bold: true
+                }
+
+                MouseArea {
+                    anchors.fill: parent
+                    cursorShape: Qt.PointingHandCursor
+                    hoverEnabled: true
+                    onEntered: sendBtn.opacity = 0.8
+                    onExited: sendBtn.opacity = 1.0
+                    onClicked: {
+                        console.log("Support Ticket Submitted: " + subjectField.text)
+                        subjectField.text = ""
+                        messageArea.text = ""
+                        supportPopup.close()
+                    }
+                }
+            }
         }
     }
 }
