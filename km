@@ -1,10 +1,8 @@
-This is my current `Main.qml` code. It works perfectly and the security constraints are exactly how I want them. 
-CRITICAL: DO NOT change, remove, or rewrite any of the existing validation logic, layouts, or IDs. 
-
-I strictly need only these two visual modifications applied to my existing code:
-1. Fix the background: Replace the radial gradient with a strictly vertical `LinearGradient` (dark blue tones) so there is absolutely NO circular shape behind the login panel.
-2. Fix the button: Add a premium bright blue glow/neon effect (using `DropShadow` or `Glow` from Qt Graphical Effects) around the existing Login button.
-
-Please provide the safely updated code.
-
-[الصق كودك الحالي هنا]
+layer.enabled: true
+layer.effect: MultiEffect {
+    shadowEnabled: true
+    shadowColor: "#00BFFF"
+    shadowBlur: 1.5
+    shadowHorizontalOffset: 0
+    shadowVerticalOffset: 0
+}
