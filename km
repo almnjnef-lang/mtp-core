@@ -1,8 +1,21 @@
-I don't need explanations right now, I need the actual code blocks so I can easily copy and paste them into Qt Creator.
+Excellent. Now, as Step 2, please write the complete `Main.qml` file for the login screen. 
 
-Please do the following:
-1. Fix the `const_cast` issue by dropping the `const` qualifier as you suggested.
-2. The username length must be INCLUSIVE (length >= 3 and length <= 25).
-3. Do not write the server-side endpoint right now. Just use a standard QNetworkAccessManager POST request with a placeholder URL like "https://api.mnjnef.com/login".
+Design Requirements:
+1. Background: Clean, premium solid blue (or elegant dark blue gradient). No circles, no abstract noise.
+2. Title: "Mnjnef" centered at the top.
+3. Subtitle: "Join a gaming community and create your own world in the Mnjnef platform".
+4. Input Fields (Vertical layout):
+   - Username field: Placeholder text "Enter Username".
+   - Email field: Placeholder text "Enter Email".
+   - Password field: Placeholder text "Enter Password".
+5. Login Button: Labeled "Login".
+6. Bottom Links (Horizontal layout): "Privacy Policy" aligned to the left, and "Contact Us" (include a simple headset 🎧 icon or Unicode symbol) aligned to the right.
+7. ALL text must be strictly in English.
 
-Provide ONLY the complete copy-pasteable code blocks for `authmanager.h` and `authmanager.cpp`. No extra text.
+Front-End Security Constraints (Defense in Depth):
+1. Username Field: Set `maximumLength: 25`. Use a `RegularExpressionValidator` to STRICTLY PREVENT the user from typing emojis, dots (.), spaces, or special characters. Only alphanumeric characters should be typable.
+2. Password Field: Must securely hide characters (`echoMode: TextInput.Password`).
+3. Anti-Spam: The Login button MUST be `enabled: false` (disabled/grayed out) until all three fields contain text, preventing empty spam requests to the C++ backend.
+4. When clicked, the button should call the C++ AuthManager function.
+
+Provide ONLY the complete, copy-pasteable QML code for `Main.qml`. No explanations.
