@@ -1,1 +1,13 @@
-It should be modified so that the honey badger logo is suitable for use on a global gaming platform instead of this animal. The logo should include the name Mnjnef in white against a black background (the background should be orange).
+I am building a highly secure login system for my gaming platform "Mnjnef" using Qt6 (C++ and QML). I already have my project structured with `authmanager.h` and `authmanager.cpp`.
+
+We have a dedicated remote French server that will act as our backend. As Step 1, please write the complete C++ code for `AuthManager`.
+
+The C++ logic MUST strictly enforce these local rules before sending any HTTP request:
+1. Username length must be strictly between 3 and 25 characters.
+2. Username must NOT contain any emojis, special characters, or dots (.).
+3. Email must be a valid email format.
+4. Password cannot be empty.
+
+Once local validation passes, use `QNetworkAccessManager` to prepare and send a secure HTTP POST request (in JSON format) to our remote server (use a placeholder URL like "https://api.mnjnef.com/login" for now). 
+
+Provide only the `authmanager.h` and `authmanager.cpp` codes. Include appropriate Qt Signals (e.g., loginSuccess, loginError(QString message)) to communicate with the QML UI. Write clean, secure, and modern C++17 code.
