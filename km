@@ -1,8 +1,7 @@
-layer.enabled: true
 layer.effect: MultiEffect {
     shadowEnabled: true
-    shadowColor: "#00BFFF"
-    shadowBlur: 1.5
+    shadowColor: "#00FFFF"
+    shadowBlur: 1.0
     shadowHorizontalOffset: 0
     shadowVerticalOffset: 0
 }
