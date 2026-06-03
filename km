@@ -1,1 +1,1 @@
-echoMode: toggleEye.isVisible ? TextInput.Normal : TextInput.Password
+onClicked: toggleEye.isVisible = !toggleEye.isVisible
