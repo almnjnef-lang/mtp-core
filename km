@@ -1,13 +1,16 @@
     Row {
         id: contactRow
         spacing: 6
+        
+        // Added smooth transition for professional hover effect
+        Behavior on opacity {
+            NumberAnimation { duration: 150 }
+        }
 
         Image {
-            // كبرنا المقاس إلى 22 عشان تبرز تفاصيل الوجه بشكل مريح للعين
             width: 22
             height: 22
             anchors.verticalCenter: parent.verticalCenter
-            // كود شعار مفرغ وحديث: وجه مبتسم، عينين، سماعة ألعاب، ومايك
             source: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' stroke='%236f7fa0' fill='none' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'><path d='M3 11A9 9 0 0 1 21 11'/><rect x='1' y='10' width='4' height='6' rx='2' fill='%236f7fa0' stroke='none'/><rect x='19' y='10' width='4' height='6' rx='2' fill='%236f7fa0' stroke='none'/><circle cx='12' cy='11' r='5'/><circle cx='9.5' cy='10' r='1' fill='%236f7fa0' stroke='none'/><circle cx='14.5' cy='10' r='1' fill='%236f7fa0' stroke='none'/><path d='M10 12.5a2.5 2.5 0 0 0 4 0'/><path d='M21 14v2a4 4 0 0 1-4 4h-3'/><path d='M6 21v-1a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v1'/></svg>"
         }
 
@@ -16,5 +19,14 @@
             color: "#6f7fa0"
             font.pixelSize: 13
             anchors.verticalCenter: parent.verticalCenter
+        }
+
+        MouseArea {
+            anchors.fill: parent
+            cursorShape: Qt.PointingHandCursor
+            hoverEnabled: true
+            onEntered: contactRow.opacity = 0.7
+            onExited: contactRow.opacity = 1.0
+            onClicked: console.log("Contact Us clicked")
         }
     }
