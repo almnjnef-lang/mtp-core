@@ -1,13 +1,8 @@
-I am building a highly secure login system for my gaming platform "Mnjnef" using Qt6 (C++ and QML). I already have my project structured with `authmanager.h` and `authmanager.cpp`.
+I don't need explanations right now, I need the actual code blocks so I can easily copy and paste them into Qt Creator.
 
-We have a dedicated remote French server that will act as our backend. As Step 1, please write the complete C++ code for `AuthManager`.
+Please do the following:
+1. Fix the `const_cast` issue by dropping the `const` qualifier as you suggested.
+2. The username length must be INCLUSIVE (length >= 3 and length <= 25).
+3. Do not write the server-side endpoint right now. Just use a standard QNetworkAccessManager POST request with a placeholder URL like "https://api.mnjnef.com/login".
 
-The C++ logic MUST strictly enforce these local rules before sending any HTTP request:
-1. Username length must be strictly between 3 and 25 characters.
-2. Username must NOT contain any emojis, special characters, or dots (.).
-3. Email must be a valid email format.
-4. Password cannot be empty.
-
-Once local validation passes, use `QNetworkAccessManager` to prepare and send a secure HTTP POST request (in JSON format) to our remote server (use a placeholder URL like "https://api.mnjnef.com/login" for now). 
-
-Provide only the `authmanager.h` and `authmanager.cpp` codes. Include appropriate Qt Signals (e.g., loginSuccess, loginError(QString message)) to communicate with the QML UI. Write clean, secure, and modern C++17 code.
+Provide ONLY the complete copy-pasteable code blocks for `authmanager.h` and `authmanager.cpp`. No extra text.
