@@ -1,2 +1,1 @@
-border.color: "#00FFFF"
-border.width: 2
+verticalAlignment: TextInput.AlignVCenter
