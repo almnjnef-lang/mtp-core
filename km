@@ -1,38 +1,92 @@
+Item {
+    id: contactUsContainer
+    width: contactRow.implicitWidth + 24
+    height: 48
+    Layout.alignment: Qt.AlignRight
+
+    // Professional properties for dynamic state handling
+    property color normalColor: "#6f7fa0"
+    property color hoverColor: "#ffffff"
+    property bool activeState: false
+
+    // Smooth opacity transition for modern gaming platform feel
+    Behavior on opacity {
+        NumberAnimation { duration: 200; easing.type: Easing.InOutQuad }
+    }
+
     Row {
         id: contactRow
-        spacing: 8
-        anchors.verticalCenter: parent.verticalCenter
-
-        // Smooth opacity transition for gaming platform feel
-        Behavior on opacity {
-            NumberAnimation { duration: 150 }
-        }
+        spacing: 10
+        anchors.centerIn: parent
 
         Image {
-            id: contactIcon
-            width: 32
-            height: 32
+            id: agentAvatar
+            width: 36
+            height: 36
             anchors.verticalCenter: parent.verticalCenter
-            
-            // Ultra-detailed custom SVG containing professional agent with headset, teeth, eyelashes, and mic
-            source: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64' fill='none'><path d='M16 54c0-7 5-12 16-12s16 5 16 12' fill='%236f7fa0'/><circle cx='32' cy='32' r='16' fill='%23b07d62'/><path d='M23 25l2 1 M26 24l0 2 M29 25l-2 1' stroke='%23221100' stroke-width='0.8'/><path d='M35 25l2-1 M38 24l0 2 M41 25l-2-1' stroke='%23221100' stroke-width='0.8'/><circle cx='26' cy='28' r='2' fill='%23ffffff'/><circle cx='26' cy='28' r='1' fill='%23111111'/><circle cx='38' cy='28' r='2' fill='%23ffffff'/><circle cx='38' cy='28' r='1' fill='%23111111'/><path d='M32 29v3c0 .4-.4.4-.4.4' stroke='%237a4f3b' stroke-width='1.5' fill='none' stroke-linecap='round'/><path d='M24 37q8 6 16 0' fill='%234a1212'/><path d='M25 37.2q7 1.5 14 0v1q-7 0.8-14 0z' fill='%23ffffff'/><path d='M14 32A18 18 0 0 1 50 32' fill='none' stroke='%231f6feb' stroke-width='3' stroke-linecap='round'/><rect x='11' y='27' width='4' height='10' rx='2' fill='%231e3257'/><rect x='49' y='27' width='4' height='10' rx='2' fill='%231e3257'/><path d='M14 34q3 8 11 5' fill='none' stroke='%23a0a0a0' stroke-width='1.8' stroke-linecap='round'/><circle cx='25' cy='39' r='1.5' fill='%23111111'/></svg>"
+            smooth: true
+            antialiasing: true
+
+            // Ultra-detailed custom SVG matrix layout
+            // Layer 1: Shoulders and base gear
+            // Layer 2: Brown skin tone face layout (#c68642)
+            // Layer 3: Eyebrows and soft upper eyelashes
+            // Layer 4: Real white eyes with dark pupils
+            // Layer 5: Clean nose line definition
+            // Layer 6: Open cheerful smile with perfect white teeth row (#ffffff)
+            // Layer 7: Pro gaming headset arc, ears padding, and precise mic boom to the mouth side
+            source: "data:image/svg+xml;utf8," +
+                    "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64' fill='none'>" +
+                    "  <path d='M16 58c0-8.5 5.5-14 16-14s16 5.5 16 14' fill='%231e3257'/>" +
+                    "  <circle cx='32' cy='28' r='13' fill='%23c68642'/>" +
+                    "  <path d='M22 21q3-2 5-1M37 20q2-1 5 1' stroke='%23111111' stroke-width='1' stroke-linecap='round'/>" +
+                    "  <path d='M21 24.5l2-0.5M43 24l-2 0.5' stroke='%23111111' stroke-width='0.8'/>" +
+                    "  <circle cx='26' cy='25' r='2.5' fill='%23ffffff'/>" +
+                    "  <circle cx='26' cy='25' r='1.2' fill='%23111111'/>" +
+                    "  <circle cx='38' cy='25' r='2.5' fill='%23ffffff'/>" +
+                    "  <circle cx='38' cy='25' r='1.2' fill='%23111111'/>" +
+                    "  <path d='M32 26v4l-2 1' stroke='%237a4f3b' stroke-width='1.2' stroke-linecap='round' fill='none'/>" +
+                    "  <path d='M25 33.5q7 5 14 0' fill='%234a1212' stroke='%23111111' stroke-width='0.8'/>" +
+                    "  <path d='M25.5 33.8q6.5 1.5 13 0v1.5q-6.5 0-13-1.5z' fill='%23ffffff'/>" +
+                    "  <path d='M17 28A15 15 0 0 1 47 28' fill='none' stroke='%231f6feb' stroke-width='2.5' stroke-linecap='round'/>" +
+                    "  <rect x='15' y='24' width='4' height='9' rx='2' fill='%23111111'/>" +
+                    "  <rect x='45' y='24' width='4' height='9' rx='2' fill='%23111111'/>" +
+                    "  <path d='M17 30q3 8 10 6' fill='none' stroke='%23111111' stroke-width='1.5' stroke-linecap='round'/>" +
+                    "  <circle cx='28' cy='36' r='1.5' fill='%231f6feb'/>" +
+                    "</svg>"
         }
 
         Text {
-            id: contactText
+            id: contactLabel
             text: qsTr("Contact Us")
-            color: "#6f7fa0"
+            color: contactUsContainer.activeState ? contactUsContainer.hoverColor : contactUsContainer.normalColor
             font.pixelSize: 13
             font.bold: true
             anchors.verticalCenter: parent.verticalCenter
-        }
 
-        MouseArea {
-            anchors.fill: parent
-            cursorShape: Qt.PointingHandCursor
-            hoverEnabled: true
-            onEntered: contactRow.opacity = 0.7
-            onExited: contactRow.opacity = 1.0
-            onClicked: console.log("Contact Us clicked")
+            // Dynamic color fade animation for high-end feel
+            Behavior on color {
+                ColorAnimation { duration: 150 }
+            }
         }
     }
+
+    MouseArea {
+        id: clickArea
+        anchors.fill: parent
+        cursorShape: Qt.PointingHandCursor
+        hoverEnabled: true
+
+        onEntered: {
+            contactUsContainer.opacity = 0.9
+            contactUsContainer.activeState = true
+        }
+        onExited: {
+            contactUsContainer.opacity = 1.0
+            contactUsContainer.activeState = false
+        }
+        onClicked: {
+            console.log("Contact Us support button triggered.")
+        }
+    }
+}
