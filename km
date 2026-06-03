@@ -1,22 +1,29 @@
     Row {
         id: contactRow
-        spacing: 6
-        
+        spacing: 8
+        anchors.verticalCenter: parent.verticalCenter
+
+        // Smooth opacity transition for gaming platform feel
         Behavior on opacity {
             NumberAnimation { duration: 150 }
         }
 
         Image {
-            width: 22
-            height: 22
+            id: contactIcon
+            width: 32
+            height: 32
             anchors.verticalCenter: parent.verticalCenter
-            source: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236f7fa0' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'><path d='M12 13a4 4 0 1 0 0-8 4 4 0 0 0 0 8z'/><path d='M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2'/><path d='M10 10.5c1 1 3 1 4 0'/><circle cx='10.5' cy='8.5' r='1' fill='%236f7fa0' stroke='none'/><circle cx='13.5' cy='8.5' r='1' fill='%236f7fa0' stroke='none'/><path d='M3 11a9 9 0 0 1 18 0'/><rect x='1' y='9' width='4' height='6' rx='2'/><rect x='19' y='9' width='4' height='6' rx='2'/><path d='M19 14v2a3 3 0 0 1-3 3h-2'/><circle cx='13' cy='19' r='1' fill='%236f7fa0' stroke='none'/></svg>"
+            
+            // Ultra-detailed custom SVG containing professional agent with headset, teeth, eyelashes, and mic
+            source: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64' fill='none'><path d='M16 54c0-7 5-12 16-12s16 5 16 12' fill='%236f7fa0'/><circle cx='32' cy='32' r='16' fill='%23b07d62'/><path d='M23 25l2 1 M26 24l0 2 M29 25l-2 1' stroke='%23221100' stroke-width='0.8'/><path d='M35 25l2-1 M38 24l0 2 M41 25l-2-1' stroke='%23221100' stroke-width='0.8'/><circle cx='26' cy='28' r='2' fill='%23ffffff'/><circle cx='26' cy='28' r='1' fill='%23111111'/><circle cx='38' cy='28' r='2' fill='%23ffffff'/><circle cx='38' cy='28' r='1' fill='%23111111'/><path d='M32 29v3c0 .4-.4.4-.4.4' stroke='%237a4f3b' stroke-width='1.5' fill='none' stroke-linecap='round'/><path d='M24 37q8 6 16 0' fill='%234a1212'/><path d='M25 37.2q7 1.5 14 0v1q-7 0.8-14 0z' fill='%23ffffff'/><path d='M14 32A18 18 0 0 1 50 32' fill='none' stroke='%231f6feb' stroke-width='3' stroke-linecap='round'/><rect x='11' y='27' width='4' height='10' rx='2' fill='%231e3257'/><rect x='49' y='27' width='4' height='10' rx='2' fill='%231e3257'/><path d='M14 34q3 8 11 5' fill='none' stroke='%23a0a0a0' stroke-width='1.8' stroke-linecap='round'/><circle cx='25' cy='39' r='1.5' fill='%23111111'/></svg>"
         }
 
         Text {
+            id: contactText
             text: qsTr("Contact Us")
             color: "#6f7fa0"
             font.pixelSize: 13
+            font.bold: true
             anchors.verticalCenter: parent.verticalCenter
         }
 
