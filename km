@@ -1,21 +1,10 @@
-Could you please help me write the complete `Main.qml` file for our login screen as Step 2? We are aiming for a clean and secure design.
+This is my current `Main.qml` code. It works perfectly and the security constraints are exactly how I want them. 
+CRITICAL: DO NOT change, remove, or rewrite any of the existing validation logic, layouts, or IDs. 
 
-Here are the design requirements:
-1. Background: A premium solid blue or an elegant dark blue gradient.
-2. Title: "Mnjnef" centered at the top.
-3. Subtitle: "Join a gaming community and create your own world in the Mnjnef platform".
-4. Input Fields (Vertical layout):
-   - Username field: Placeholder text "Enter Username".
-   - Email field: Placeholder text "Enter Email".
-   - Password field: Placeholder text "Enter Password".
-5. Login Button: Labeled "Login".
-6. Bottom Links (Horizontal layout): "Privacy Policy" aligned to the left, and "Contact Us" (with a simple headset 🎧 icon or Unicode symbol) aligned to the right.
-7. All text must be in English.
+I strictly need only these two visual modifications applied to my existing code:
+1. Fix the background: Replace the radial gradient with a strictly vertical `LinearGradient` (dark blue tones) so there is absolutely NO circular shape behind the login panel.
+2. Fix the button: Add a premium bright blue glow/neon effect (using `DropShadow` or `Glow` from Qt Graphical Effects) around the existing Login button.
 
-Here are the front-end security requirements (Defense in Depth):
-1. Username Field: Set maximumLength to 25. Please use a RegularExpressionValidator to allow only alphanumeric characters, preventing emojis, dots, spaces, or special characters.
-2. Password Field: Securely hide the characters (echoMode: TextInput.Password).
-3. Anti-Spam: The Login button should be disabled (enabled: false) until all three fields contain text, to prevent empty requests.
-4. Action: When clicked, the button should trigger the C++ AuthManager logic.
+Please provide the safely updated code.
 
-I would appreciate it if you could provide the complete, copy-pasteable QML code block so I can easily test it. Thank you!
+[الصق كودك الحالي هنا]
