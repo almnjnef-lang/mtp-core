@@ -3,538 +3,630 @@ import QtQuick.Controls
 import QtQuick.Layouts
 
 Item {
-    id: mnjnefUiLibrary
-    width: 1
-    height: 1
-    visible: false
+    id: mnjnefSecurityCoreRoot
+    anchors.fill: parent
+    clip: true
 
     // ==========================================
-    // CENTRALIZED SHARED THEME PALETTE
+    // SYSTEM PROPERTIES & SIGNALS
+    // ==========================================
+    property bool isActive: false
+    property int currentPhase: 0
+    property int overallProgress: 0
+    property string activeTerminalNode: "AWAITING_INITIALIZATION"
+    
+    signal securityCheckPassed(string secureToken)
+    signal securityCheckFailed(string reason, string errorCode)
+
+    // ==========================================
+    // INTERNAL THEME DEFINITION
     // ==========================================
     QtObject {
-        id: gPalette
-        property color primary: "#1f6feb"
-        property color primaryHover: "#3b82f6"
-        property color primaryPressed: "#1d4ed8"
-        property color primaryGlow: "rgba(69, 137, 255, 0.4)"
+        id: secTheme
+        property color bgPrimary: "#050914"
+        property color bgConsole: "#02040a"
+        property color bgPanel: "#0f172a"
         
-        property color bgSurface: "#0f172a"
-        property color bgInput: "#070c14"
-        property color bgHover: "#1e293b"
+        property color textLog: "#38bdf8"
+        property color textError: "#ef4444"
+        property color textSuccess: "#10b981"
+        property color textWarning: "#f59e0b"
+        property color textMuted: "#475569"
         
-        property color textMain: "#ffffff"
-        property color textSub: "#94a3b8"
-        property color textDark: "#0f172a"
-        property color textError: "#f43f5e"
-        
-        property color borderDefault: "#334155"
-        property color borderFocus: "#1f6feb"
-        property color borderError: "#ef4444"
-        
-        property color stateSuccess: "#10b981"
-        property color stateWarning: "#f59e0b"
+        property color borderLine: "#1e293b"
+        property color scannerLine: "#1f6feb"
+        property color glowAccent: "#3b82f6"
     }
 
     // ==========================================
-    // COMPONENT 1: ULTRA-PREMIUM BUTTON
+    // DATA MODELS
     // ==========================================
-    component MnjnefButton : Rectangle {
-        id: btnRoot
-        property string text: "Button"
-        property bool isSecondary: false
-        property bool isLoading: false
-        property bool isButtonDisabled: false
-        property int customIconType: 0 // 0: None, 1: Arrow, 2: Lock
-        
-        implicitWidth: 200
-        implicitHeight: 50
-        radius: 8
-        clip: true
-        
-        color: {
-            if (isButtonDisabled) return "#1e293b"
-            if (btnMouse.containsPress) return isSecondary ? "#1e293b" : gPalette.primaryPressed
-            if (btnMouse.containsMouse) return isSecondary ? "#1e293b" : gPalette.primaryHover
-            return isSecondary ? "transparent" : gPalette.primary
-        }
-        
-        border.color: {
-            if (isButtonDisabled) return "#334155"
-            if (isSecondary) return btnMouse.containsMouse ? gPalette.primaryHover : gPalette.borderDefault
-            return "transparent"
-        }
-        border.width: isSecondary ? 1 : 0
-        
-        Behavior on color { ColorAnimation { duration: 200; easing.type: Easing.OutQuad } }
-        Behavior on border.color { ColorAnimation { duration: 200 } }
+    ListModel {
+        id: terminalLogModel
+        // Dynamically populated by JS engine
+    }
 
-        // Glow Layer for Primary Hover State
-        Rectangle {
-            anchors.fill: parent
-            radius: parent.radius
-            color: "transparent"
-            border.color: gPalette.primaryGlow
-            border.width: 3
-            opacity: (!btnRoot.isSecondary && btnMouse.containsMouse && !btnRoot.isButtonDisabled) ? 1.0 : 0.0
-            Behavior on opacity { NumberAnimation { duration: 250 } }
-        }
+    ListModel {
+        id: securityPhasesModel
+        ListElement { phaseId: 1; title: "Client Handshake"; status: 0 } // 0: Pending, 1: Active, 2: Done, 3: Error
+        ListElement { phaseId: 2; title: "Behavioral Heuristics"; status: 0 }
+        ListElement { phaseId: 3; title: "Network Anomaly Scan"; status: 0 }
+        ListElement { phaseId: 4; title: "Cryptographic Minting"; status: 0 }
+    }
 
+    // ==========================================
+    // MAIN LAYOUT
+    // ==========================================
+    ColumnLayout {
+        anchors.fill: parent
+        anchors.margins: 24
+        spacing: 16
+
+        // ------------------------------------------
+        // HEADER: SECURITY MODULE STATUS
+        // ------------------------------------------
         RowLayout {
-            anchors.centerIn: parent
-            spacing: 8
-            opacity: btnRoot.isLoading ? 0.0 : 1.0
-            Behavior on opacity { NumberAnimation { duration: 150 } }
-
-            Text {
-                text: btnRoot.text
-                color: btnRoot.isButtonDisabled ? "#475569" : (btnRoot.isSecondary && btnMouse.containsMouse ? gPalette.primaryHover : gPalette.textMain)
-                font.pixelSize: 14
-                font.bold: true
-                font.family: "Segoe UI"
-                verticalAlignment: Text.AlignVCenter
-                Behavior on color { ColorAnimation { duration: 150 } }
-            }
-
-            // Optional Icon Drawing
-            Rectangle {
-                Layout.preferredWidth: 12
-                Layout.preferredHeight: 12
-                color: "transparent"
-                visible: btnRoot.customIconType > 0
-                Layout.alignment: Qt.AlignVCenter
-
-                Rectangle {
-                    width: 6
-                    height: 6
-                    color: "transparent"
-                    border.color: gPalette.textMain
-                    border.width: 1.5
-                    rotation: 45
-                    x: 2
-                    y: 3
-                    visible: btnRoot.customIconType === 1 // Arrow Right
-                    
-                    Rectangle {
-                        width: 6
-                        height: 6
-                        color: btnRoot.color
-                        x: -2
-                        y: -2
-                    }
-                }
-            }
-        }
-
-        // Embedded GPU Loading Spinner
-        Item {
-            id: spinnerItem
-            width: 22
-            height: 22
-            anchors.centerIn: parent
-            visible: btnRoot.isLoading
-            opacity: btnRoot.isLoading ? 1.0 : 0.0
-            Behavior on opacity { NumberAnimation { duration: 150 } }
-
-            Rectangle {
-                anchors.fill: parent
-                radius: 11
-                color: "transparent"
-                border.color: gPalette.textMain
-                border.width: 2.5
-                opacity: 0.2
-            }
-
-            Rectangle {
-                anchors.fill: parent
-                radius: 11
-                color: "transparent"
-                border.color: gPalette.textMain
-                border.width: 2.5
-                clip: true
-
-                RotationAnimation on rotation {
-                    loops: Animation.Infinite
-                    from: 0
-                    to: 360
-                    duration: 800
-                    running: btnRoot.isLoading
-                }
-            }
-        }
-
-        MouseArea {
-            id: btnMouse
-            anchors.fill: parent
-            hoverEnabled: !btnRoot.isButtonDisabled && !btnRoot.isLoading
-            cursorShape: (btnRoot.isButtonDisabled || btnRoot.isLoading) ? Qt.ForbiddenCursor : Qt.PointingHandCursor
-            onClicked: {
-                if (!btnRoot.isButtonDisabled && !btnRoot.isLoading) {
-                    btnRoot.parent.forceActiveFocus()
-                    btnRoot.clicked()
-                }
-            }
-        }
-        
-        signal clicked()
-    }
-
-    // ==========================================
-    // COMPONENT 2: SECURE INPUT FIELD
-    // ==========================================
-    component MnjnefInputField : ColumnLayout {
-        id: inputRoot
-        property string label: "Input Label"
-        property string placeholder: "Type here..."
-        property string value: txtInput.text
-        property bool isInvalid: false
-        property string errorText: "Required field missing"
-        property bool isEncrypted: false
-        property int maxCharacterLimit: 120
-
-        spacing: 6
-        Layout.fillWidth: true
-
-        Text {
-            text: inputRoot.label
-            color: inputRoot.isInvalid ? gPalette.borderError : gPalette.textSub
-            font.pixelSize: 13
-            font.bold: true
-            font.family: "Segoe UI"
-            Behavior on color { ColorAnimation { duration: 150 } }
-        }
-
-        Rectangle {
-            id: fieldBackground
             Layout.fillWidth: true
             Layout.preferredHeight: 48
-            color: gPalette.bgInput
-            radius: 8
-            border.color: {
-                if (inputRoot.isInvalid) return gPalette.borderError
-                if (txtInput.activeFocus) return gPalette.borderFocus
-                return gPalette.borderDefault
-            }
-            border.width: (txtInput.activeFocus || inputRoot.isInvalid) ? 2 : 1
-            
-            Behavior on border.color { ColorAnimation { duration: 150 } }
+            spacing: 16
 
-            TextInput {
-                id: txtInput
-                anchors.fill: parent
-                anchors.leftMargin: 16
-                anchors.rightMargin: 40
-                color: gPalette.textMain
-                font.pixelSize: 14
-                font.family: "Segoe UI"
-                verticalAlignment: TextInput.AlignVCenter
-                echoMode: inputRoot.isEncrypted ? TextInput.Password : TextInput.Normal
-                clip: true
-                maximumLength: inputRoot.maxCharacterLimit
-
-                Text {
-                    text: inputRoot.placeholder
-                    color: "#475569"
-                    font.pixelSize: 14
-                    font.family: "Segoe UI"
-                    anchors.verticalCenter: parent.verticalCenter
-                    visible: !txtInput.text && !txtInput.activeFocus
-                }
-                
-                onTextChanged: inputRoot.valueChanged(txtInput.text)
-            }
-
-            // Inline Clear Text Action Button
             Rectangle {
-                width: 18
-                height: 18
-                radius: 9
-                color: "#1e293b"
-                anchors.right: parent.right
-                anchors.rightMargin: 14
-                anchors.verticalCenter: parent.verticalCenter
-                visible: txtInput.text.length > 0 && txtInput.activeFocus
+                Layout.preferredWidth: 48
+                Layout.preferredHeight: 48
+                color: secTheme.bgPanel
+                radius: 12
+                border.color: mnjnefSecurityCoreRoot.isActive ? secTheme.glowAccent : secTheme.borderLine
+                border.width: 1
+                
+                Behavior on border.color { ColorAnimation { duration: 300 } }
 
                 Text {
                     anchors.centerIn: parent
-                    text: "×"
-                    color: gPalette.textSub
-                    font.pixelSize: 12
-                    y: -1
+                    text: "🛡️"
+                    font.pixelSize: 22
+                }
+            }
+
+            ColumnLayout {
+                Layout.fillWidth: true
+                spacing: 2
+
+                Text {
+                    text: qsTr("MNJNEF ANTI-TAMPER PROTOCOL")
+                    color: "#ffffff"
+                    font.pixelSize: 16
+                    font.bold: true
+                    font.family: "Segoe UI"
+                    font.letterSpacing: 1.5
                 }
 
-                MouseArea {
-                    anchors.fill: parent
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: {
-                        txtInput.text = ""
-                        txtInput.forceActiveFocus()
-                    }
+                Text {
+                    text: qsTr("Analyzing endpoint integrity and network topology...")
+                    color: secTheme.textMuted
+                    font.pixelSize: 12
+                    font.family: "Consolas"
                 }
+            }
+
+            // Global Progress Percentage
+            Text {
+                text: mnjnefSecurityCoreRoot.overallProgress + "%"
+                color: mnjnefSecurityCoreRoot.overallProgress === 100 ? secTheme.textSuccess : secTheme.glowAccent
+                font.pixelSize: 28
+                font.bold: true
+                font.family: "Consolas"
+                Layout.alignment: Qt.AlignRight
             }
         }
 
-        Text {
-            text: inputRoot.errorText
-            color: gPalette.textError
-            font.pixelSize: 12
-            font.family: "Segoe UI"
-            visible: inputRoot.isInvalid
-            Layout.topMargin: 2
+        Rectangle {
+            Layout.fillWidth: true
+            Layout.preferredHeight: 1
+            color: secTheme.borderLine
         }
 
-        signal valueChanged(string newValue)
-        
-        function forceClear() {
-            txtInput.text = ""
-        }
-        function setFocus() {
-            txtInput.forceActiveFocus()
-        }
-    }
-
-    // ==========================================
-    // COMPONENT 3: SECURE TEXT AREA (MULTILINE)
-    // ==========================================
-    component MnjnefTextArea : ColumnLayout {
-        id: areaRoot
-        property string label: "Description Label"
-        property string placeholder: "Provide comprehensive description details..."
-        property string value: editInput.text
-        property bool isInvalid: false
-        property int maximumLength: 500
-
-        spacing: 6
-        Layout.fillWidth: true
-
+        // ------------------------------------------
+        // MIDDLE SECTION: SCANNER & TERMINAL
+        // ------------------------------------------
         RowLayout {
             Layout.fillWidth: true
-            
-            Text {
-                text: areaRoot.label
-                color: areaRoot.isInvalid ? gPalette.borderError : gPalette.textSub
-                font.pixelSize: 13
-                font.bold: true
-                font.family: "Segoe UI"
-                Layout.fillWidth: true
-            }
-            
-            Text {
-                text: editInput.text.length + " / " + areaRoot.maximumLength
-                color: editInput.text.length >= areaRoot.maximumLength ? gPalette.textError : gPalette.textMuted
-                font.pixelSize: 11
-                font.family: "Consolas"
-            }
-        }
+            Layout.fillHeight: true
+            spacing: 16
 
-        Rectangle {
-            Layout.fillWidth: true
-            Layout.preferredHeight: 140
-            color: gPalette.bgInput
-            radius: 8
-            border.color: {
-                if (areaRoot.isInvalid) return gPalette.borderError
-                if (editInput.activeFocus) return gPalette.borderFocus
-                return gPalette.borderDefault
-            }
-            border.width: (editInput.activeFocus || areaRoot.isInvalid) ? 2 : 1
-            Behavior on border.color { ColorAnimation { duration: 150 } }
-
-            Flickable {
-                id: scrollFlick
-                anchors.fill: parent
-                anchors.margins: 14
-                contentWidth: width
-                contentHeight: editInput.implicitHeight
+            // LEFT: Visual Radar & Node Scanner
+            Rectangle {
+                Layout.fillHeight: true
+                Layout.preferredWidth: 260
+                color: secTheme.bgConsole
+                radius: 12
+                border.color: secTheme.borderLine
+                border.width: 1
                 clip: true
-                
-                TextEdit {
-                    id: editInput
-                    width: scrollFlick.width
-                    color: gPalette.textMain
-                    font.pixelSize: 14
-                    font.family: "Segoe UI"
-                    wrapMode: TextEdit.WordWrap
-                    selectByMouse: true
+
+                // Cyber Grid Background
+                Grid {
+                    anchors.fill: parent
+                    anchors.margins: 2
+                    rows: 20
+                    columns: 15
+                    spacing: 1
                     
-                    onTextChanged: {
-                        if (text.length > areaRoot.maximumLength) {
-                            text = text.substring(0, areaRoot.maximumLength)
+                    Repeater {
+                        model: 300
+                        Rectangle {
+                            width: 16
+                            height: 16
+                            color: "transparent"
+                            border.color: secTheme.borderLine
+                            border.width: 1
+                            opacity: 0.3
                         }
-                        areaRoot.valueChanged(text)
+                    }
+                }
+
+                // Rotating Radar Element
+                Item {
+                    anchors.centerIn: parent
+                    width: 200
+                    height: 200
+
+                    Rectangle {
+                        anchors.fill: parent
+                        radius: 100
+                        color: "transparent"
+                        border.color: secTheme.glowAccent
+                        border.width: 1
+                        opacity: 0.4
+                    }
+                    
+                    Rectangle {
+                        anchors.centerIn: parent
+                        width: 100
+                        height: 100
+                        radius: 50
+                        color: "transparent"
+                        border.color: secTheme.glowAccent
+                        border.width: 1
+                        opacity: 0.2
                     }
 
+                    // Scanner Sweep
+                    ConicalGradientDummy {
+                        // Dummy component name used to simulate a sweeping arc
+                        // In real Qt6 use standard ShaderEffect or Canvas for conical gradient
+                        id: radarSweep
+                    }
+                    
+                    Rectangle {
+                        width: parent.width / 2
+                        height: 2
+                        color: secTheme.glowAccent
+                        x: parent.width / 2
+                        y: parent.height / 2
+                        transformOrigin: Item.Left
+                        
+                        RotationAnimation on rotation {
+                            loops: Animation.Infinite
+                            from: 0
+                            to: 360
+                            duration: 2000
+                            running: mnjnefSecurityCoreRoot.isActive
+                        }
+                    }
+                }
+
+                // Target Nodes
+                Repeater {
+                    model: [
+                        { x: 40, y: 60 }, { x: 180, y: 80 }, { x: 120, y: 220 },
+                        { x: 70, y: 160 }, { x: 200, y: 190 }, { x: 140, y: 40 }
+                    ]
+                    
+                    Rectangle {
+                        x: modelData.x
+                        y: modelData.y
+                        width: 8
+                        height: 8
+                        radius: 4
+                        color: mnjnefSecurityCoreRoot.overallProgress > 50 ? secTheme.textSuccess : secTheme.textLog
+                        
+                        SequentialAnimation on opacity {
+                            loops: Animation.Infinite
+                            running: true
+                            NumberAnimation { from: 0.2; to: 1.0; duration: Math.random() * 1000 + 500 }
+                            NumberAnimation { from: 1.0; to: 0.2; duration: Math.random() * 1000 + 500 }
+                        }
+                    }
+                }
+
+                // Scan Status Overlay
+                Rectangle {
+                    anchors.bottom: parent.bottom
+                    anchors.left: parent.left
+                    anchors.right: parent.right
+                    height: 40
+                    color: "#cc02040a"
+                    
                     Text {
-                        text: areaRoot.placeholder
-                        color: "#475569"
-                        font.pixelSize: 14
-                        font.family: "Segoe UI"
-                        width: editInput.width
-                        wrapMode: Text.WordWrap
-                        visible: !editInput.text && !editInput.activeFocus
+                        anchors.centerIn: parent
+                        text: "NODE: " + mnjnefSecurityCoreRoot.activeTerminalNode
+                        color: secTheme.glowAccent
+                        font.pixelSize: 10
+                        font.family: "Consolas"
+                    }
+                }
+            }
+
+            // RIGHT: Live Terminal Log
+            Rectangle {
+                Layout.fillHeight: true
+                Layout.fillWidth: true
+                color: secTheme.bgConsole
+                radius: 12
+                border.color: secTheme.borderLine
+                border.width: 1
+                clip: true
+
+                ListView {
+                    id: terminalListView
+                    anchors.fill: parent
+                    anchors.margins: 16
+                    model: terminalLogModel
+                    spacing: 4
+                    
+                    // Auto-scroll to bottom
+                    onCountChanged: {
+                        Qt.callLater(function() {
+                            terminalListView.positionViewAtEnd()
+                        })
+                    }
+
+                    delegate: RowLayout {
+                        width: ListView.view.width
+                        spacing: 8
+                        
+                        Text {
+                            text: "[" + timestamp + "]"
+                            color: secTheme.textMuted
+                            font.pixelSize: 11
+                            font.family: "Consolas"
+                            Layout.alignment: Qt.AlignTop
+                        }
+                        
+                        Text {
+                            text: logText
+                            color: {
+                                if (logType === "ERROR") return secTheme.textError
+                                if (logType === "SUCCESS") return secTheme.textSuccess
+                                if (logType === "WARNING") return secTheme.textWarning
+                                return secTheme.textLog
+                            }
+                            font.pixelSize: 11
+                            font.family: "Consolas"
+                            Layout.fillWidth: true
+                            wrapMode: Text.WrapAnywhere
+                        }
+                    }
+                }
+                
+                // Terminal Scanline Effect
+                Rectangle {
+                    width: parent.width
+                    height: 2
+                    color: secTheme.glowAccent
+                    opacity: 0.15
+                    
+                    SequentialAnimation on y {
+                        loops: Animation.Infinite
+                        running: mnjnefSecurityCoreRoot.isActive
+                        NumberAnimation { from: 0; to: 300; duration: 2500 }
                     }
                 }
             }
         }
 
-        signal valueChanged(string newValue)
-        
-        function clear() {
-            editInput.text = ""
-        }
-    }
-
-    // ==========================================
-    // COMPONENT 4: CYBERSECURITY CHECKBOX
-    // ==========================================
-    component MnjnefCheckBox : RowLayout {
-        id: checkRoot
-        property string description: "Accept terms and system declarations."
-        property bool isChecked: false
-        property bool isRequiredAlert: false
-
-        spacing: 12
-        Layout.fillWidth: true
-
-        Rectangle {
-            id: checkboxBox
-            Layout.preferredWidth: 22
-            Layout.preferredHeight: 22
-            radius: 6
-            color: checkRoot.isChecked ? gPalette.primary : gPalette.bgInput
-            border.color: {
-                if (checkRoot.isRequiredAlert && !checkRoot.isChecked) return gPalette.borderError
-                if (checkMouse.containsMouse) return gPalette.borderFocus
-                return gPalette.borderDefault
-            }
-            border.width: checkRoot.isChecked ? 0 : 1.5
-            Layout.alignment: Qt.AlignTop
-            Layout.topMargin: 2
-            
-            Behavior on color { ColorAnimation { duration: 150 } }
-            Behavior on border.color { ColorAnimation { duration: 150 } }
-
-            // Procedural Vector Checkmark
-            Item {
-                anchors.fill: parent
-                visible: checkRoot.isChecked
-                scale: checkRoot.isChecked ? 1.0 : 0.0
-                Behavior on scale { NumberAnimation { duration: 150; easing.type: Easing.OutBack } }
-
-                Rectangle {
-                    width: 2
-                    height: 6
-                    color: gPalette.textDark
-                    rotation: -45
-                    x: 6
-                    y: 10
-                }
-                Rectangle {
-                    width: 2
-                    height: 11
-                    color: gPalette.textDark
-                    rotation: 45
-                    x: 12
-                    y: 5
-                }
-            }
-        }
-
-        Text {
-            text: checkRoot.description
-            color: checkRoot.isChecked ? gPalette.textMain : gPalette.textSub
-            font.pixelSize: 13
-            font.family: "Segoe UI"
+        // ------------------------------------------
+        // BOTTOM SECTION: PHASE INDICATORS
+        // ------------------------------------------
+        RowLayout {
             Layout.fillWidth: true
-            wrapMode: Text.WordWrap
-            lineHeight: 1.3
-            Behavior on color { ColorAnimation { duration: 150 } }
-        }
+            Layout.preferredHeight: 80
+            spacing: 12
 
-        MouseArea {
-            id: checkMouse
-            anchors.fill: parent
-            hoverEnabled: true
-            cursorShape: Qt.PointingHandCursor
-            onClicked: {
-                checkRoot.isChecked = !checkRoot.isChecked
-                checkRoot.toggled(checkRoot.isChecked)
-            }
-        }
-
-        signal toggled(bool checkedState)
-    }
-
-    // ==========================================
-    // COMPONENT 5: SYSTEM STATE BADGE
-    // ==========================================
-    component MnjnefBadge : Rectangle {
-        id: badgeRoot
-        property string typeState: "SAFE" // SAFE, WARNING, SCANNING
-        
-        implicitWidth: textLabel.implicitWidth + 16
-        implicitHeight: 26
-        radius: 6
-        
-        color: {
-            if (typeState === "SAFE") return "rgba(16, 185, 129, 0.15)"
-            if (typeState === "WARNING") return "rgba(245, 158, 11, 0.15)"
-            return "rgba(139, 92, 246, 0.15)"
-        }
-        
-        border.color: {
-            if (typeState === "SAFE") return gPalette.stateSuccess
-            if (typeState === "WARNING") return gPalette.stateWarning
-            return "#8b5cf6"
-        }
-        border.width: 1
-
-        Text {
-            id: textLabel
-            anchors.centerIn: parent
-            text: badgeRoot.typeState
-            color: parent.border.color
-            font.pixelSize: 11
-            font.bold: true
-            font.family: "Consolas"
-        }
-    }
-
-    // ==========================================
-    // COMPONENT 6: INFINITE HARDWARE SCANNER LINE
-    // ==========================================
-    component MnjnefLoadingLine : Item {
-        id: lineRoot
-        property bool isActive: false
-        
-        Layout.fillWidth: true
-        Layout.preferredHeight: 2
-        clip: true
-        visible: lineRoot.isActive
-
-        Rectangle {
-            id: track
-            anchors.fill: parent
-            color: gPalette.borderDefault
-            opacity: 0.2
-        }
-
-        Rectangle {
-            id: bar
-            width: parent.width * 0.4
-            height: parent.height
-            color: gPalette.primary
-            
-            SequentialAnimation on x {
-                loops: Animation.Infinite
-                running: lineRoot.isActive
+            Repeater {
+                model: securityPhasesModel
                 
-                NumberAnimation {
-                    from: -bar.width
-                    to: lineRoot.width
-                    duration: 1000
-                    easing.type: Easing.InOutQuad
+                Rectangle {
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    color: secTheme.bgPanel
+                    radius: 8
+                    border.color: {
+                        if (status === 1) return secTheme.glowAccent
+                        if (status === 2) return secTheme.textSuccess
+                        if (status === 3) return secTheme.textError
+                        return secTheme.borderLine
+                    }
+                    border.width: status === 1 ? 2 : 1
+                    
+                    Behavior on border.color { ColorAnimation { duration: 300 } }
+
+                    ColumnLayout {
+                        anchors.centerIn: parent
+                        spacing: 6
+                        
+                        Item {
+                            Layout.alignment: Qt.AlignHCenter
+                            Layout.preferredWidth: 24
+                            Layout.preferredHeight: 24
+                            
+                            // Pending State
+                            Rectangle {
+                                anchors.fill: parent
+                                radius: 12
+                                color: "transparent"
+                                border.color: secTheme.textMuted
+                                border.width: 2
+                                visible: status === 0
+                            }
+                            
+                            // Active State (Spinner)
+                            Rectangle {
+                                anchors.fill: parent
+                                radius: 12
+                                color: "transparent"
+                                border.color: secTheme.glowAccent
+                                border.width: 2
+                                visible: status === 1
+                                clip: true
+                                
+                                RotationAnimation on rotation {
+                                    loops: Animation.Infinite
+                                    from: 0; to: 360; duration: 1000
+                                    running: status === 1
+                                }
+                            }
+                            
+                            // Done State
+                            Text {
+                                anchors.centerIn: parent
+                                text: "✓"
+                                color: secTheme.textSuccess
+                                font.pixelSize: 16
+                                font.bold: true
+                                visible: status === 2
+                            }
+                            
+                            // Error State
+                            Text {
+                                anchors.centerIn: parent
+                                text: "✕"
+                                color: secTheme.textError
+                                font.pixelSize: 16
+                                font.bold: true
+                                visible: status === 3
+                            }
+                        }
+                        
+                        Text {
+                            text: title
+                            color: status === 2 ? secTheme.textSuccess : (status === 1 ? "#ffffff" : secTheme.textMuted)
+                            font.pixelSize: 11
+                            font.bold: true
+                            font.family: "Segoe UI"
+                            Layout.alignment: Qt.AlignHCenter
+                        }
+                    }
                 }
             }
         }
+    }
+
+    // ==========================================
+    // SECURITY ENGINE JAVASCRIPT CONTROLLER
+    // ==========================================
+    QtObject {
+        id: secEngine
+
+        function startSecuritySequence() {
+            mnjnefSecurityCoreRoot.isActive = true
+            terminalLogModel.clear()
+            mnjnefSecurityCoreRoot.overallProgress = 0
+            
+            appendLog("INFO", "Initializing Mnjnef Core Security Module v2.4.1...")
+            appendLog("INFO", "Allocating memory buffers for packet inspection.")
+            
+            phase1Timer.start()
+        }
+
+        function appendLog(type, message) {
+            let d = new Date()
+            let timeStr = d.getHours().toString().padStart(2, '0') + ":" + 
+                          d.getMinutes().toString().padStart(2, '0') + ":" + 
+                          d.getSeconds().toString().padStart(2, '0') + "." + 
+                          d.getMilliseconds().toString().padStart(3, '0')
+                          
+            terminalLogModel.append({
+                "timestamp": timeStr,
+                "logType": type,
+                "logText": message
+            })
+        }
+
+        function generateRandomHex(length) {
+            let chars = "0123456789ABCDEF"
+            let result = ""
+            for (let i = 0; i < length; i++) {
+                result += chars.charAt(Math.floor(Math.random() * chars.length))
+            }
+            return result
+        }
+
+        function completeSequence() {
+            appendLog("SUCCESS", "All security protocols satisfied.")
+            appendLog("INFO", "Generating secure session token...")
+            
+            let finalToken = "MNJ-" + generateRandomHex(8) + "-" + generateRandomHex(16)
+            appendLog("SUCCESS", "Token minted: " + finalToken)
+            
+            mnjnefSecurityCoreRoot.isActive = false
+            
+            // Allow user to see final success before proceeding
+            Qt.callLater(function() {
+                finishTimer.start()
+            })
+        }
+    }
+
+    // ==========================================
+    // TIMERS FOR SEQUENTIAL SIMULATION
+    // ==========================================
+
+    // PHASE 1: Client Handshake
+    Timer {
+        id: phase1Timer
+        interval: 150
+        repeat: true
+        property int ticks: 0
+        
+        onStarted: {
+            ticks = 0
+            securityPhasesModel.setProperty(0, "status", 1)
+            secEngine.appendLog("INFO", "Beginning TLS Handshake sequence...")
+            mnjnefSecurityCoreRoot.activeTerminalNode = "NET_GATEWAY_DXB"
+        }
+        
+        onTriggered: {
+            ticks++
+            mnjnefSecurityCoreRoot.overallProgress += 1
+            
+            if (ticks === 3) secEngine.appendLog("INFO", "Negotiating cipher suite: TLS_AES_256_GCM_SHA384")
+            if (ticks === 6) secEngine.appendLog("SUCCESS", "Cipher negotiated successfully.")
+            if (ticks === 9) secEngine.appendLog("INFO", "Verifying client certificate chain...")
+            
+            if (ticks >= 12) {
+                stop()
+                securityPhasesModel.setProperty(0, "status", 2)
+                secEngine.appendLog("SUCCESS", "Handshake complete. Connection encrypted.")
+                phase2Timer.start()
+            }
+        }
+    }
+
+    // PHASE 2: Behavioral Heuristics
+    Timer {
+        id: phase2Timer
+        interval: 200
+        repeat: true
+        property int ticks: 0
+        
+        onStarted: {
+            ticks = 0
+            securityPhasesModel.setProperty(1, "status", 1)
+            secEngine.appendLog("INFO", "Engaging behavioral heuristics engine...")
+            mnjnefSecurityCoreRoot.activeTerminalNode = "HEURISTIC_CORE_01"
+        }
+        
+        onTriggered: {
+            ticks++
+            mnjnefSecurityCoreRoot.overallProgress += 2
+            
+            if (ticks === 2) secEngine.appendLog("INFO", "Analyzing cursor trajectory patterns...")
+            if (ticks === 4) secEngine.appendLog("INFO", "Measuring click latency & interaction intervals...")
+            if (ticks === 6) secEngine.appendLog("INFO", "Cross-referencing input signatures with bot database...")
+            if (ticks === 8) secEngine.appendLog("SUCCESS", "Input patterns identified as HUMAN.")
+            
+            if (ticks >= 10) {
+                stop()
+                securityPhasesModel.setProperty(1, "status", 2)
+                phase3Timer.start()
+            }
+        }
+    }
+
+    // PHASE 3: Network Anomaly Scan
+    Timer {
+        id: phase3Timer
+        interval: 120
+        repeat: true
+        property int ticks: 0
+        
+        onStarted: {
+            ticks = 0
+            securityPhasesModel.setProperty(2, "status", 1)
+            secEngine.appendLog("WARNING", "Initiating deep packet inspection...")
+            mnjnefSecurityCoreRoot.activeTerminalNode = "DPI_INSPECTOR_V9"
+        }
+        
+        onTriggered: {
+            ticks++
+            mnjnefSecurityCoreRoot.overallProgress += 1
+            
+            if (ticks % 4 === 0) {
+                let packetId = "0x" + secEngine.generateRandomHex(8)
+                secEngine.appendLog("INFO", "Scanning payload frame " + packetId + " [CLEAN]")
+            }
+            
+            if (ticks === 15) secEngine.appendLog("INFO", "Checking IP against global blacklist...")
+            if (ticks === 20) secEngine.appendLog("SUCCESS", "IP reputation score: 99/100 (Safe)")
+            if (ticks === 25) secEngine.appendLog("INFO", "Verifying DNS resolution integrity...")
+            
+            if (ticks >= 30) {
+                stop()
+                securityPhasesModel.setProperty(2, "status", 2)
+                secEngine.appendLog("SUCCESS", "Zero anomalies detected in network stream.")
+                phase4Timer.start()
+            }
+        }
+    }
+
+    // PHASE 4: Cryptographic Minting
+    Timer {
+        id: phase4Timer
+        interval: 300
+        repeat: true
+        property int ticks: 0
+        
+        onStarted: {
+            ticks = 0
+            securityPhasesModel.setProperty(3, "status", 1)
+            secEngine.appendLog("INFO", "Requesting secure token allocation from mainframe...")
+            mnjnefSecurityCoreRoot.activeTerminalNode = "AUTH_KEY_EXCHANGE"
+        }
+        
+        onTriggered: {
+            ticks++
+            // Push progress to 100
+            mnjnefSecurityCoreRoot.overallProgress = Math.min(100, mnjnefSecurityCoreRoot.overallProgress + 6)
+            
+            if (ticks === 2) secEngine.appendLog("INFO", "Generating 2048-bit RSA key pair locally...")
+            if (ticks === 4) secEngine.appendLog("INFO", "Hashing environment variables (SHA-256)...")
+            if (ticks === 6) secEngine.appendLog("SUCCESS", "Hash match confirmed by server.")
+            
+            if (ticks >= 8) {
+                stop()
+                mnjnefSecurityCoreRoot.overallProgress = 100
+                securityPhasesModel.setProperty(3, "status", 2)
+                mnjnefSecurityCoreRoot.activeTerminalNode = "SECURE_LINK_ESTABLISHED"
+                secEngine.completeSequence()
+            }
+        }
+    }
+
+    // Timer to delay final emit so user reads the success message
+    Timer {
+        id: finishTimer
+        interval: 1500
+        repeat: false
+        onTriggered: {
+            let finalToken = "MNJ-" + secEngine.generateRandomHex(8) + "-" + secEngine.generateRandomHex(16)
+            mnjnefSecurityCoreRoot.securityCheckPassed(finalToken)
+        }
+    }
+
+    // Auto-start for testing/integration
+    Component.onCompleted: {
+        // In full integration, MasterEngine will call startSecuritySequence()
+        // secEngine.startSecuritySequence()
     }
 }
