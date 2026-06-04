@@ -1,28 +1,310 @@
-    RowLayout {
-        Layout.fillWidth: true
-        Layout.topMargin: 5
+import QtQuick
+import QtQuick.Controls
+import QtQuick.Layouts
+
+Item {
+    id: root
+    width: contactContainer.implicitWidth
+    height: contactContainer.implicitHeight
+
+    property color accentColor: "#1f6feb"
+    property color textColor: "#6f7fa0"
+    property color hoverColor: "#ffffff"
+    property color backgroundColor: "#0a1428"
+    property color surfaceColor: "#1e3257"
+
+    Row {
+        id: contactContainer
+        spacing: 10
+        anchors.centerIn: parent
+
+        Behavior on opacity {
+            NumberAnimation { duration: 200; easing.type: Easing.OutCubic }
+        }
+
+        Image {
+            id: realisticAvatar
+            width: 42
+            height: 42
+            anchors.verticalCenter: parent.verticalCenter
+            smooth: true
+            antialiasing: true
+            mipmap: true
+            
+            source: "data:image/svg+xml;utf8," +
+                "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 128 128'>" +
+                
+                "<!-- Shoulders & Uniform Base -->" +
+                "<path d='M24 128 C24 85, 104 85, 104 128' fill='%23111827'/>" +
+                "<path d='M34 128 C34 95, 94 95, 94 128' fill='%231e3257'/>" +
+                "<path d='M44 128 L64 100 L84 128 Z' fill='%231f6feb' opacity='0.8'/>" +
+
+                "<!-- Neck & Shadow -->" +
+                "<rect x='52' y='80' width='24' height='30' rx='8' fill='%23b57b4f'/>" +
+                "<path d='M52 85 Q64 95 76 85 L76 100 L52 100 Z' fill='%23915c36'/>" +
+
+                "<!-- Face Base (Beige/Brown Tone) -->" +
+                "<circle cx='64' cy='60' r='36' fill='%23d4a373'/>" +
+                
+                "<!-- Face Shading & Highlights for 3D Effect -->" +
+                "<path d='M28 60 A36 36 0 0 0 100 60 A36 32 0 0 1 28 60' fill='%23b57b4f' opacity='0.6'/>" +
+                "<ellipse cx='64' cy='50' rx='20' ry='10' fill='%23e6ba91' opacity='0.5'/>" +
+
+                "<!-- Eyes & Eyelashes -->" +
+                "<path d='M40 52 Q48 45 54 52 Q48 57 40 52' fill='%23ffffff'/>" +
+                "<path d='M74 52 Q80 45 88 52 Q80 57 74 52' fill='%23ffffff'/>" +
+                "<circle cx='47' cy='51' r='4' fill='%23382215'/>" +
+                "<circle cx='81' cy='51' r='4' fill='%23382215'/>" +
+                "<circle cx='48' cy='50' r='1.5' fill='%23ffffff'/>" +
+                "<circle cx='82' cy='50' r='1.5' fill='%23ffffff'/>" +
+                "<path d='M38 52 Q48 43 56 53' fill='none' stroke='%2322110a' stroke-width='1.5' stroke-linecap='round'/>" +
+                "<path d='M72 52 Q80 43 90 53' fill='none' stroke='%2322110a' stroke-width='1.5' stroke-linecap='round'/>" +
+
+                "<!-- Eyebrows -->" +
+                "<path d='M38 42 Q46 38 54 42' fill='none' stroke='%232b170c' stroke-width='3' stroke-linecap='round'/>" +
+                "<path d='M74 42 Q82 38 90 42' fill='none' stroke='%232b170c' stroke-width='3' stroke-linecap='round'/>" +
+
+                "<!-- Nose (Semi-Realistic Shading) -->" +
+                "<path d='M64 52 L60 68 L64 70 L68 68 Z' fill='%23b57b4f'/>" +
+                "<path d='M64 52 L60 68 L64 70' fill='%23e6ba91' opacity='0.7'/>" +
+
+                "<!-- Realistic Smile with White Teeth -->" +
+                "<path d='M48 80 Q64 96 80 80' fill='%23ffffff' stroke='%238a5a44' stroke-width='1.5'/>" +
+                "<path d='M50 82 Q64 94 78 82' fill='none' stroke='%23cccccc' stroke-width='0.5'/>" +
+                "<path d='M55 85 L55 88 M60 87 L60 91 M64 88 L64 92 M68 87 L68 91 M73 85 L73 88' stroke='%23e0e0e0' stroke-width='0.5'/>" +
+                "<path d='M46 78 Q64 98 82 78 Q64 88 46 78' fill='%23ffffff'/>" +
+                
+                "<!-- Lips Base -->" +
+                "<path d='M46 80 Q64 86 82 80 Q64 83 46 80' fill='%23a45c47'/>" +
+
+                "<!-- Professional Gaming Headset Base -->" +
+                "<path d='M26 64 A42 42 0 0 1 102 64' fill='none' stroke='%230f172a' stroke-width='12'/>" +
+                "<path d='M26 64 A42 42 0 0 1 102 64' fill='none' stroke='%231e293b' stroke-width='6'/>" +
+
+                "<!-- Headset Neon Accent (Mnjnef Theme) -->" +
+                "<path d='M30 60 A38 38 0 0 1 98 60' fill='none' stroke='%231f6feb' stroke-width='2'/>" +
+
+                "<!-- Left Earcup with 3D Depth -->" +
+                "<rect x='14' y='50' width='16' height='36' rx='8' fill='%230f172a'/>" +
+                "<rect x='18' y='52' width='12' height='32' rx='6' fill='%231e293b'/>" +
+                "<rect x='22' y='56' width='8' height='24' rx='4' fill='%23334155'/>" +
+
+                "<!-- Right Earcup with 3D Depth -->" +
+                "<rect x='98' y='50' width='16' height='36' rx='8' fill='%230f172a'/>" +
+                "<rect x='98' y='52' width='12' height='32' rx='6' fill='%231e293b'/>" +
+                "<rect x='98' y='56' width='8' height='24' rx='4' fill='%23334155'/>" +
+
+                "<!-- Microphone Boom & Foam Filter -->" +
+                "<path d='M24 74 Q30 92 48 90' fill='none' stroke='%23111827' stroke-width='4' stroke-linecap='round'/>" +
+                "<path d='M24 74 Q30 92 48 90' fill='none' stroke='%23334155' stroke-width='1.5' stroke-linecap='round'/>" +
+                "<ellipse cx='52' cy='89' rx='8' ry='5' fill='%23111827'/>" +
+                "<ellipse cx='51' cy='88' rx='4' ry='2' fill='%23334155' opacity='0.6'/>" +
+                
+                "</svg>"
+        }
 
         Text {
-            text: qsTr("Privacy Policy")
-            color: "#6f7fa0"
-            font.pixelSize: 12
-            Layout.alignment: Qt.AlignVCenter
+            id: contactTextLabel
+            text: qsTr("Contact Us")
+            color: root.textColor
+            font.pixelSize: 13
+            font.bold: true
+            anchors.verticalCenter: parent.verticalCenter
             
-            MouseArea {
-                anchors.fill: parent
-                cursorShape: Qt.PointingHandCursor
-                hoverEnabled: true
-                onEntered: parent.opacity = 0.7
-                onExited: parent.opacity = 1.0
-                onClicked: console.log("Privacy Policy clicked")
+            Behavior on color {
+                ColorAnimation { duration: 150 }
+            }
+        }
+    }
+
+    MouseArea {
+        anchors.fill: parent
+        cursorShape: Qt.PointingHandCursor
+        hoverEnabled: true
+        
+        onEntered: {
+            contactContainer.opacity = 0.8
+            contactTextLabel.color = root.hoverColor
+        }
+        onExited: {
+            contactContainer.opacity = 1.0
+            contactTextLabel.color = root.textColor
+        }
+        onClicked: {
+            supportPopup.open()
+        }
+    }
+
+    Popup {
+        id: supportPopup
+        width: 460
+        height: 540
+        x: (parent.width - width) / 2 - 200
+        y: -420
+        modal: true
+        focus: true
+        closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
+
+        enter: Transition {
+            ParallelAnimation {
+                NumberAnimation { property: "opacity"; from: 0.0; to: 1.0; duration: 250; easing.type: Easing.OutCubic }
+                NumberAnimation { property: "scale"; from: 0.95; to: 1.0; duration: 250; easing.type: Easing.OutBack }
+            }
+        }
+        exit: Transition {
+            ParallelAnimation {
+                NumberAnimation { property: "opacity"; from: 1.0; to: 0.0; duration: 200; easing.type: Easing.InCubic }
+                NumberAnimation { property: "scale"; from: 1.0; to: 0.95; duration: 200; easing.type: Easing.InCubic }
             }
         }
 
-        Item { 
-            Layout.fillWidth: true 
+        background: Rectangle {
+            color: root.backgroundColor
+            radius: 14
+            border.color: root.surfaceColor
+            border.width: 1
+            
+            Rectangle {
+                anchors.fill: parent
+                radius: 14
+                color: "transparent"
+                border.color: "#1a253a"
+                border.width: 2
+                opacity: 0.5
+            }
         }
 
-        ContactUs {
-            Layout.alignment: Qt.AlignVCenter
+        Column {
+            anchors.fill: parent
+            anchors.margins: 26
+            spacing: 22
+
+            Row {
+                width: parent.width
+                
+                Text {
+                    text: qsTr("Mnjnef Premium Support")
+                    color: "#ffffff"
+                    font.pixelSize: 22
+                    font.bold: true
+                    width: parent.width - closeBtn.width
+                }
+                
+                Rectangle {
+                    id: closeBtn
+                    width: 28
+                    height: 28
+                    color: "transparent"
+                    radius: 14
+                    
+                    Text { 
+                        anchors.centerIn: parent
+                        text: "✕"
+                        color: root.textColor
+                        font.pixelSize: 16
+                        font.bold: true
+                    }
+                    
+                    MouseArea {
+                        anchors.fill: parent
+                        cursorShape: Qt.PointingHandCursor
+                        hoverEnabled: true
+                        onEntered: closeBtn.color = "#1e293b"
+                        onExited: closeBtn.color = "transparent"
+                        onClicked: supportPopup.close()
+                    }
+                }
+            }
+
+            Rectangle { width: parent.width; height: 1; color: root.surfaceColor }
+
+            Text { 
+                text: qsTr("How can our team assist you today?")
+                color: root.textColor
+                font.pixelSize: 14 
+            }
+
+            Rectangle {
+                width: parent.width
+                height: 50
+                color: "#0f172a"
+                radius: 8
+                border.color: subjectInput.activeFocus ? root.accentColor : root.surfaceColor
+                border.width: 1
+                
+                TextInput {
+                    id: subjectInput
+                    anchors.fill: parent
+                    anchors.margins: 14
+                    color: "#ffffff"
+                    font.pixelSize: 14
+                    verticalAlignment: TextInput.AlignVCenter
+                    
+                    Text { 
+                        text: qsTr("Enter subject...")
+                        color: "#475569"
+                        font.pixelSize: 14
+                        anchors.verticalCenter: parent.verticalCenter
+                        visible: !subjectInput.text && !subjectInput.activeFocus 
+                    }
+                }
+            }
+
+            Rectangle {
+                width: parent.width
+                height: 190
+                color: "#0f172a"
+                radius: 8
+                border.color: messageInput.activeFocus ? root.accentColor : root.surfaceColor
+                border.width: 1
+                
+                TextEdit {
+                    id: messageInput
+                    anchors.fill: parent
+                    anchors.margins: 14
+                    color: "#ffffff"
+                    font.pixelSize: 14
+                    wrapMode: TextEdit.WordWrap
+                    
+                    Text { 
+                        text: qsTr("Describe your issue in detail...")
+                        color: "#475569"
+                        font.pixelSize: 14
+                        visible: !messageInput.text && !messageInput.activeFocus 
+                    }
+                }
+            }
+
+            Rectangle {
+                id: submitBtn
+                width: parent.width
+                height: 50
+                radius: 8
+                color: root.accentColor
+                
+                Behavior on opacity { NumberAnimation { duration: 150 } }
+
+                Text { 
+                    anchors.centerIn: parent
+                    text: qsTr("Submit Ticket")
+                    color: "#ffffff"
+                    font.pixelSize: 15
+                    font.bold: true 
+                }
+                
+                MouseArea {
+                    anchors.fill: parent
+                    cursorShape: Qt.PointingHandCursor
+                    hoverEnabled: true
+                    onEntered: submitBtn.opacity = 0.8
+                    onExited: submitBtn.opacity = 1.0
+                    onClicked: { 
+                        subjectInput.text = ""
+                        messageInput.text = ""
+                        supportPopup.close() 
+                    }
+                }
+            }
         }
     }
+}
