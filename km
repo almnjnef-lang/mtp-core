@@ -14,6 +14,9 @@ Item {
     property int currentPhase: 0
     property int overallProgress: 0
     property string activeTerminalNode: "AWAITING_INITIALIZATION"
+    property string currentIpTarget: "0.0.0.0"
+    property real networkPing: 0.0
+    property int packetsScanned: 0
     
     signal securityCheckPassed(string secureToken)
     signal securityCheckFailed(string reason, string errorCode)
@@ -26,12 +29,15 @@ Item {
         property color bgPrimary: "#050914"
         property color bgConsole: "#02040a"
         property color bgPanel: "#0f172a"
+        property color bgHighlight: "#1e293b"
         
         property color textLog: "#38bdf8"
         property color textError: "#ef4444"
         property color textSuccess: "#10b981"
         property color textWarning: "#f59e0b"
         property color textMuted: "#475569"
+        property color textWhite: "#ffffff"
+        property color textHex: "#8b5cf6"
         
         property color borderLine: "#1e293b"
         property color scannerLine: "#1f6feb"
@@ -43,15 +49,30 @@ Item {
     // ==========================================
     ListModel {
         id: terminalLogModel
-        // Dynamically populated by JS engine
     }
 
     ListModel {
         id: securityPhasesModel
-        ListElement { phaseId: 1; title: "Client Handshake"; status: 0 } // 0: Pending, 1: Active, 2: Done, 3: Error
-        ListElement { phaseId: 2; title: "Behavioral Heuristics"; status: 0 }
-        ListElement { phaseId: 3; title: "Network Anomaly Scan"; status: 0 }
-        ListElement { phaseId: 4; title: "Cryptographic Minting"; status: 0 }
+        ListElement { phaseId: 1; title: "Client Handshake"; status: 0; detail: "TLS/SSL" }
+        ListElement { phaseId: 2; title: "Behavioral Scan"; status: 0; detail: "Heuristics" }
+        ListElement { phaseId: 3; title: "Network DPI"; status: 0; detail: "Packet Auth" }
+        ListElement { phaseId: 4; title: "Memory Integrity"; status: 0; detail: "RAM Check" }
+        ListElement { phaseId: 5; title: "Token Minting"; status: 0; detail: "RSA-2048" }
+    }
+
+    ListModel {
+        id: hardwareSpecsModel
+        ListElement { specName: "OS Arch"; specValue: "x86_64 NT" }
+        ListElement { specName: "Allocated RAM"; specValue: "4096 MB" }
+        ListElement { specName: "CPU Threads"; specValue: "16 Logical" }
+        ListElement { specName: "GPU Accel"; specValue: "Enabled" }
+        ListElement { specName: "Locale"; specValue: "ar_AE" }
+        ListElement { specName: "Timezone"; specValue: "UTC+4" }
+    }
+
+    ListModel {
+        id: liveTrafficModel
+        // Dynamically populated to draw the graph
     }
 
     // ==========================================
@@ -67,12 +88,12 @@ Item {
         // ------------------------------------------
         RowLayout {
             Layout.fillWidth: true
-            Layout.preferredHeight: 48
+            Layout.preferredHeight: 64
             spacing: 16
 
             Rectangle {
-                Layout.preferredWidth: 48
-                Layout.preferredHeight: 48
+                Layout.preferredWidth: 56
+                Layout.preferredHeight: 56
                 color: secTheme.bgPanel
                 radius: 12
                 border.color: mnjnefSecurityCoreRoot.isActive ? secTheme.glowAccent : secTheme.borderLine
@@ -83,39 +104,96 @@ Item {
                 Text {
                     anchors.centerIn: parent
                     text: "🛡️"
-                    font.pixelSize: 22
+                    font.pixelSize: 28
+                }
+                
+                // Pulsing glow behind the shield
+                Rectangle {
+                    anchors.fill: parent
+                    radius: 12
+                    color: "transparent"
+                    border.color: secTheme.glowAccent
+                    border.width: 2
+                    opacity: 0.0
+                    
+                    SequentialAnimation on opacity {
+                        loops: Animation.Infinite
+                        running: mnjnefSecurityCoreRoot.isActive
+                        NumberAnimation { from: 0.0; to: 0.5; duration: 1000 }
+                        NumberAnimation { from: 0.5; to: 0.0; duration: 1000 }
+                    }
                 }
             }
 
             ColumnLayout {
                 Layout.fillWidth: true
-                spacing: 2
+                spacing: 4
 
                 Text {
-                    text: qsTr("MNJNEF ANTI-TAMPER PROTOCOL")
-                    color: "#ffffff"
-                    font.pixelSize: 16
+                    text: qsTr("MNJNEF ANTI-TAMPER PROTOCOL v2.4")
+                    color: secTheme.textWhite
+                    font.pixelSize: 18
                     font.bold: true
                     font.family: "Segoe UI"
                     font.letterSpacing: 1.5
                 }
 
-                Text {
-                    text: qsTr("Analyzing endpoint integrity and network topology...")
-                    color: secTheme.textMuted
-                    font.pixelSize: 12
-                    font.family: "Consolas"
+                RowLayout {
+                    spacing: 12
+                    
+                    Text {
+                        text: qsTr("Status:")
+                        color: secTheme.textMuted
+                        font.pixelSize: 12
+                        font.family: "Consolas"
+                    }
+                    
+                    Text {
+                        text: mnjnefSecurityCoreRoot.isActive ? qsTr("SCANNING IN PROGRESS") : qsTr("STANDBY")
+                        color: mnjnefSecurityCoreRoot.isActive ? secTheme.glowAccent : secTheme.textMuted
+                        font.pixelSize: 12
+                        font.bold: true
+                        font.family: "Consolas"
+                    }
+                    
+                    Rectangle {
+                        width: 1
+                        height: 12
+                        color: secTheme.borderLine
+                    }
+                    
+                    Text {
+                        text: qsTr("Target Node:")
+                        color: secTheme.textMuted
+                        font.pixelSize: 12
+                        font.family: "Consolas"
+                    }
+                    
+                    Text {
+                        text: mnjnefSecurityCoreRoot.activeTerminalNode
+                        color: secTheme.textSuccess
+                        font.pixelSize: 12
+                        font.family: "Consolas"
+                    }
                 }
             }
 
-            // Global Progress Percentage
-            Text {
-                text: mnjnefSecurityCoreRoot.overallProgress + "%"
-                color: mnjnefSecurityCoreRoot.overallProgress === 100 ? secTheme.textSuccess : secTheme.glowAccent
-                font.pixelSize: 28
-                font.bold: true
-                font.family: "Consolas"
-                Layout.alignment: Qt.AlignRight
+            // Global Progress Display
+            Item {
+                Layout.preferredWidth: 80
+                Layout.preferredHeight: 64
+                
+                Text {
+                    anchors.right: parent.right
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: mnjnefSecurityCoreRoot.overallProgress + "%"
+                    color: mnjnefSecurityCoreRoot.overallProgress === 100 ? secTheme.textSuccess : secTheme.glowAccent
+                    font.pixelSize: 32
+                    font.bold: true
+                    font.family: "Consolas"
+                    
+                    Behavior on color { ColorAnimation { duration: 300 } }
+                }
             }
         }
 
@@ -126,211 +204,450 @@ Item {
         }
 
         // ------------------------------------------
-        // MIDDLE SECTION: SCANNER & TERMINAL
+        // MIDDLE SECTION: SCANNER, GRAPH & TERMINAL
         // ------------------------------------------
         RowLayout {
             Layout.fillWidth: true
             Layout.fillHeight: true
             spacing: 16
 
-            // LEFT: Visual Radar & Node Scanner
-            Rectangle {
+            // LEFT COLUMN: Radar & Hardware Specs
+            ColumnLayout {
+                Layout.preferredWidth: 280
                 Layout.fillHeight: true
-                Layout.preferredWidth: 260
-                color: secTheme.bgConsole
-                radius: 12
-                border.color: secTheme.borderLine
-                border.width: 1
-                clip: true
+                spacing: 16
 
-                // Cyber Grid Background
-                Grid {
-                    anchors.fill: parent
-                    anchors.margins: 2
-                    rows: 20
-                    columns: 15
-                    spacing: 1
-                    
-                    Repeater {
-                        model: 300
-                        Rectangle {
-                            width: 16
-                            height: 16
-                            color: "transparent"
-                            border.color: secTheme.borderLine
-                            border.width: 1
-                            opacity: 0.3
-                        }
-                    }
-                }
-
-                // Rotating Radar Element
-                Item {
-                    anchors.centerIn: parent
-                    width: 200
-                    height: 200
-
-                    Rectangle {
-                        anchors.fill: parent
-                        radius: 100
-                        color: "transparent"
-                        border.color: secTheme.glowAccent
-                        border.width: 1
-                        opacity: 0.4
-                    }
-                    
-                    Rectangle {
-                        anchors.centerIn: parent
-                        width: 100
-                        height: 100
-                        radius: 50
-                        color: "transparent"
-                        border.color: secTheme.glowAccent
-                        border.width: 1
-                        opacity: 0.2
-                    }
-
-                    // Scanner Sweep
-                    ConicalGradientDummy {
-                        // Dummy component name used to simulate a sweeping arc
-                        // In real Qt6 use standard ShaderEffect or Canvas for conical gradient
-                        id: radarSweep
-                    }
-                    
-                    Rectangle {
-                        width: parent.width / 2
-                        height: 2
-                        color: secTheme.glowAccent
-                        x: parent.width / 2
-                        y: parent.height / 2
-                        transformOrigin: Item.Left
-                        
-                        RotationAnimation on rotation {
-                            loops: Animation.Infinite
-                            from: 0
-                            to: 360
-                            duration: 2000
-                            running: mnjnefSecurityCoreRoot.isActive
-                        }
-                    }
-                }
-
-                // Target Nodes
-                Repeater {
-                    model: [
-                        { x: 40, y: 60 }, { x: 180, y: 80 }, { x: 120, y: 220 },
-                        { x: 70, y: 160 }, { x: 200, y: 190 }, { x: 140, y: 40 }
-                    ]
-                    
-                    Rectangle {
-                        x: modelData.x
-                        y: modelData.y
-                        width: 8
-                        height: 8
-                        radius: 4
-                        color: mnjnefSecurityCoreRoot.overallProgress > 50 ? secTheme.textSuccess : secTheme.textLog
-                        
-                        SequentialAnimation on opacity {
-                            loops: Animation.Infinite
-                            running: true
-                            NumberAnimation { from: 0.2; to: 1.0; duration: Math.random() * 1000 + 500 }
-                            NumberAnimation { from: 1.0; to: 0.2; duration: Math.random() * 1000 + 500 }
-                        }
-                    }
-                }
-
-                // Scan Status Overlay
+                // 1. Radar Visualizer (Using Canvas for error-free drawing)
                 Rectangle {
-                    anchors.bottom: parent.bottom
-                    anchors.left: parent.left
-                    anchors.right: parent.right
-                    height: 40
-                    color: "#cc02040a"
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 280
+                    color: secTheme.bgConsole
+                    radius: 12
+                    border.color: secTheme.borderLine
+                    border.width: 1
+                    clip: true
+
+                    // Grid Background
+                    Grid {
+                        anchors.fill: parent
+                        anchors.margins: 4
+                        rows: 14
+                        columns: 14
+                        spacing: 2
+                        
+                        Repeater {
+                            model: 196
+                            Rectangle {
+                                width: 17
+                                height: 17
+                                color: "transparent"
+                                border.color: secTheme.borderLine
+                                border.width: 1
+                                opacity: 0.2
+                            }
+                        }
+                    }
+
+                    // Canvas Radar Drawing
+                    Canvas {
+                        id: radarCanvas
+                        anchors.fill: parent
+                        property real sweepAngle: 0
+                        
+                        onPaint: {
+                            var ctx = getContext("2d");
+                            var cx = width / 2;
+                            var cy = height / 2;
+                            var radius = Math.min(width, height) / 2 - 20;
+
+                            ctx.clearRect(0, 0, width, height);
+
+                            // Draw Concentric Circles
+                            ctx.strokeStyle = secTheme.borderLine;
+                            ctx.lineWidth = 1;
+                            
+                            for (var i = 1; i <= 3; i++) {
+                                ctx.beginPath();
+                                ctx.arc(cx, cy, radius * (i/3), 0, Math.PI * 2);
+                                ctx.stroke();
+                            }
+
+                            // Draw Crosshairs
+                            ctx.beginPath();
+                            ctx.moveTo(cx, 10);
+                            ctx.lineTo(cx, height - 10);
+                            ctx.moveTo(10, cy);
+                            ctx.lineTo(width - 10, cy);
+                            ctx.stroke();
+
+                            // Draw Sweep Line
+                            if (mnjnefSecurityCoreRoot.isActive) {
+                                ctx.save();
+                                ctx.translate(cx, cy);
+                                ctx.rotate(sweepAngle);
+                                
+                                // Draw scanner line
+                                ctx.strokeStyle = secTheme.glowAccent;
+                                ctx.lineWidth = 2;
+                                ctx.beginPath();
+                                ctx.moveTo(0, 0);
+                                ctx.lineTo(0, -radius);
+                                ctx.stroke();
+                                
+                                // Draw gradient sweep area (simulated with multiple lines)
+                                ctx.globalAlpha = 0.02;
+                                ctx.fillStyle = secTheme.glowAccent;
+                                ctx.beginPath();
+                                ctx.moveTo(0, 0);
+                                ctx.arc(0, 0, radius, -Math.PI/2, -Math.PI/2 - 0.5, true);
+                                ctx.closePath();
+                                ctx.fill();
+                                
+                                ctx.restore();
+                            }
+                        }
+                        
+                        Timer {
+                            interval: 30
+                            running: mnjnefSecurityCoreRoot.isActive
+                            repeat: true
+                            onTriggered: {
+                                radarCanvas.sweepAngle += 0.05;
+                                if (radarCanvas.sweepAngle > Math.PI * 2) {
+                                    radarCanvas.sweepAngle = 0;
+                                }
+                                radarCanvas.requestPaint();
+                            }
+                        }
+                    }
+
+                    // Simulated Target Nodes on Radar
+                    Repeater {
+                        model: [
+                            { rx: 0.3, ry: 0.2 }, { rx: 0.7, ry: 0.8 }, { rx: 0.8, ry: 0.3 },
+                            { rx: 0.2, ry: 0.7 }, { rx: 0.5, ry: 0.5 }, { rx: 0.6, ry: 0.1 }
+                        ]
+                        
+                        Rectangle {
+                            x: parent.width * modelData.rx
+                            y: parent.height * modelData.ry
+                            width: 6
+                            height: 6
+                            radius: 3
+                            color: mnjnefSecurityCoreRoot.overallProgress > 75 ? secTheme.textSuccess : secTheme.textWarning
+                            visible: mnjnefSecurityCoreRoot.isActive
+                            
+                            SequentialAnimation on opacity {
+                                loops: Animation.Infinite
+                                running: mnjnefSecurityCoreRoot.isActive
+                                NumberAnimation { from: 0.1; to: 1.0; duration: Math.random() * 800 + 400 }
+                                NumberAnimation { from: 1.0; to: 0.1; duration: Math.random() * 800 + 400 }
+                            }
+                        }
+                    }
                     
-                    Text {
-                        anchors.centerIn: parent
-                        text: "NODE: " + mnjnefSecurityCoreRoot.activeTerminalNode
-                        color: secTheme.glowAccent
-                        font.pixelSize: 10
-                        font.family: "Consolas"
+                    // Radar Status Overlay
+                    Rectangle {
+                        anchors.bottom: parent.bottom
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        height: 32
+                        color: "#cc02040a"
+                        border.color: secTheme.borderLine
+                        border.width: 1
+                        
+                        Text {
+                            anchors.centerIn: parent
+                            text: "IP: " + mnjnefSecurityCoreRoot.currentIpTarget + " | LATENCY: " + mnjnefSecurityCoreRoot.networkPing.toFixed(1) + "ms"
+                            color: secTheme.glowAccent
+                            font.pixelSize: 10
+                            font.family: "Consolas"
+                        }
+                    }
+                }
+
+                // 2. Hardware / Environment Specs Grid
+                Rectangle {
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    color: secTheme.bgPanel
+                    radius: 12
+                    border.color: secTheme.borderLine
+                    border.width: 1
+                    clip: true
+
+                    ColumnLayout {
+                        anchors.fill: parent
+                        anchors.margins: 12
+                        spacing: 8
+
+                        Text {
+                            text: qsTr("ENVIRONMENT INTEGRITY")
+                            color: secTheme.textWhite
+                            font.pixelSize: 11
+                            font.bold: true
+                            font.family: "Segoe UI"
+                            Layout.alignment: Qt.AlignHCenter
+                        }
+
+                        Rectangle {
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: 1
+                            color: secTheme.borderLine
+                        }
+
+                        GridView {
+                            Layout.fillWidth: true
+                            Layout.fillHeight: true
+                            cellWidth: width / 2
+                            cellHeight: 36
+                            model: hardwareSpecsModel
+                            interactive: false
+
+                            delegate: Item {
+                                width: GridView.view.cellWidth
+                                height: GridView.view.cellHeight
+                                
+                                Column {
+                                    anchors.centerIn: parent
+                                    spacing: 2
+                                    
+                                    Text {
+                                        text: specName
+                                        color: secTheme.textMuted
+                                        font.pixelSize: 10
+                                        font.family: "Consolas"
+                                        anchors.horizontalCenter: parent.horizontalCenter
+                                    }
+                                    
+                                    Text {
+                                        text: specValue
+                                        color: secTheme.textLog
+                                        font.pixelSize: 11
+                                        font.bold: true
+                                        font.family: "Consolas"
+                                        anchors.horizontalCenter: parent.horizontalCenter
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
 
-            // RIGHT: Live Terminal Log
-            Rectangle {
-                Layout.fillHeight: true
+            // RIGHT COLUMN: Live Network Graph & Terminal
+            ColumnLayout {
                 Layout.fillWidth: true
-                color: secTheme.bgConsole
-                radius: 12
-                border.color: secTheme.borderLine
-                border.width: 1
-                clip: true
+                Layout.fillHeight: true
+                spacing: 16
 
-                ListView {
-                    id: terminalListView
-                    anchors.fill: parent
-                    anchors.margins: 16
-                    model: terminalLogModel
-                    spacing: 4
+                // 1. Live Network Traffic Graph
+                Rectangle {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 100
+                    color: secTheme.bgConsole
+                    radius: 12
+                    border.color: secTheme.borderLine
+                    border.width: 1
+                    clip: true
+
+                    Text {
+                        anchors.top: parent.top
+                        anchors.left: parent.left
+                        anchors.margins: 12
+                        text: qsTr("PACKET INSPECTION GRAPH")
+                        color: secTheme.textMuted
+                        font.pixelSize: 10
+                        font.family: "Consolas"
+                        z: 2
+                    }
                     
-                    // Auto-scroll to bottom
-                    onCountChanged: {
-                        Qt.callLater(function() {
-                            terminalListView.positionViewAtEnd()
-                        })
+                    Text {
+                        anchors.top: parent.top
+                        anchors.right: parent.right
+                        anchors.margins: 12
+                        text: "SCANNED: " + mnjnefSecurityCoreRoot.packetsScanned
+                        color: secTheme.textLog
+                        font.pixelSize: 10
+                        font.family: "Consolas"
+                        z: 2
                     }
 
-                    delegate: RowLayout {
-                        width: ListView.view.width
-                        spacing: 8
-                        
-                        Text {
-                            text: "[" + timestamp + "]"
-                            color: secTheme.textMuted
-                            font.pixelSize: 11
-                            font.family: "Consolas"
-                            Layout.alignment: Qt.AlignTop
-                        }
-                        
-                        Text {
-                            text: logText
-                            color: {
-                                if (logType === "ERROR") return secTheme.textError
-                                if (logType === "SUCCESS") return secTheme.textSuccess
-                                if (logType === "WARNING") return secTheme.textWarning
-                                return secTheme.textLog
+                    // Background Grid Lines
+                    Column {
+                        anchors.fill: parent
+                        anchors.margins: 10
+                        spacing: (parent.height - 20) / 4
+                        Repeater {
+                            model: 4
+                            Rectangle {
+                                width: parent.width
+                                height: 1
+                                color: secTheme.borderLine
+                                opacity: 0.5
                             }
-                            font.pixelSize: 11
-                            font.family: "Consolas"
-                            Layout.fillWidth: true
-                            wrapMode: Text.WrapAnywhere
+                        }
+                    }
+
+                    // Dynamic Bars container
+                    Row {
+                        anchors.bottom: parent.bottom
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        anchors.margins: 10
+                        spacing: 4
+                        
+                        Repeater {
+                            model: liveTrafficModel
+                            
+                            Rectangle {
+                                width: (parent.width / 40) - 4 // approx 40 bars
+                                height: Math.max(2, Math.min(barValue, 80))
+                                anchors.bottom: parent.bottom
+                                color: barStatus === "CLEAN" ? secTheme.textSuccess : (barStatus === "WARN" ? secTheme.textWarning : secTheme.textError)
+                                radius: 2
+                                
+                                Behavior on height { NumberAnimation { duration: 150; easing.type: Easing.OutQuad } }
+                            }
+                        }
+                    }
+                    
+                    // Graph Generator Timer
+                    Timer {
+                        interval: 100
+                        running: mnjnefSecurityCoreRoot.isActive
+                        repeat: true
+                        onTriggered: {
+                            // Keep max 40 bars
+                            if (liveTrafficModel.count >= 40) {
+                                liveTrafficModel.remove(0, 1)
+                            }
+                            
+                            let val = Math.random() * 60 + 10;
+                            let stat = "CLEAN";
+                            let rand = Math.random();
+                            
+                            if (rand > 0.95) stat = "ERROR";
+                            else if (rand > 0.85) stat = "WARN";
+                            
+                            liveTrafficModel.append({ "barValue": val, "barStatus": stat })
+                            
+                            mnjnefSecurityCoreRoot.packetsScanned += Math.floor(Math.random() * 12) + 1
                         }
                     }
                 }
-                
-                // Terminal Scanline Effect
+
+                // 2. Main Terminal Console
                 Rectangle {
-                    width: parent.width
-                    height: 2
-                    color: secTheme.glowAccent
-                    opacity: 0.15
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    color: secTheme.bgConsole
+                    radius: 12
+                    border.color: secTheme.borderLine
+                    border.width: 1
+                    clip: true
+
+                    ListView {
+                        id: terminalListView
+                        anchors.fill: parent
+                        anchors.margins: 16
+                        model: terminalLogModel
+                        spacing: 6
+                        
+                        // Auto-scroll logic
+                        onCountChanged: {
+                            Qt.callLater(function() {
+                                terminalListView.positionViewAtEnd()
+                            })
+                        }
+
+                        delegate: ColumnLayout {
+                            width: ListView.view.width
+                            spacing: 2
+                            
+                            RowLayout {
+                                Layout.fillWidth: true
+                                spacing: 8
+                                
+                                Text {
+                                    text: "[" + timestamp + "]"
+                                    color: secTheme.textMuted
+                                    font.pixelSize: 11
+                                    font.family: "Consolas"
+                                    Layout.alignment: Qt.AlignTop
+                                }
+                                
+                                Text {
+                                    text: logType === "HEX" ? ">>" : logText
+                                    color: {
+                                        if (logType === "ERROR") return secTheme.textError
+                                        if (logType === "SUCCESS") return secTheme.textSuccess
+                                        if (logType === "WARNING") return secTheme.textWarning
+                                        if (logType === "HEX") return secTheme.textHex
+                                        return secTheme.textLog
+                                    }
+                                    font.pixelSize: 11
+                                    font.family: "Consolas"
+                                    Layout.fillWidth: true
+                                    wrapMode: Text.WrapAnywhere
+                                }
+                            }
+                            
+                            // Optional Hex Dump Row
+                            Text {
+                                text: hexDump
+                                color: secTheme.textMuted
+                                font.pixelSize: 10
+                                font.family: "Consolas"
+                                Layout.fillWidth: true
+                                Layout.leftMargin: 80
+                                wrapMode: Text.WrapAnywhere
+                                visible: logType === "HEX"
+                            }
+                        }
+                    }
                     
-                    SequentialAnimation on y {
-                        loops: Animation.Infinite
-                        running: mnjnefSecurityCoreRoot.isActive
-                        NumberAnimation { from: 0; to: 300; duration: 2500 }
+                    // CRT Scanline Overlay
+                    Rectangle {
+                        width: parent.width
+                        height: parent.height
+                        color: "transparent"
+                        
+                        Repeater {
+                            model: Math.floor(parent.height / 4)
+                            Rectangle {
+                                width: parent.width
+                                height: 1
+                                y: index * 4
+                                color: "#000000"
+                                opacity: 0.3
+                            }
+                        }
+                    }
+                    
+                    // Animated Scan Bar
+                    Rectangle {
+                        width: parent.width
+                        height: 2
+                        color: secTheme.glowAccent
+                        opacity: 0.2
+                        
+                        SequentialAnimation on y {
+                            loops: Animation.Infinite
+                            running: mnjnefSecurityCoreRoot.isActive
+                            NumberAnimation { from: 0; to: 400; duration: 3000 }
+                        }
                     }
                 }
             }
         }
 
         // ------------------------------------------
-        // BOTTOM SECTION: PHASE INDICATORS
+        // BOTTOM SECTION: 5-PHASE INDICATORS
         // ------------------------------------------
         RowLayout {
             Layout.fillWidth: true
-            Layout.preferredHeight: 80
+            Layout.preferredHeight: 88
             spacing: 12
 
             Repeater {
@@ -352,70 +669,92 @@ Item {
                     Behavior on border.color { ColorAnimation { duration: 300 } }
 
                     ColumnLayout {
-                        anchors.centerIn: parent
-                        spacing: 6
+                        anchors.fill: parent
+                        anchors.margins: 8
+                        spacing: 4
                         
-                        Item {
-                            Layout.alignment: Qt.AlignHCenter
-                            Layout.preferredWidth: 24
-                            Layout.preferredHeight: 24
+                        RowLayout {
+                            Layout.fillWidth: true
                             
-                            // Pending State
-                            Rectangle {
-                                anchors.fill: parent
-                                radius: 12
-                                color: "transparent"
-                                border.color: secTheme.textMuted
-                                border.width: 2
-                                visible: status === 0
+                            Text {
+                                text: "PHASE 0" + phaseId
+                                color: secTheme.textMuted
+                                font.pixelSize: 10
+                                font.bold: true
+                                font.family: "Consolas"
+                                Layout.alignment: Qt.AlignLeft
                             }
                             
-                            // Active State (Spinner)
-                            Rectangle {
-                                anchors.fill: parent
-                                radius: 12
-                                color: "transparent"
-                                border.color: secTheme.glowAccent
-                                border.width: 2
-                                visible: status === 1
-                                clip: true
+                            Item { Layout.fillWidth: true }
+                            
+                            // State Icon
+                            Item {
+                                width: 16
+                                height: 16
+                                Layout.alignment: Qt.AlignRight
                                 
-                                RotationAnimation on rotation {
-                                    loops: Animation.Infinite
-                                    from: 0; to: 360; duration: 1000
-                                    running: status === 1
+                                Rectangle {
+                                    anchors.fill: parent
+                                    radius: 8
+                                    color: "transparent"
+                                    border.color: secTheme.textMuted
+                                    border.width: 1
+                                    visible: status === 0
+                                }
+                                
+                                Rectangle {
+                                    anchors.fill: parent
+                                    radius: 8
+                                    color: "transparent"
+                                    border.color: secTheme.glowAccent
+                                    border.width: 2
+                                    visible: status === 1
+                                    clip: true
+                                    RotationAnimation on rotation {
+                                        loops: Animation.Infinite
+                                        from: 0; to: 360; duration: 800
+                                        running: status === 1
+                                    }
+                                }
+                                
+                                Text {
+                                    anchors.centerIn: parent
+                                    text: "✓"
+                                    color: secTheme.textSuccess
+                                    font.pixelSize: 12
+                                    font.bold: true
+                                    visible: status === 2
                                 }
                             }
-                            
-                            // Done State
-                            Text {
-                                anchors.centerIn: parent
-                                text: "✓"
-                                color: secTheme.textSuccess
-                                font.pixelSize: 16
-                                font.bold: true
-                                visible: status === 2
-                            }
-                            
-                            // Error State
-                            Text {
-                                anchors.centerIn: parent
-                                text: "✕"
-                                color: secTheme.textError
-                                font.pixelSize: 16
-                                font.bold: true
-                                visible: status === 3
-                            }
                         }
+                        
+                        Item { Layout.fillHeight: true }
                         
                         Text {
                             text: title
-                            color: status === 2 ? secTheme.textSuccess : (status === 1 ? "#ffffff" : secTheme.textMuted)
-                            font.pixelSize: 11
+                            color: status === 2 ? secTheme.textSuccess : (status === 1 ? secTheme.textWhite : secTheme.textMuted)
+                            font.pixelSize: 12
                             font.bold: true
                             font.family: "Segoe UI"
-                            Layout.alignment: Qt.AlignHCenter
+                            Layout.fillWidth: true
                         }
+                        
+                        Text {
+                            text: detail
+                            color: secTheme.textMuted
+                            font.pixelSize: 10
+                            font.family: "Consolas"
+                            Layout.fillWidth: true
+                        }
+                    }
+                    
+                    // Background highlight when active
+                    Rectangle {
+                        anchors.fill: parent
+                        radius: 8
+                        color: secTheme.glowAccent
+                        opacity: status === 1 ? 0.05 : 0.0
+                        Behavior on opacity { NumberAnimation { duration: 300 } }
                     }
                 }
             }
@@ -429,17 +768,28 @@ Item {
         id: secEngine
 
         function startSecuritySequence() {
+            if (mnjnefSecurityCoreRoot.isActive) return
+            
             mnjnefSecurityCoreRoot.isActive = true
             terminalLogModel.clear()
+            liveTrafficModel.clear()
             mnjnefSecurityCoreRoot.overallProgress = 0
+            mnjnefSecurityCoreRoot.packetsScanned = 0
             
-            appendLog("INFO", "Initializing Mnjnef Core Security Module v2.4.1...")
-            appendLog("INFO", "Allocating memory buffers for packet inspection.")
+            for(let i=0; i<5; i++) {
+                securityPhasesModel.setProperty(i, "status", 0)
+            }
+            
+            appendLog("INFO", "MNJNEF KERNEL SEC-MODULE v2.4 initialized.")
+            appendLog("INFO", "Allocating isolated memory buffer: 0x00A4F8B0")
+            
+            mnjnefSecurityCoreRoot.currentIpTarget = Math.floor(Math.random()*255) + "." + Math.floor(Math.random()*255) + ".1.1"
+            mnjnefSecurityCoreRoot.networkPing = Math.random() * 20 + 5
             
             phase1Timer.start()
         }
 
-        function appendLog(type, message) {
+        function appendLog(type, message, hexData) {
             let d = new Date()
             let timeStr = d.getHours().toString().padStart(2, '0') + ":" + 
                           d.getMinutes().toString().padStart(2, '0') + ":" + 
@@ -449,7 +799,8 @@ Item {
             terminalLogModel.append({
                 "timestamp": timeStr,
                 "logType": type,
-                "logText": message
+                "logText": message,
+                "hexDump": hexData ? hexData : ""
             })
         }
 
@@ -458,20 +809,21 @@ Item {
             let result = ""
             for (let i = 0; i < length; i++) {
                 result += chars.charAt(Math.floor(Math.random() * chars.length))
+                if (i % 4 === 3 && i < length - 1) result += " "
             }
             return result
         }
 
         function completeSequence() {
-            appendLog("SUCCESS", "All security protocols satisfied.")
-            appendLog("INFO", "Generating secure session token...")
+            appendLog("SUCCESS", "All 5 security domains validated and secured.")
+            appendLog("INFO", "Minting cryptographic session token...")
             
-            let finalToken = "MNJ-" + generateRandomHex(8) + "-" + generateRandomHex(16)
-            appendLog("SUCCESS", "Token minted: " + finalToken)
+            let finalToken = "MNJ-" + generateRandomHex(12).replace(/ /g, '') + "-" + generateRandomHex(16).replace(/ /g, '')
+            appendLog("SUCCESS", "TOKEN ISSUED: " + finalToken)
             
             mnjnefSecurityCoreRoot.isActive = false
+            mnjnefSecurityCoreRoot.activeTerminalNode = "SECURE_LINK_ESTABLISHED"
             
-            // Allow user to see final success before proceeding
             Qt.callLater(function() {
                 finishTimer.start()
             })
@@ -479,35 +831,34 @@ Item {
     }
 
     // ==========================================
-    // TIMERS FOR SEQUENTIAL SIMULATION
+    // TIMERS FOR SEQUENTIAL SIMULATION (5 PHASES)
     // ==========================================
 
     // PHASE 1: Client Handshake
     Timer {
         id: phase1Timer
-        interval: 150
+        interval: 100
         repeat: true
         property int ticks: 0
         
         onStarted: {
             ticks = 0
             securityPhasesModel.setProperty(0, "status", 1)
-            secEngine.appendLog("INFO", "Beginning TLS Handshake sequence...")
-            mnjnefSecurityCoreRoot.activeTerminalNode = "NET_GATEWAY_DXB"
+            secEngine.appendLog("INFO", "Initiating TLS 1.3 Handshake...")
+            mnjnefSecurityCoreRoot.activeTerminalNode = "NET_GATEWAY_AUTH"
         }
         
         onTriggered: {
             ticks++
-            mnjnefSecurityCoreRoot.overallProgress += 1
+            mnjnefSecurityCoreRoot.overallProgress = Math.min(20, ticks * 2)
             
-            if (ticks === 3) secEngine.appendLog("INFO", "Negotiating cipher suite: TLS_AES_256_GCM_SHA384")
-            if (ticks === 6) secEngine.appendLog("SUCCESS", "Cipher negotiated successfully.")
-            if (ticks === 9) secEngine.appendLog("INFO", "Verifying client certificate chain...")
+            if (ticks === 3) secEngine.appendLog("INFO", "Cipher negotiated: TLS_CHACHA20_POLY1305_SHA256")
+            if (ticks === 6) secEngine.appendLog("HEX", "Certificate Chain Rx:", secEngine.generateRandomHex(64))
+            if (ticks === 8) secEngine.appendLog("SUCCESS", "Certificate verified. Key exchange complete.")
             
-            if (ticks >= 12) {
+            if (ticks >= 10) {
                 stop()
                 securityPhasesModel.setProperty(0, "status", 2)
-                secEngine.appendLog("SUCCESS", "Handshake complete. Connection encrypted.")
                 phase2Timer.start()
             }
         }
@@ -516,25 +867,25 @@ Item {
     // PHASE 2: Behavioral Heuristics
     Timer {
         id: phase2Timer
-        interval: 200
+        interval: 150
         repeat: true
         property int ticks: 0
         
         onStarted: {
             ticks = 0
             securityPhasesModel.setProperty(1, "status", 1)
-            secEngine.appendLog("INFO", "Engaging behavioral heuristics engine...")
-            mnjnefSecurityCoreRoot.activeTerminalNode = "HEURISTIC_CORE_01"
+            secEngine.appendLog("INFO", "Engaging Client Behavioral Engine v4...")
+            mnjnefSecurityCoreRoot.activeTerminalNode = "HEURISTIC_CORE_X1"
         }
         
         onTriggered: {
             ticks++
-            mnjnefSecurityCoreRoot.overallProgress += 2
+            mnjnefSecurityCoreRoot.overallProgress = 20 + Math.min(20, ticks * 2)
             
-            if (ticks === 2) secEngine.appendLog("INFO", "Analyzing cursor trajectory patterns...")
-            if (ticks === 4) secEngine.appendLog("INFO", "Measuring click latency & interaction intervals...")
-            if (ticks === 6) secEngine.appendLog("INFO", "Cross-referencing input signatures with bot database...")
-            if (ticks === 8) secEngine.appendLog("SUCCESS", "Input patterns identified as HUMAN.")
+            if (ticks === 2) secEngine.appendLog("INFO", "Analyzing cursor vectors and click latency...")
+            if (ticks === 4) secEngine.appendLog("HEX", "Input Signature Dump:", secEngine.generateRandomHex(48))
+            if (ticks === 6) secEngine.appendLog("INFO", "Comparing against known automation tools (Selenium, Puppeteer)...")
+            if (ticks === 8) secEngine.appendLog("SUCCESS", "Interaction dynamics classified as HUMAN.")
             
             if (ticks >= 10) {
                 stop()
@@ -544,89 +895,112 @@ Item {
         }
     }
 
-    // PHASE 3: Network Anomaly Scan
+    // PHASE 3: Network DPI
     Timer {
         id: phase3Timer
-        interval: 120
+        interval: 80
         repeat: true
         property int ticks: 0
         
         onStarted: {
             ticks = 0
             securityPhasesModel.setProperty(2, "status", 1)
-            secEngine.appendLog("WARNING", "Initiating deep packet inspection...")
+            secEngine.appendLog("WARNING", "Activating Deep Packet Inspection (DPI)...")
             mnjnefSecurityCoreRoot.activeTerminalNode = "DPI_INSPECTOR_V9"
         }
         
         onTriggered: {
             ticks++
-            mnjnefSecurityCoreRoot.overallProgress += 1
+            mnjnefSecurityCoreRoot.overallProgress = 40 + Math.min(20, ticks)
             
-            if (ticks % 4 === 0) {
-                let packetId = "0x" + secEngine.generateRandomHex(8)
-                secEngine.appendLog("INFO", "Scanning payload frame " + packetId + " [CLEAN]")
+            if (ticks % 5 === 0) {
+                secEngine.appendLog("HEX", "Payload Frame [" + ticks + "]:", secEngine.generateRandomHex(32))
             }
+            if (ticks === 10) secEngine.appendLog("INFO", "Cross-referencing IP reputation with global banlist...")
+            if (ticks === 15) secEngine.appendLog("SUCCESS", "IP reputation clear. No anomalies detected in stream.")
             
-            if (ticks === 15) secEngine.appendLog("INFO", "Checking IP against global blacklist...")
-            if (ticks === 20) secEngine.appendLog("SUCCESS", "IP reputation score: 99/100 (Safe)")
-            if (ticks === 25) secEngine.appendLog("INFO", "Verifying DNS resolution integrity...")
-            
-            if (ticks >= 30) {
+            if (ticks >= 20) {
                 stop()
                 securityPhasesModel.setProperty(2, "status", 2)
-                secEngine.appendLog("SUCCESS", "Zero anomalies detected in network stream.")
                 phase4Timer.start()
             }
         }
     }
 
-    // PHASE 4: Cryptographic Minting
+    // PHASE 4: Memory Integrity
     Timer {
         id: phase4Timer
-        interval: 300
+        interval: 120
         repeat: true
         property int ticks: 0
         
         onStarted: {
             ticks = 0
             securityPhasesModel.setProperty(3, "status", 1)
-            secEngine.appendLog("INFO", "Requesting secure token allocation from mainframe...")
-            mnjnefSecurityCoreRoot.activeTerminalNode = "AUTH_KEY_EXCHANGE"
+            secEngine.appendLog("INFO", "Scanning local memory space for hook injections...")
+            mnjnefSecurityCoreRoot.activeTerminalNode = "MEM_SCANNER_RING0"
         }
         
         onTriggered: {
             ticks++
-            // Push progress to 100
-            mnjnefSecurityCoreRoot.overallProgress = Math.min(100, mnjnefSecurityCoreRoot.overallProgress + 6)
+            mnjnefSecurityCoreRoot.overallProgress = 60 + Math.min(20, ticks * 2)
             
-            if (ticks === 2) secEngine.appendLog("INFO", "Generating 2048-bit RSA key pair locally...")
-            if (ticks === 4) secEngine.appendLog("INFO", "Hashing environment variables (SHA-256)...")
-            if (ticks === 6) secEngine.appendLog("SUCCESS", "Hash match confirmed by server.")
+            if (ticks === 3) secEngine.appendLog("HEX", "Checking address space:", "0x" + secEngine.generateRandomHex(16) + " - 0x" + secEngine.generateRandomHex(16))
+            if (ticks === 6) secEngine.appendLog("INFO", "Validating DLL signatures in Qt runtime environment...")
+            if (ticks === 8) secEngine.appendLog("SUCCESS", "No foreign modules or debuggers detected.")
             
-            if (ticks >= 8) {
+            if (ticks >= 10) {
+                stop()
+                securityPhasesModel.setProperty(3, "status", 2)
+                phase5Timer.start()
+            }
+        }
+    }
+
+    // PHASE 5: Token Minting
+    Timer {
+        id: phase5Timer
+        interval: 200
+        repeat: true
+        property int ticks: 0
+        
+        onStarted: {
+            ticks = 0
+            securityPhasesModel.setProperty(4, "status", 1)
+            secEngine.appendLog("INFO", "Requesting final cryptographic seal from Mainframe...")
+            mnjnefSecurityCoreRoot.activeTerminalNode = "CRYPTO_MINT_NODE"
+        }
+        
+        onTriggered: {
+            ticks++
+            mnjnefSecurityCoreRoot.overallProgress = 80 + Math.min(20, ticks * 3)
+            
+            if (ticks === 2) secEngine.appendLog("INFO", "Generating localized entropy pool...")
+            if (ticks === 4) secEngine.appendLog("HEX", "SHA-384 Env Hash:", secEngine.generateRandomHex(96))
+            if (ticks === 6) secEngine.appendLog("SUCCESS", "Mainframe validation acknowledged.")
+            
+            if (ticks >= 7) {
                 stop()
                 mnjnefSecurityCoreRoot.overallProgress = 100
-                securityPhasesModel.setProperty(3, "status", 2)
-                mnjnefSecurityCoreRoot.activeTerminalNode = "SECURE_LINK_ESTABLISHED"
+                securityPhasesModel.setProperty(4, "status", 2)
                 secEngine.completeSequence()
             }
         }
     }
 
-    // Timer to delay final emit so user reads the success message
     Timer {
         id: finishTimer
-        interval: 1500
+        interval: 2000
         repeat: false
         onTriggered: {
-            let finalToken = "MNJ-" + secEngine.generateRandomHex(8) + "-" + secEngine.generateRandomHex(16)
+            // Signal emitted to parent/MasterEngine to move to the next screen
+            let finalToken = "MNJ-" + secEngine.generateRandomHex(12).replace(/ /g, '') + "-" + secEngine.generateRandomHex(16).replace(/ /g, '')
             mnjnefSecurityCoreRoot.securityCheckPassed(finalToken)
         }
     }
 
-    // Auto-start for testing/integration
-    Component.onCompleted: {
-        // In full integration, MasterEngine will call startSecuritySequence()
-        // secEngine.startSecuritySequence()
+    // Export function to allow external components to trigger the scan
+    function triggerScan() {
+        secEngine.startSecuritySequence()
     }
 }
