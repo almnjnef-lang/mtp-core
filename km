@@ -3,246 +3,188 @@ import QtQuick.Controls
 import QtQuick.Layouts
 
 Item {
-    id: contactUsRootComponent
-    width: mainLayoutContainer.implicitWidth
+    id: mnjnefSupportSystem
+    width: triggerLayout.implicitWidth
     height: 48
     
-    // Core Theme Properties for Mnjnef
-    property color colorPrimary: "#1f6feb"
-    property color colorPrimaryHover: "#3b82f6"
-    property color colorTextDefault: "#6f7fa0"
-    property color colorTextHover: "#ffffff"
-    property color colorBackground: "#0a1428"
-    property color colorSurface: "#1e3257"
-    property color colorSurfaceHover: "#2a3f6a"
-    property color colorBorder: "#334155"
-    property color colorError: "#ef4444"
-    property color colorSuccess: "#22c55e"
+    property color themePrimary: "#1f6feb"
+    property color themePrimaryHover: "#3b82f6"
+    property color themePrimaryPressed: "#1d4ed8"
+    property color themeTextMain: "#f8fafc"
+    property color themeTextSub: "#94a3b8"
+    property color themeBackground: "#070c14"
+    property color themeSurface: "#111c2e"
+    property color themeSurfaceHighlight: "#1e2f4c"
+    property color themeBorder: "#1e293b"
+    property color themeError: "#ef4444"
+    property color themeSuccess: "#10b981"
     
-    // State Properties
-    property bool isComponentHovered: false
-    property bool isSubmitting: false
+    property bool isHovering: false
 
-    // Main Layout ensuring absolute side-by-side alignment
-    Row {
-        id: mainLayoutContainer
-        spacing: 12
+    RowLayout {
+        id: triggerLayout
         anchors.centerIn: parent
+        spacing: 12
 
-        // Smooth transition for the entire row
         Behavior on opacity {
-            NumberAnimation { 
-                duration: 200
-                easing.type: Easing.OutCubic 
+            NumberAnimation { duration: 250; easing.type: Easing.OutQuart }
+        }
+
+        Item {
+            id: avatarContainer
+            Layout.alignment: Qt.AlignVCenter
+            Layout.preferredWidth: 38
+            Layout.preferredHeight: 38
+
+            Rectangle {
+                anchors.fill: parent
+                radius: 19
+                color: mnjnefSupportSystem.isHovering ? mnjnefSupportSystem.themeSurfaceHighlight : "transparent"
+                border.color: mnjnefSupportSystem.isHovering ? mnjnefSupportSystem.themePrimary : "transparent"
+                border.width: 1
+                
+                Behavior on color { ColorAnimation { duration: 200 } }
+                Behavior on border.color { ColorAnimation { duration: 200 } }
+            }
+
+            Image {
+                id: agentAvatar
+                anchors.centerIn: parent
+                width: 32
+                height: 32
+                smooth: true
+                antialiasing: true
+                mipmap: true
+                
+                source: "data:image/svg+xml;utf8," +
+                    "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 128 128'>" +
+                    "<path d='M16 128 C16 80, 112 80, 112 128 Z' fill='%230f172a'/>" +
+                    "<path d='M26 128 C26 90, 102 90, 102 128 Z' fill='%231e3257'/>" +
+                    "<path d='M46 128 L64 96 L82 128 Z' fill='%231f6feb'/>" +
+                    "<rect x='52' y='76' width='24' height='30' rx='8' fill='%239a6b4e'/>" +
+                    "<path d='M52 86 Q64 98 76 86 L76 106 L52 106 Z' fill='%237d543b'/>" +
+                    "<path d='M40 40 L88 40 Q96 40 96 64 Q96 90 64 96 Q32 90 32 64 Q32 40 40 40 Z' fill='%23bc8a64'/>" +
+                    "<circle cx='64' cy='56' r='32' fill='%23bc8a64'/>" +
+                    "<path d='M32 64 Q32 94 64 100 Q96 94 96 64 Q92 76 80 84 Q64 90 48 84 Q36 76 32 64 Z' fill='%232a1e17'/>" +
+                    "<path d='M36 72 Q64 104 92 72 Q86 86 64 92 Q42 86 36 72 Z' fill='%231c130e'/>" +
+                    "<path d='M48 76 Q64 68 80 76 Q64 82 48 76 Z' fill='%232a1e17'/>" +
+                    "<path d='M52 77 Q64 72 76 77 Q64 80 52 77 Z' fill='%231c130e'/>" +
+                    "<path d='M28 50 C28 10, 100 10, 100 50 C100 24, 28 24, 28 50 Z' fill='%232a1e17'/>" +
+                    "<path d='M30 46 C30 16, 98 16, 98 46 C98 18, 30 18, 30 46 Z' fill='%233d2c22'/>" +
+                    "<path d='M40 22 Q64 10 88 22 Q64 16 40 22 Z' fill='%231c130e'/>" +
+                    "<circle cx='30' cy='60' r='8' fill='%239a6b4e'/>" +
+                    "<circle cx='98' cy='60' r='8' fill='%239a6b4e'/>" +
+                    "<path d='M40 44 Q48 40 54 44' fill='none' stroke='%232a1e17' stroke-width='4' stroke-linecap='round'/>" +
+                    "<path d='M74 44 Q82 40 88 44' fill='none' stroke='%232a1e17' stroke-width='4' stroke-linecap='round'/>" +
+                    "<path d='M42 54 Q48 48 54 54 Q48 58 42 54' fill='%23ffffff'/>" +
+                    "<path d='M74 54 Q80 48 86 54 Q80 58 74 54' fill='%23ffffff'/>" +
+                    "<circle cx='48' cy='53' r='3.5' fill='%233d2c22'/>" +
+                    "<circle cx='80' cy='53' r='3.5' fill='%233d2c22'/>" +
+                    "<circle cx='49' cy='52' r='1' fill='%23ffffff'/>" +
+                    "<circle cx='81' cy='52' r='1' fill='%23ffffff'/>" +
+                    "<path d='M64 54 L60 68 L64 70 L68 68 Z' fill='%239a6b4e'/>" +
+                    "<path d='M54 80 Q64 86 74 80 Q64 84 54 80' fill='%23ffffff'/>" +
+                    "<path d='M54 80 Q64 86 74 80' fill='none' stroke='%231c130e' stroke-width='1.5'/>" +
+                    "<path d='M24 64 A40 40 0 0 1 104 64' fill='none' stroke='%230f172a' stroke-width='14'/>" +
+                    "<path d='M24 64 A40 40 0 0 1 104 64' fill='none' stroke='%231e293b' stroke-width='8'/>" +
+                    "<path d='M28 60 A36 36 0 0 1 100 60' fill='none' stroke='%231f6feb' stroke-width='2'/>" +
+                    "<rect x='14' y='46' width='18' height='40' rx='9' fill='%230f172a'/>" +
+                    "<rect x='18' y='48' width='14' height='36' rx='7' fill='%231e293b'/>" +
+                    "<rect x='22' y='54' width='10' height='24' rx='5' fill='%23334155'/>" +
+                    "<circle cx='27' cy='66' r='4' fill='%231f6feb'/>" +
+                    "<rect x='96' y='46' width='18' height='40' rx='9' fill='%230f172a'/>" +
+                    "<rect x='96' y='48' width='14' height='36' rx='7' fill='%231e293b'/>" +
+                    "<rect x='96' y='54' width='10' height='24' rx='5' fill='%23334155'/>" +
+                    "<circle cx='101' cy='66' r='4' fill='%231f6feb'/>" +
+                    "<path d='M26 76 Q32 96 52 94' fill='none' stroke='%230f172a' stroke-width='5' stroke-linecap='round'/>" +
+                    "<path d='M26 76 Q32 96 52 94' fill='none' stroke='%23334155' stroke-width='2' stroke-linecap='round'/>" +
+                    "<ellipse cx='56' cy='93' rx='9' ry='6' fill='%23111827'/>" +
+                    "<ellipse cx='55' cy='92' rx='5' ry='3' fill='%23334155' opacity='0.7'/>" +
+                    "<circle cx='62' cy='93' r='2' fill='%231f6feb'/>" +
+                    "</svg>"
             }
         }
 
-        // The Ultra-Detailed Semi-Realistic Avatar
-        Image {
-            id: supportAvatarIcon
-            width: 36
-            height: 36
-            anchors.verticalCenter: parent.verticalCenter
-            smooth: true
-            antialiasing: true
-            mipmap: true
-            
-            // Massive SVG construction for a masculine, bearded agent with hair and headset
-            source: "data:image/svg+xml;utf8," +
-                "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 128 128'>" +
-                
-                "<!-- Shoulders & Uniform Base -->" +
-                "<path d='M16 128 C16 80, 112 80, 112 128 Z' fill='%230f172a'/>" +
-                "<path d='M26 128 C26 90, 102 90, 102 128 Z' fill='%231e3257'/>" +
-                "<path d='M46 128 L64 96 L82 128 Z' fill='%231f6feb'/>" +
-
-                "<!-- Neck Base -->" +
-                "<rect x='52' y='76' width='24' height='30' rx='8' fill='%239a6b4e'/>" +
-                "<path d='M52 86 Q64 98 76 86 L76 106 L52 106 Z' fill='%237d543b'/>" +
-
-                "<!-- Face Base (Beige/Brown Masculine Structure) -->" +
-                "<path d='M40 40 L88 40 Q96 40 96 64 Q96 90 64 96 Q32 90 32 64 Q32 40 40 40 Z' fill='%23bc8a64'/>" +
-                "<circle cx='64' cy='56' r='32' fill='%23bc8a64'/>" +
-                
-                "<!-- Masculine Jawline Shading -->" +
-                "<path d='M32 64 Q32 90 64 96 Q96 90 96 64 A32 32 0 0 1 32 64 Z' fill='%239a6b4e' opacity='0.5'/>" +
-                
-                "<!-- Full Masculine Beard (Dark Brown/Black) -->" +
-                "<path d='M32 64 Q32 94 64 100 Q96 94 96 64 Q92 76 80 84 Q64 90 48 84 Q36 76 32 64 Z' fill='%232a1e17'/>" +
-                "<path d='M36 72 Q64 104 92 72 Q86 86 64 92 Q42 86 36 72 Z' fill='%231c130e'/>" +
-                
-                "<!-- Mustache -->" +
-                "<path d='M48 76 Q64 68 80 76 Q64 82 48 76 Z' fill='%232a1e17'/>" +
-                "<path d='M52 77 Q64 72 76 77 Q64 80 52 77 Z' fill='%231c130e'/>" +
-
-                "<!-- Full Haircut (Modern Masculine Style) -->" +
-                "<path d='M28 50 C28 10, 100 10, 100 50 C100 24, 28 24, 28 50 Z' fill='%232a1e17'/>" +
-                "<path d='M30 46 C30 16, 98 16, 98 46 C98 18, 30 18, 30 46 Z' fill='%233d2c22'/>" +
-                "<path d='M40 22 Q64 10 88 22 Q64 16 40 22 Z' fill='%231c130e'/>" +
-                
-                "<!-- Ears -->" +
-                "<circle cx='30' cy='60' r='8' fill='%239a6b4e'/>" +
-                "<circle cx='98' cy='60' r='8' fill='%239a6b4e'/>" +
-
-                "<!-- Eyes & Eyebrows (Strong Features) -->" +
-                "<path d='M40 44 Q48 40 54 44' fill='none' stroke='%232a1e17' stroke-width='4' stroke-linecap='round'/>" +
-                "<path d='M74 44 Q82 40 88 44' fill='none' stroke='%232a1e17' stroke-width='4' stroke-linecap='round'/>" +
-                
-                "<path d='M42 54 Q48 48 54 54 Q48 58 42 54' fill='%23ffffff'/>" +
-                "<path d='M74 54 Q80 48 86 54 Q80 58 74 54' fill='%23ffffff'/>" +
-                
-                "<circle cx='48' cy='53' r='3.5' fill='%233d2c22'/>" +
-                "<circle cx='80' cy='53' r='3.5' fill='%233d2c22'/>" +
-                "<circle cx='49' cy='52' r='1' fill='%23ffffff'/>" +
-                "<circle cx='81' cy='52' r='1' fill='%23ffffff'/>" +
-
-                "<!-- Nose -->" +
-                "<path d='M64 54 L60 68 L64 70 L68 68 Z' fill='%239a6b4e'/>" +
-                "<path d='M64 54 L60 68 L64 70' fill='%23bc8a64' opacity='0.8'/>" +
-
-                "<!-- Smile (White Teeth showing through beard) -->" +
-                "<path d='M54 80 Q64 86 74 80 Q64 84 54 80' fill='%23ffffff'/>" +
-                "<path d='M54 80 Q64 86 74 80' fill='none' stroke='%231c130e' stroke-width='1'/>" +
-                
-                "<!-- Professional Gaming Headset Base -->" +
-                "<path d='M24 64 A40 40 0 0 1 104 64' fill='none' stroke='%230f172a' stroke-width='14'/>" +
-                "<path d='M24 64 A40 40 0 0 1 104 64' fill='none' stroke='%231e293b' stroke-width='8'/>" +
-
-                "<!-- Headset Neon Accent -->" +
-                "<path d='M28 60 A36 36 0 0 1 100 60' fill='none' stroke='%231f6feb' stroke-width='2'/>" +
-
-                "<!-- Left Earcup with 3D Depth -->" +
-                "<rect x='14' y='46' width='18' height='40' rx='9' fill='%230f172a'/>" +
-                "<rect x='18' y='48' width='14' height='36' rx='7' fill='%231e293b'/>" +
-                "<rect x='22' y='54' width='10' height='24' rx='5' fill='%23334155'/>" +
-                "<circle cx='27' cy='66' r='4' fill='%231f6feb'/>" +
-
-                "<!-- Right Earcup with 3D Depth -->" +
-                "<rect x='96' y='46' width='18' height='40' rx='9' fill='%230f172a'/>" +
-                "<rect x='96' y='48' width='14' height='36' rx='7' fill='%231e293b'/>" +
-                "<rect x='96' y='54' width='10' height='24' rx='5' fill='%23334155'/>" +
-                "<circle cx='101' cy='66' r='4' fill='%231f6feb'/>" +
-
-                "<!-- Professional Boom Microphone -->" +
-                "<path d='M26 76 Q32 96 52 94' fill='none' stroke='%230f172a' stroke-width='5' stroke-linecap='round'/>" +
-                "<path d='M26 76 Q32 96 52 94' fill='none' stroke='%23334155' stroke-width='2' stroke-linecap='round'/>" +
-                
-                "<!-- Mic Foam Filter -->" +
-                "<ellipse cx='56' cy='93' rx='9' ry='6' fill='%23111827'/>" +
-                "<ellipse cx='55' cy='92' rx='5' ry='3' fill='%23334155' opacity='0.7'/>" +
-                "<circle cx='62' cy='93' r='2' fill='%231f6feb'/>" +
-                
-                "</svg>"
-        }
-
-        // Text meticulously aligned to the vertical center of the image
         Text {
-            id: contactTextLabel
+            id: triggerLabel
             text: qsTr("Contact Us")
-            color: contactUsRootComponent.isComponentHovered ? contactUsRootComponent.colorTextHover : contactUsRootComponent.colorTextDefault
+            Layout.alignment: Qt.AlignVCenter
+            color: mnjnefSupportSystem.isHovering ? mnjnefSupportSystem.themeTextMain : mnjnefSupportSystem.themeTextSub
             font.pixelSize: 13
             font.bold: true
             font.family: "Segoe UI"
-            anchors.verticalCenter: parent.verticalCenter
+            font.letterSpacing: 0.5
             
             Behavior on color {
-                ColorAnimation { 
-                    duration: 150 
-                    easing.type: Easing.InOutQuad
-                }
+                ColorAnimation { duration: 200; easing.type: Easing.OutQuart }
             }
         }
     }
 
-    // Interactive Area for the entire component
     MouseArea {
-        id: contactMouseArea
         anchors.fill: parent
         cursorShape: Qt.PointingHandCursor
         hoverEnabled: true
         
         onEntered: {
-            contactUsRootComponent.isComponentHovered = true
-            mainLayoutContainer.opacity = 0.85
+            mnjnefSupportSystem.isHovering = true
+            triggerLayout.opacity = 0.9
         }
-        
         onExited: {
-            contactUsRootComponent.isComponentHovered = false
-            mainLayoutContainer.opacity = 1.0
+            mnjnefSupportSystem.isHovering = false
+            triggerLayout.opacity = 1.0
         }
-        
         onClicked: {
-            supportTicketPopup.open()
+            ticketFormPopup.open()
+            formReset()
         }
-        
-        onPressed: {
-            mainLayoutContainer.scale = 0.95
-        }
-        
-        onReleased: {
-            mainLayoutContainer.scale = 1.0
-        }
+        onPressed: triggerLayout.scale = 0.96
+        onReleased: triggerLayout.scale = 1.0
     }
 
-    // Comprehensive Support Ticket Popup Window
+    function formReset() {
+        subjectInput.text = ""
+        categoryDropdown.currentIndex = 0
+        messageInput.text = ""
+        submitStateMachine.state = "idle"
+    }
+
     Popup {
-        id: supportTicketPopup
-        width: 500
-        height: 620
-        x: (parent.width - width) / 2 - 220
-        y: -480
+        id: ticketFormPopup
+        width: 540
+        height: 680
+        x: Math.round((parent.width - width) / 2) - 240
+        y: -540
         modal: true
         focus: true
         closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
 
-        // High-end cinematic entrance animation
+        Overlay.modal: Rectangle {
+            color: "#000000"
+            opacity: 0.6
+            Behavior on opacity { NumberAnimation { duration: 300 } }
+        }
+
         enter: Transition {
             ParallelAnimation {
-                NumberAnimation { 
-                    property: "opacity"
-                    from: 0.0
-                    to: 1.0
-                    duration: 300
-                    easing.type: Easing.OutQuint
-                }
-                NumberAnimation { 
-                    property: "scale"
-                    from: 0.90
-                    to: 1.0
-                    duration: 300
-                    easing.type: Easing.OutBack
-                }
+                NumberAnimation { property: "opacity"; from: 0.0; to: 1.0; duration: 250; easing.type: Easing.OutCubic }
+                NumberAnimation { property: "scale"; from: 0.92; to: 1.0; duration: 350; easing.type: Easing.OutBack }
             }
         }
         
-        // High-end cinematic exit animation
         exit: Transition {
             ParallelAnimation {
-                NumberAnimation { 
-                    property: "opacity"
-                    from: 1.0
-                    to: 0.0
-                    duration: 250
-                    easing.type: Easing.InQuint
-                }
-                NumberAnimation { 
-                    property: "scale"
-                    from: 1.0
-                    to: 0.95
-                    duration: 250
-                    easing.type: Easing.InQuint
-                }
+                NumberAnimation { property: "opacity"; from: 1.0; to: 0.0; duration: 200; easing.type: Easing.InCubic }
+                NumberAnimation { property: "scale"; from: 1.0; to: 0.95; duration: 200; easing.type: Easing.InCubic }
             }
         }
 
-        // Complex background with layering
         background: Rectangle {
-            color: contactUsRootComponent.colorBackground
+            color: mnjnefSupportSystem.themeBackground
             radius: 16
-            border.color: contactUsRootComponent.colorBorder
+            border.color: mnjnefSupportSystem.themeBorder
             border.width: 1
             
-            // Inner subtle glow/highlight
             Rectangle {
                 anchors.fill: parent
                 anchors.margins: 1
@@ -252,70 +194,77 @@ Item {
                 border.width: 1
             }
             
-            // Header visual separation
             Rectangle {
                 width: parent.width
-                height: 70
+                height: 80
                 anchors.top: parent.top
-                color: contactUsRootComponent.colorSurface
+                color: mnjnefSupportSystem.themeSurface
                 radius: 16
                 
                 Rectangle {
                     width: parent.width
-                    height: 16
+                    height: 20
                     anchors.bottom: parent.bottom
-                    color: contactUsRootComponent.colorSurface
+                    color: mnjnefSupportSystem.themeSurface
                 }
             }
         }
 
-        // Main Content Column
         Column {
             anchors.fill: parent
-            anchors.margins: 28
+            anchors.margins: 32
             spacing: 24
 
-            // Custom Header Row
             Item {
                 width: parent.width
-                height: 32
+                height: 40
                 
-                Row {
-                    anchors.left: parent.left
-                    anchors.verticalCenter: parent.verticalCenter
-                    spacing: 12
+                RowLayout {
+                    anchors.fill: parent
+                    spacing: 16
                     
-                    // Small header icon
                     Rectangle {
-                        width: 32
-                        height: 32
-                        radius: 8
-                        color: contactUsRootComponent.colorPrimary
-                        opacity: 0.2
-                        anchors.verticalCenter: parent.verticalCenter
+                        Layout.preferredWidth: 40
+                        Layout.preferredHeight: 40
+                        radius: 10
+                        color: mnjnefSupportSystem.themePrimary
+                        opacity: 0.15
                     }
                     
                     Text {
                         text: "!"
-                        color: contactUsRootComponent.colorPrimary
-                        font.pixelSize: 18
+                        color: mnjnefSupportSystem.themePrimary
+                        font.pixelSize: 20
                         font.bold: true
-                        anchors.centerIn: parent.children[0]
+                        x: 16
+                        y: 8
                     }
 
-                    Text {
-                        text: qsTr("Contact Support")
-                        color: "#ffffff"
-                        font.pixelSize: 22
-                        font.bold: true
-                        font.family: "Segoe UI"
-                        anchors.verticalCenter: parent.verticalCenter
+                    Column {
+                        Layout.fillWidth: true
+                        spacing: 2
+                        
+                        Text {
+                            text: qsTr("Mnjnef Premium Support")
+                            color: mnjnefSupportSystem.themeTextMain
+                            font.pixelSize: 20
+                            font.bold: true
+                            font.family: "Segoe UI"
+                        }
+                        
+                        Text {
+                            text: qsTr("Ticket Creation Portal")
+                            color: mnjnefSupportSystem.themePrimary
+                            font.pixelSize: 12
+                            font.bold: true
+                            font.family: "Segoe UI"
+                            font.letterSpacing: 1.0
+                        }
                     }
                 }
                 
-                // Animated Close Button
                 Rectangle {
-                    id: closePopupButton
+                    id: closeBtn
                     width: 32
                     height: 32
                     color: "transparent"
@@ -323,14 +272,12 @@ Item {
                     anchors.right: parent.right
                     anchors.verticalCenter: parent.verticalCenter
                     
-                    Behavior on color {
-                        ColorAnimation { duration: 150 }
-                    }
+                    Behavior on color { ColorAnimation { duration: 150 } }
                     
                     Text { 
                         anchors.centerIn: parent
                         text: "✕"
-                        color: contactUsRootComponent.colorTextDefault
+                        color: mnjnefSupportSystem.themeTextSub
                         font.pixelSize: 16
                         font.bold: true
                     }
@@ -339,201 +286,245 @@ Item {
                         anchors.fill: parent
                         cursorShape: Qt.PointingHandCursor
                         hoverEnabled: true
-                        onEntered: {
-                            closePopupButton.color = contactUsRootComponent.colorSurfaceHover
-                        }
-                        onExited: {
-                            closePopupButton.color = "transparent"
-                        }
-                        onClicked: {
-                            supportTicketPopup.close()
-                        }
+                        onEntered: closeBtn.color = mnjnefSupportSystem.themeSurfaceHighlight
+                        onExited: closeBtn.color = "transparent"
+                        onClicked: ticketFormPopup.close()
                     }
                 }
             }
 
-            Rectangle { 
-                width: parent.width
-                height: 1
-                color: contactUsRootComponent.colorBorder 
-                opacity: 0.5
-            }
+            Rectangle { width: parent.width; height: 1; color: mnjnefSupportSystem.themeBorder }
 
-            // Instructional Text
-            Text { 
-                text: qsTr("Please fill out the form below and our technical team will get back to you as soon as possible.")
-                color: contactUsRootComponent.colorTextDefault
-                font.pixelSize: 14 
-                font.family: "Segoe UI"
-                wrapMode: Text.WordWrap
-                width: parent.width
-                lineHeight: 1.4
-            }
-
-            // Subject Input Field
             Column {
                 width: parent.width
                 spacing: 8
                 
-                Text {
-                    text: qsTr("Subject")
-                    color: "#e2e8f0"
-                    font.pixelSize: 14
-                    font.bold: true
+                Text { text: qsTr("Issue Category"); color: mnjnefSupportSystem.themeTextMain; font.pixelSize: 13; font.bold: true }
+                
+                ComboBox {
+                    id: categoryDropdown
+                    width: parent.width
+                    height: 48
+                    model: ["Account & Login", "Billing & Payments", "Technical Issue", "Report a Bug", "Other"]
+                    
+                    background: Rectangle {
+                        color: mnjnefSupportSystem.themeSurface
+                        radius: 8
+                        border.color: categoryDropdown.activeFocus ? mnjnefSupportSystem.themePrimary : mnjnefSupportSystem.themeBorder
+                        border.width: categoryDropdown.activeFocus ? 2 : 1
+                        Behavior on border.color { ColorAnimation { duration: 150 } }
+                    }
+                    
+                    contentItem: Text {
+                        leftPadding: 16
+                        text: categoryDropdown.currentText
+                        color: mnjnefSupportSystem.themeTextMain
+                        font.pixelSize: 14
+                        verticalAlignment: Text.AlignVCenter
+                        elide: Text.ElideRight
+                    }
                 }
+            }
+
+            Column {
+                width: parent.width
+                spacing: 8
+                
+                Text { text: qsTr("Subject"); color: mnjnefSupportSystem.themeTextMain; font.pixelSize: 13; font.bold: true }
                 
                 Rectangle {
                     width: parent.width
-                    height: 50
-                    color: "#0f172a"
+                    height: 48
+                    color: mnjnefSupportSystem.themeSurface
                     radius: 8
-                    border.color: ticketSubjectField.activeFocus ? contactUsRootComponent.colorPrimary : contactUsRootComponent.colorBorder
-                    border.width: ticketSubjectField.activeFocus ? 2 : 1
-                    
+                    border.color: subjectInput.activeFocus ? mnjnefSupportSystem.themePrimary : mnjnefSupportSystem.themeBorder
+                    border.width: subjectInput.activeFocus ? 2 : 1
                     Behavior on border.color { ColorAnimation { duration: 150 } }
                     
                     TextInput {
-                        id: ticketSubjectField
+                        id: subjectInput
                         anchors.fill: parent
                         anchors.leftMargin: 16
                         anchors.rightMargin: 16
-                        color: "#ffffff"
+                        color: mnjnefSupportSystem.themeTextMain
                         font.pixelSize: 14
-                        font.family: "Segoe UI"
                         verticalAlignment: TextInput.AlignVCenter
                         clip: true
                         
                         Text { 
-                            text: qsTr("Briefly describe the issue")
-                            color: "#475569"
+                            text: qsTr("e.g. Cannot connect to main server")
+                            color: mnjnefSupportSystem.themeTextSub
                             font.pixelSize: 14
                             anchors.verticalCenter: parent.verticalCenter
-                            visible: !ticketSubjectField.text && !ticketSubjectField.activeFocus 
+                            visible: !subjectInput.text && !subjectInput.activeFocus 
                         }
                     }
                 }
             }
 
-            // Detailed Message Input Area
             Column {
                 width: parent.width
                 spacing: 8
                 
-                Text {
-                    text: qsTr("Message Details")
-                    color: "#e2e8f0"
-                    font.pixelSize: 14
-                    font.bold: true
+                RowLayout {
+                    width: parent.width
+                    Text { text: qsTr("Detailed Description"); color: mnjnefSupportSystem.themeTextMain; font.pixelSize: 13; font.bold: true; Layout.fillWidth: true }
+                    Text { 
+                        text: messageInput.text.length + "/500"
+                        color: messageInput.text.length > 480 ? mnjnefSupportSystem.themeError : mnjnefSupportSystem.themeTextSub
+                        font.pixelSize: 12
+                    }
                 }
                 
                 Rectangle {
                     width: parent.width
-                    height: 160
-                    color: "#0f172a"
+                    height: 140
+                    color: mnjnefSupportSystem.themeSurface
                     radius: 8
-                    border.color: ticketMessageArea.activeFocus ? contactUsRootComponent.colorPrimary : contactUsRootComponent.colorBorder
-                    border.width: ticketMessageArea.activeFocus ? 2 : 1
-                    
+                    border.color: messageInput.activeFocus ? mnjnefSupportSystem.themePrimary : mnjnefSupportSystem.themeBorder
+                    border.width: messageInput.activeFocus ? 2 : 1
                     Behavior on border.color { ColorAnimation { duration: 150 } }
                     
                     TextEdit {
-                        id: ticketMessageArea
+                        id: messageInput
                         anchors.fill: parent
                         anchors.margins: 16
-                        color: "#ffffff"
+                        color: mnjnefSupportSystem.themeTextMain
                         font.pixelSize: 14
-                        font.family: "Segoe UI"
                         wrapMode: TextEdit.WordWrap
                         clip: true
                         
+                        onTextChanged: {
+                            if (text.length > 500) {
+                                text = text.substring(0, 500)
+                            }
+                        }
+                        
                         Text { 
-                            text: qsTr("Provide all necessary details, error codes, or steps to reproduce...")
-                            color: "#475569"
+                            text: qsTr("Please provide as much detail as possible to help our team resolve your issue quickly...")
+                            color: mnjnefSupportSystem.themeTextSub
                             font.pixelSize: 14
-                            visible: !ticketMessageArea.text && !ticketMessageArea.activeFocus 
+                            width: parent.width
+                            wrapMode: Text.WordWrap
+                            visible: !messageInput.text && !messageInput.activeFocus 
                         }
                     }
                 }
             }
 
-            // Spacer to push buttons to the bottom
-            Item {
-                width: 1
-                height: 10
-            }
+            Item { width: 1; height: 1 }
 
-            // Action Buttons Row
-            Row {
+            Rectangle {
+                id: submitActionBtn
                 width: parent.width
-                spacing: 16
+                height: 52
+                radius: 8
+                color: {
+                    if (submitStateMachine.state === "success") return mnjnefSupportSystem.themeSuccess
+                    if (submitMouseArea.containsPress) return mnjnefSupportSystem.themePrimaryPressed
+                    if (submitMouseArea.containsMouse) return mnjnefSupportSystem.themePrimaryHover
+                    return mnjnefSupportSystem.themePrimary
+                }
                 
-                // Cancel Button
-                Rectangle {
-                    id: cancelTicketBtn
-                    width: (parent.width - 16) / 3
-                    height: 50
-                    radius: 8
-                    color: "transparent"
-                    border.color: contactUsRootComponent.colorBorder
-                    border.width: 1
+                Behavior on color { ColorAnimation { duration: 200 } }
+
+                Item {
+                    id: submitStateMachine
+                    state: "idle"
+                    anchors.fill: parent
                     
-                    Behavior on color { ColorAnimation { duration: 150 } }
+                    states: [
+                        State { name: "idle" },
+                        State { name: "loading" },
+                        State { name: "success" }
+                    ]
+                }
+
+                Text { 
+                    anchors.centerIn: parent
+                    text: submitStateMachine.state === "success" ? qsTr("Ticket Submitted Successfully") : qsTr("Submit Support Ticket")
+                    color: "#ffffff"
+                    font.pixelSize: 15
+                    font.bold: true 
+                    opacity: submitStateMachine.state === "loading" ? 0 : 1
+                    Behavior on opacity { NumberAnimation { duration: 150 } }
+                }
+
+                // Custom Loading Spinner Animation
+                Item {
+                    width: 24
+                    height: 24
+                    anchors.centerIn: parent
+                    opacity: submitStateMachine.state === "loading" ? 1 : 0
+                    Behavior on opacity { NumberAnimation { duration: 150 } }
                     
-                    Text { 
-                        anchors.centerIn: parent
-                        text: qsTr("Cancel")
-                        color: contactUsRootComponent.colorTextHover
-                        font.pixelSize: 15
-                        font.bold: true 
+                    Rectangle {
+                        width: 24
+                        height: 24
+                        radius: 12
+                        color: "transparent"
+                        border.color: "#ffffff"
+                        border.width: 3
+                        opacity: 0.3
                     }
                     
-                    MouseArea {
-                        anchors.fill: parent
-                        cursorShape: Qt.PointingHandCursor
-                        hoverEnabled: true
-                        onEntered: cancelTicketBtn.color = contactUsRootComponent.colorSurface
-                        onExited: cancelTicketBtn.color = "transparent"
-                        onClicked: { 
-                            ticketSubjectField.text = ""
-                            ticketMessageArea.text = ""
-                            supportTicketPopup.close() 
+                    Rectangle {
+                        width: 24
+                        height: 24
+                        radius: 12
+                        color: "transparent"
+                        border.color: "#ffffff"
+                        border.width: 3
+                        clip: true
+                        
+                        RotationAnimation on rotation {
+                            loops: Animation.Infinite
+                            from: 0
+                            to: 360
+                            duration: 800
+                            running: submitStateMachine.state === "loading"
                         }
                     }
                 }
-                
-                // Submit Button
-                Rectangle {
-                    id: submitTicketBtn
-                    width: ((parent.width - 16) / 3) * 2
-                    height: 50
-                    radius: 8
-                    color: contactUsRootComponent.colorPrimary
+
+                MouseArea {
+                    id: submitMouseArea
+                    anchors.fill: parent
+                    cursorShape: submitStateMachine.state === "idle" ? Qt.PointingHandCursor : Qt.ArrowCursor
+                    hoverEnabled: true
                     
-                    Behavior on color { ColorAnimation { duration: 150 } }
-                    
-                    Text { 
-                        anchors.centerIn: parent
-                        text: qsTr("Send to Support Team")
-                        color: "#ffffff"
-                        font.pixelSize: 15
-                        font.bold: true 
-                    }
-                    
-                    MouseArea {
-                        anchors.fill: parent
-                        cursorShape: Qt.PointingHandCursor
-                        hoverEnabled: true
-                        onEntered: submitTicketBtn.color = contactUsRootComponent.colorPrimaryHover
-                        onExited: submitTicketBtn.color = contactUsRootComponent.colorPrimary
-                        onClicked: { 
-                            console.log("Ticket Submitted: " + ticketSubjectField.text)
-                            ticketSubjectField.text = ""
-                            ticketMessageArea.text = ""
-                            supportTicketPopup.close() 
+                    onClicked: {
+                        if (submitStateMachine.state !== "idle") return;
+                        
+                        if (subjectInput.text.trim() === "" || messageInput.text.trim() === "") {
+                            subjectInput.forceActiveFocus()
+                            return;
                         }
+                        
+                        submitStateMachine.state = "loading"
+                        
+                        // Simulate network delay for pro feel
+                        fakeNetworkDelay.start()
                     }
                 }
             }
+        }
+        
+        Timer {
+            id: fakeNetworkDelay
+            interval: 1500
+            repeat: false
+            onTriggered: {
+                submitStateMachine.state = "success"
+                closeDelay.start()
+            }
+        }
+        
+        Timer {
+            id: closeDelay
+            interval: 1200
+            repeat: false
+            onTriggered: ticketFormPopup.close()
         }
     }
 }
