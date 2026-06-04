@@ -2,596 +2,625 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 
-Item {
-    id: mnjnefSupportLauncherRoot
-    width: launcherMainContainer.width
-    height: launcherMainContainer.height
-    implicitWidth: 280
-    implicitHeight: 70
-    
-    // ==========================================
-    // SYSTEM API & SIGNALS
-    // ==========================================
-    signal launcherTriggered(int sessionId, string timestamp)
-    signal securityCheckFailed(string errorCode)
-    signal masterEngineLoaded()
-    signal hoverStateChanged(bool isHovered)
-    
-    property bool isSystemActive: false
-    property bool isEngineReady: false
-    property string currentSessionId: ""
-    property int securityLevel: 3 // 1: Low, 2: Med, 3: High, 4: Max
-    property string lastEventLog: ""
+Popup {
+    id: mnjnefMasterEngineRoot
+    width: 900
+    height: 680
+    x: Math.round((parent.width - width) / 2)
+    y: Math.round((parent.height - height) / 2)
+    modal: true
+    focus: true
+    closePolicy: Popup.NoAutoClose // Forces user to use our secure close button
 
     // ==========================================
-    // THEME & STYLING CORE (MNJNEF DESIGN SYSTEM)
+    // CORE SYSTEM PROPERTIES & THEME
     // ==========================================
     QtObject {
-        id: theme
-        // Primary Brand Colors
-        property color primaryCore: "#1f6feb"
-        property color primaryHover: "#3b82f6"
-        property color primaryActive: "#1d4ed8"
-        property color primaryGlow: "#4589ff"
-        property color primaryTransparent: "#331f6feb"
+        id: engineTheme
+        property color bgPrimary: "#070c14"
+        property color bgSecondary: "#0f172a"
+        property color bgTertiary: "#1e293b"
+        property color bgOverlay: "#cc000000"
         
-        // Backgrounds & Surfaces
-        property color bgAppBase: "#050914"
-        property color bgSurfaceLevel1: "#0f172a"
-        property color bgSurfaceLevel2: "#1e293b"
-        property color bgSurfaceLevel3: "#334155"
+        property color accentMain: "#1f6feb"
+        property color accentHover: "#3b82f6"
+        property color accentActive: "#1d4ed8"
+        property color accentGlow: "#4589ff"
         
-        // Text & Typography Colors
-        property color textHighEmphasis: "#ffffff"
-        property color textMediumEmphasis: "#f8fafc"
-        property color textLowEmphasis: "#94a3b8"
+        property color textHeader: "#ffffff"
+        property color textBody: "#f8fafc"
+        property color textMuted: "#94a3b8"
         property color textDisabled: "#475569"
         
-        // Borders & Dividers
-        property color borderSubtle: "#1e293b"
-        property color borderDefault: "#334155"
-        property color borderHover: "#475569"
+        property color borderLight: "#334155"
+        property color borderMedium: "#1e293b"
         property color borderFocus: "#1f6feb"
         
-        // Status & Semantic Colors
-        property color statusError: "#ef4444"
-        property color statusErrorBg: "#33ef4444"
+        property color statusSecure: "#10b981"
         property color statusWarning: "#f59e0b"
-        property color statusWarningBg: "#33f59e0b"
-        property color statusSuccess: "#10b981"
-        property color statusSuccessBg: "#3310b981"
-        property color statusInfo: "#0ea5e9"
-        
-        // Security Specific Colors
-        property color securitySafe: "#10b981"
-        property color securityScanning: "#8b5cf6"
-        property color securityLocked: "#f43f5e"
+        property color statusDanger: "#ef4444"
+        property color statusScan: "#8b5cf6"
     }
 
-    // ==========================================
-    // METRICS & SPACING SYSTEM
-    // ==========================================
     QtObject {
-        id: metrics
-        property int radiusSmall: 4
-        property int radiusMedium: 8
-        property int radiusLarge: 12
-        property int radiusPill: 35
-        
-        property int spacingMicro: 4
-        property int spacingSmall: 8
-        property int spacingMedium: 12
-        property int spacingLarge: 16
-        property int spacingXLarge: 24
-        
-        property int avatarSize: 42
-        property int statusDotSize: 12
-        
-        property int containerPaddingHorizontal: 20
-        property int containerPaddingVertical: 12
+        id: engineMetrics
+        property int headerHeight: 64
+        property int footerHeight: 32
+        property int sidebarWidth: 240
+        property int radiusWindow: 16
+        property int radiusElements: 8
+        property int paddingStandard: 24
     }
 
-    // ==========================================
-    // TYPOGRAPHY SYSTEM
-    // ==========================================
     QtObject {
-        id: typo
-        property string fontFamilyMain: "Segoe UI"
-        property string fontFamilyMono: "Consolas"
-        
-        property int sizeHeader: 16
-        property int sizeBody: 14
-        property int sizeCaption: 11
-        property int sizeMicro: 9
-        
-        property int weightNormal: Font.Normal
-        property int weightMedium: Font.Medium
-        property int weightBold: Font.Bold
+        id: engineState
+        property string currentModule: "System Initialization"
+        property int securityClearance: 3
+        property bool isNetworkSecure: true
+        property string sessionId: "MNJ-SEC-000000"
+        property bool isProcessing: false
     }
 
     // ==========================================
-    // MAIN LAUNCHER CONTAINER
+    // MASTER ENGINE ANIMATIONS (ENTER/EXIT)
     // ==========================================
-    Item {
-        id: launcherMainContainer
-        width: contentLayout.implicitWidth + (metrics.containerPaddingHorizontal * 2)
-        height: contentLayout.implicitHeight + (metrics.containerPaddingVertical * 2)
-        anchors.centerIn: parent
+    enter: Transition {
+        ParallelAnimation {
+            NumberAnimation { property: "opacity"; from: 0.0; to: 1.0; duration: 400; easing.type: Easing.OutQuint }
+            NumberAnimation { property: "scale"; from: 0.95; to: 1.0; duration: 500; easing.type: Easing.OutElastic; easing.amplitude: 1.2 }
+        }
+    }
+    
+    exit: Transition {
+        ParallelAnimation {
+            NumberAnimation { property: "opacity"; from: 1.0; to: 0.0; duration: 300; easing.type: Easing.InQuint }
+            NumberAnimation { property: "scale"; from: 1.0; to: 0.95; duration: 300; easing.type: Easing.InQuint }
+        }
+    }
 
-        // Focus & Accessibility
-        activeFocusOnTab: true
-        Keys.onEnterPressed: rootController.initiateLaunchSequence()
-        Keys.onReturnPressed: rootController.initiateLaunchSequence()
-        Keys.onSpacePressed: rootController.initiateLaunchSequence()
-
-        // ------------------------------------------
-        // VISUAL EFFECTS: AMBIENT GLOW
-        // ------------------------------------------
+    // ==========================================
+    // MODAL OVERLAY BACKGROUND
+    // ==========================================
+    Overlay.modal: Rectangle {
+        color: engineTheme.bgOverlay
+        
+        // Blurred background effect simulation
         Rectangle {
-            id: ambientOuterGlow
             anchors.fill: parent
-            anchors.margins: -6
-            radius: metrics.radiusPill + 6
+            color: engineTheme.accentMain
+            opacity: 0.03
+        }
+        
+        Behavior on opacity { NumberAnimation { duration: 400 } }
+    }
+
+    // ==========================================
+    // MASTER WINDOW BACKGROUND & BORDERS
+    // ==========================================
+    background: Rectangle {
+        color: engineTheme.bgPrimary
+        radius: engineMetrics.radiusWindow
+        border.color: engineTheme.borderMedium
+        border.width: 1
+        
+        // Inner Glow / Reflection
+        Rectangle {
+            anchors.fill: parent
+            anchors.margins: 1
+            radius: engineMetrics.radiusWindow - 1
             color: "transparent"
-            border.color: theme.primaryGlow
-            border.width: 2
-            opacity: 0.0
-            
-            Behavior on opacity { NumberAnimation { duration: 400; easing.type: Easing.OutCubic } }
-            Behavior on scale { NumberAnimation { duration: 400; easing.type: Easing.OutBack } }
+            border.color: "#1a253a"
+            border.width: 1
         }
+        
+        // Decorative Top Line
+        Rectangle {
+            width: parent.width - 60
+            height: 2
+            anchors.top: parent.top
+            anchors.horizontalCenter: parent.horizontalCenter
+            color: engineTheme.accentMain
+            opacity: 0.5
+            radius: 1
+        }
+    }
+
+    // ==========================================
+    // MAIN LAYOUT STRUCTURE
+    // ==========================================
+    ColumnLayout {
+        anchors.fill: parent
+        spacing: 0
 
         // ------------------------------------------
-        // VISUAL EFFECTS: DYNAMIC BACKGROUND
+        // 1. MASTER HEADER
         // ------------------------------------------
         Rectangle {
-            id: containerBackground
-            anchors.fill: parent
-            radius: metrics.radiusPill
-            color: theme.bgSurfaceLevel1
-            border.color: theme.borderDefault
-            border.width: 1
+            Layout.fillWidth: true
+            Layout.preferredHeight: engineMetrics.headerHeight
+            color: engineTheme.bgSecondary
+            radius: engineMetrics.radiusWindow
             
-            // Subtle internal gradient simulation
+            // Fix bottom corners to be square so it blends with body
             Rectangle {
-                anchors.fill: parent
-                radius: metrics.radiusPill
-                color: theme.primaryCore
-                opacity: 0.0
-                id: bgHighlightLayer
-                Behavior on opacity { NumberAnimation { duration: 300 } }
+                width: parent.width
+                height: engineMetrics.radiusWindow
+                anchors.bottom: parent.bottom
+                color: engineTheme.bgSecondary
             }
-            
-            Behavior on color { ColorAnimation { duration: 250; easing.type: Easing.OutQuart } }
-            Behavior on border.color { ColorAnimation { duration: 250 } }
-        }
 
-        // ------------------------------------------
-        // CONTENT LAYOUT (AVATAR + TEXT)
-        // ------------------------------------------
-        RowLayout {
-            id: contentLayout
-            anchors.centerIn: parent
-            spacing: metrics.spacingMedium
+            Rectangle {
+                width: parent.width
+                height: 1
+                anchors.bottom: parent.bottom
+                color: engineTheme.borderLight
+            }
 
-            // AVATAR MODULE
-            Item {
-                id: avatarModule
-                Layout.alignment: Qt.AlignVCenter
-                Layout.preferredWidth: metrics.avatarSize
-                Layout.preferredHeight: metrics.avatarSize
+            RowLayout {
+                anchors.fill: parent
+                anchors.leftMargin: engineMetrics.paddingStandard
+                anchors.rightMargin: engineMetrics.paddingStandard
+                spacing: 16
 
-                // Avatar Border / Ring
+                // Header Logo / Icon
                 Rectangle {
-                    id: avatarRing
-                    anchors.fill: parent
-                    radius: metrics.avatarSize / 2
-                    color: "transparent"
-                    border.color: theme.borderDefault
-                    border.width: 2
-                    Behavior on border.color { ColorAnimation { duration: 200 } }
-                }
-
-                // Main Avatar Image
-                Image {
-                    id: userAvatarImage
-                    anchors.centerIn: parent
-                    width: metrics.avatarSize - 4
-                    height: metrics.avatarSize - 4
-                    smooth: true
-                    antialiasing: true
-                    mipmap: true
-                    source: "support_avatar.png"
-                    
-                    // Circular clipping for the image
-                    layer.enabled: true
-                    layer.effect: ShaderEffect {
-                        fragmentShader: "
-                            varying highp vec2 qt_TexCoord0;
-                            uniform sampler2D source;
-                            uniform lowp float qt_Opacity;
-                            void main() {
-                                highp vec2 uv = qt_TexCoord0;
-                                highp float dist = distance(uv, vec2(0.5, 0.5));
-                                lowp vec4 tex = texture2D(source, uv);
-                                gl_FragColor = tex * smoothstep(0.5, 0.48, dist) * qt_Opacity;
-                            }
-                        "
-                    }
-                }
-
-                // Avatar Fallback (If image fails to load)
-                Rectangle {
-                    id: avatarFallback
-                    anchors.centerIn: parent
-                    width: metrics.avatarSize - 4
-                    height: metrics.avatarSize - 4
-                    radius: (metrics.avatarSize - 4) / 2
-                    color: theme.bgSurfaceLevel3
-                    visible: userAvatarImage.status === Image.Error || userAvatarImage.status === Image.Null
+                    Layout.preferredWidth: 36
+                    Layout.preferredHeight: 36
+                    radius: 8
+                    color: engineTheme.bgTertiary
+                    border.color: engineTheme.borderLight
+                    border.width: 1
                     
                     Text {
                         anchors.centerIn: parent
-                        text: "MS" // Mnjnef Support
-                        color: theme.textHighEmphasis
-                        font.pixelSize: typo.sizeHeader
+                        text: "M"
+                        color: engineTheme.accentMain
+                        font.pixelSize: 20
                         font.bold: true
-                        font.family: typo.fontFamilyMain
+                        font.family: "Segoe UI"
                     }
                 }
 
-                // ------------------------------------------
-                // LIVE STATUS INDICATOR (Pulsing Dot)
-                // ------------------------------------------
-                Item {
-                    id: statusIndicatorContainer
-                    width: metrics.statusDotSize
-                    height: metrics.statusDotSize
-                    anchors.right: parent.right
-                    anchors.bottom: parent.bottom
-                    anchors.margins: -2
+                // Header Titles
+                Column {
+                    Layout.alignment: Qt.AlignVCenter
+                    Layout.fillWidth: true
+                    spacing: 2
                     
-                    // Outer Pulse Ring
-                    Rectangle {
-                        id: statusPulseRing
-                        anchors.centerIn: parent
-                        width: metrics.statusDotSize
-                        height: metrics.statusDotSize
-                        radius: width / 2
-                        color: "transparent"
-                        border.color: theme.statusSuccess
-                        border.width: 1
-                        opacity: 0.0
-                        
-                        SequentialAnimation on width {
-                            loops: Animation.Infinite
-                            running: true
-                            NumberAnimation { from: metrics.statusDotSize; to: metrics.statusDotSize + 12; duration: 1500; easing.type: Easing.OutQuad }
-                        }
-                        
-                        SequentialAnimation on opacity {
-                            loops: Animation.Infinite
-                            running: true
-                            NumberAnimation { from: 0.8; to: 0.0; duration: 1500; easing.type: Easing.OutQuad }
-                        }
+                    Text {
+                        text: qsTr("Mnjnef Command Center")
+                        color: engineTheme.textHeader
+                        font.pixelSize: 18
+                        font.bold: true
+                        font.family: "Segoe UI"
+                        font.letterSpacing: 0.5
                     }
                     
-                    // Core Status Dot
-                    Rectangle {
-                        id: statusCoreDot
-                        anchors.fill: parent
-                        radius: width / 2
-                        color: theme.statusSuccess
-                        border.color: theme.bgSurfaceLevel1
-                        border.width: 2
+                    RowLayout {
+                        spacing: 8
                         
-                        Behavior on color { ColorAnimation { duration: 300 } }
-                        Behavior on border.color { ColorAnimation { duration: 300 } }
+                        Rectangle {
+                            width: 6
+                            height: 6
+                            radius: 3
+                            color: engineTheme.statusSecure
+                            Layout.alignment: Qt.AlignVCenter
+                        }
+                        
+                        Text {
+                            text: engineState.currentModule
+                            color: engineTheme.textMuted
+                            font.pixelSize: 12
+                            font.bold: true
+                            font.family: "Segoe UI"
+                        }
+                    }
+                }
+
+                // Window Controls (Close Button)
+                Rectangle {
+                    id: headerCloseBtn
+                    Layout.preferredWidth: 36
+                    Layout.preferredHeight: 36
+                    radius: 18
+                    color: "transparent"
+                    
+                    Behavior on color { ColorAnimation { duration: 150 } }
+                    
+                    Text {
+                        anchors.centerIn: parent
+                        text: "✕"
+                        color: headerCloseBtnArea.containsMouse ? "#ffffff" : engineTheme.textMuted
+                        font.pixelSize: 16
+                        font.bold: true
+                        Behavior on color { ColorAnimation { duration: 150 } }
+                    }
+                    
+                    MouseArea {
+                        id: headerCloseBtnArea
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        
+                        onEntered: headerCloseBtn.color = engineTheme.statusDanger
+                        onExited: headerCloseBtn.color = "transparent"
+                        onClicked: engineController.secureCloseSequence()
                     }
                 }
             }
+        }
 
-            // TEXT MODULE
-            Column {
-                id: textModule
-                Layout.alignment: Qt.AlignVCenter
-                spacing: metrics.spacingMicro - 2
+        // ------------------------------------------
+        // 2. MASTER STACKVIEW (BODY)
+        // ------------------------------------------
+        Item {
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+            clip: true
+
+            StackView {
+                id: masterStackView
+                anchors.fill: parent
+                initialItem: initializationScreenComponent
                 
-                Text {
-                    id: titleText
-                    text: qsTr("Mnjnef Support")
-                    color: theme.textLowEmphasis
-                    font.pixelSize: typo.sizeHeader
-                    font.weight: typo.weightBold
-                    font.family: typo.fontFamilyMain
-                    font.letterSpacing: 0.25
-                    
-                    Behavior on color { ColorAnimation { duration: 200 } }
+                // Advanced AAA Push Transition
+                pushEnter: Transition {
+                    ParallelAnimation {
+                        NumberAnimation { property: "opacity"; from: 0.0; to: 1.0; duration: 300; easing.type: Easing.OutCubic }
+                        NumberAnimation { property: "x"; from: masterStackView.width * 0.2; to: 0; duration: 400; easing.type: Easing.OutExpo }
+                    }
+                }
+                pushExit: Transition {
+                    ParallelAnimation {
+                        NumberAnimation { property: "opacity"; from: 1.0; to: 0.0; duration: 300; easing.type: Easing.InCubic }
+                        NumberAnimation { property: "x"; from: 0; to: -(masterStackView.width * 0.2); duration: 400; easing.type: Easing.InExpo }
+                    }
                 }
                 
-                RowLayout {
-                    spacing: metrics.spacingMicro
+                // Advanced AAA Pop Transition
+                popEnter: Transition {
+                    ParallelAnimation {
+                        NumberAnimation { property: "opacity"; from: 0.0; to: 1.0; duration: 300; easing.type: Easing.OutCubic }
+                        NumberAnimation { property: "x"; from: -(masterStackView.width * 0.2); to: 0; duration: 400; easing.type: Easing.OutExpo }
+                    }
+                }
+                popExit: Transition {
+                    ParallelAnimation {
+                        NumberAnimation { property: "opacity"; from: 1.0; to: 0.0; duration: 300; easing.type: Easing.InCubic }
+                        NumberAnimation { property: "x"; from: 0; to: masterStackView.width * 0.2; duration: 400; easing.type: Easing.InExpo }
+                    }
+                }
+            }
+            
+            // Security Overlay layer (blocks UI during processing)
+            Rectangle {
+                id: securityProcessingOverlay
+                anchors.fill: parent
+                color: engineTheme.bgOverlay
+                opacity: engineState.isProcessing ? 1.0 : 0.0
+                visible: opacity > 0
+                Behavior on opacity { NumberAnimation { duration: 250 } }
+                
+                // Block all inputs
+                MouseArea { anchors.fill: parent; hoverEnabled: true }
+                
+                Column {
+                    anchors.centerIn: parent
+                    spacing: 16
                     
-                    // Secure Lock Icon (SVG Path)
+                    // Spinner
                     Item {
-                        width: 10
-                        height: 10
-                        Layout.alignment: Qt.AlignVCenter
-                        opacity: subtitleText.opacity
+                        width: 48
+                        height: 48
+                        anchors.horizontalCenter: parent.horizontalCenter
                         
-                        ShapePathDummy {
-                            // Dummy item representing SVG lock icon for security indicator
-                            // In real environment, replace with Shape or Image
+                        Rectangle {
+                            anchors.fill: parent
+                            radius: 24
+                            color: "transparent"
+                            border.color: engineTheme.accentMain
+                            border.width: 4
+                            opacity: 0.2
                         }
                         
                         Rectangle {
                             anchors.fill: parent
-                            color: theme.securitySafe
-                            radius: 2
-                            visible: false // Hidden in text-only mode for now
+                            radius: 24
+                            color: "transparent"
+                            border.color: engineTheme.accentMain
+                            border.width: 4
+                            clip: true
+                            
+                            RotationAnimation on rotation {
+                                loops: Animation.Infinite
+                                from: 0
+                                to: 360
+                                duration: 1000
+                            }
                         }
                     }
-
+                    
                     Text {
-                        id: subtitleText
-                        text: qsTr("System Ready")
-                        color: theme.securitySafe
-                        font.pixelSize: typo.sizeCaption
-                        font.weight: typo.weightMedium
-                        font.family: typo.fontFamilyMain
-                        font.letterSpacing: 0.5
-                        opacity: 0.0
-                        
-                        Behavior on opacity { NumberAnimation { duration: 250 } }
-                        Behavior on color { ColorAnimation { duration: 250 } }
+                        text: qsTr("Encrypting payload & Verifying security...")
+                        color: engineTheme.textHeader
+                        font.pixelSize: 14
+                        font.family: "Segoe UI"
+                        anchors.horizontalCenter: parent.horizontalCenter
                     }
                 }
             }
         }
 
-        // ==========================================
-        // INTERACTION HANDLING (MOUSE & TOUCH)
-        // ==========================================
-        MouseArea {
-            id: mainMouseArea
-            anchors.fill: parent
-            hoverEnabled: true
-            cursorShape: mnjnefSupportLauncherRoot.isSystemActive ? Qt.ArrowCursor : Qt.PointingHandCursor
+        // ------------------------------------------
+        // 3. MASTER FOOTER
+        // ------------------------------------------
+        Rectangle {
+            Layout.fillWidth: true
+            Layout.preferredHeight: engineMetrics.footerHeight
+            color: engineTheme.bgSecondary
+            radius: engineMetrics.radiusWindow
             
-            onEntered: {
-                if (mnjnefSupportLauncherRoot.isSystemActive) return;
-                rootController.handleHoverEnter();
+            // Fix top corners to be square
+            Rectangle {
+                width: parent.width
+                height: engineMetrics.radiusWindow
+                anchors.top: parent.top
+                color: engineTheme.bgSecondary
             }
             
-            onExited: {
-                if (mnjnefSupportLauncherRoot.isSystemActive) return;
-                rootController.handleHoverExit();
+            Rectangle {
+                width: parent.width
+                height: 1
+                anchors.top: parent.top
+                color: engineTheme.borderLight
             }
-            
-            onPressed: {
-                if (mnjnefSupportLauncherRoot.isSystemActive) return;
-                rootController.handlePress();
-            }
-            
-            onReleased: {
-                if (mnjnefSupportLauncherRoot.isSystemActive) return;
-                rootController.handleRelease();
-            }
-            
-            onClicked: {
-                if (mnjnefSupportLauncherRoot.isSystemActive) return;
-                rootController.initiateLaunchSequence();
+
+            RowLayout {
+                anchors.fill: parent
+                anchors.leftMargin: 16
+                anchors.rightMargin: 16
+                
+                Text {
+                    text: qsTr("SESSION: ") + engineState.sessionId
+                    color: engineTheme.textDisabled
+                    font.pixelSize: 11
+                    font.family: "Consolas"
+                    Layout.alignment: Qt.AlignVCenter
+                }
+                
+                Item { Layout.fillWidth: true }
+                
+                RowLayout {
+                    spacing: 8
+                    Layout.alignment: Qt.AlignVCenter
+                    
+                    Text {
+                        text: qsTr("Server: UAE-DXB-01")
+                        color: engineTheme.textDisabled
+                        font.pixelSize: 11
+                        font.family: "Segoe UI"
+                    }
+                    
+                    Rectangle {
+                        width: 1
+                        height: 12
+                        color: engineTheme.borderLight
+                    }
+                    
+                    Text {
+                        text: qsTr("Ping: 14ms")
+                        color: engineTheme.statusSecure
+                        font.pixelSize: 11
+                        font.family: "Segoe UI"
+                    }
+                }
             }
         }
     }
 
     // ==========================================
-    // CONTROLLER LOGIC (JAVASCRIPT)
+    // INITIALIZATION MOCK COMPONENT (Boot Screen)
+    // ==========================================
+    Component {
+        id: initializationScreenComponent
+        
+        Item {
+            anchors.fill: parent
+            
+            Column {
+                anchors.centerIn: parent
+                spacing: 24
+                
+                // Mnjnef Logo / Shield
+                Rectangle {
+                    width: 80
+                    height: 80
+                    radius: 20
+                    color: engineTheme.bgTertiary
+                    border.color: engineTheme.borderFocus
+                    border.width: 2
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    
+                    // Internal glow
+                    Rectangle {
+                        anchors.fill: parent
+                        anchors.margins: 2
+                        radius: 18
+                        color: engineTheme.accentMain
+                        opacity: 0.1
+                    }
+                    
+                    Text {
+                        anchors.centerIn: parent
+                        text: "M"
+                        color: engineTheme.accentMain
+                        font.pixelSize: 42
+                        font.bold: true
+                        font.family: "Segoe UI"
+                    }
+                }
+                
+                Column {
+                    spacing: 8
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    
+                    Text {
+                        text: qsTr("MNJNEF SECURE PROTOCOL")
+                        color: engineTheme.textHeader
+                        font.pixelSize: 22
+                        font.bold: true
+                        font.family: "Segoe UI"
+                        font.letterSpacing: 2.0
+                        anchors.horizontalCenter: parent.horizontalCenter
+                    }
+                    
+                    Text {
+                        id: bootLogText
+                        text: qsTr("Establishing secure connection to mainframe...")
+                        color: engineTheme.textMuted
+                        font.pixelSize: 13
+                        font.family: "Consolas"
+                        anchors.horizontalCenter: parent.horizontalCenter
+                    }
+                }
+                
+                // Progress Bar
+                Rectangle {
+                    width: 300
+                    height: 6
+                    radius: 3
+                    color: engineTheme.bgTertiary
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    clip: true
+                    
+                    Rectangle {
+                        id: bootProgressBar
+                        width: 0
+                        height: parent.height
+                        radius: 3
+                        color: engineTheme.accentMain
+                        
+                        Behavior on width { NumberAnimation { duration: 1500; easing.type: Easing.OutQuart } }
+                    }
+                }
+            }
+            
+            // Boot Sequence Logic
+            Component.onCompleted: {
+                engineState.currentModule = "System Initialization"
+                bootSequenceTimer.start()
+            }
+            
+            Timer {
+                id: bootSequenceTimer
+                interval: 500
+                repeat: true
+                property int step: 0
+                
+                onTriggered: {
+                    step++
+                    if (step === 1) {
+                        bootProgressBar.width = 100
+                        bootLogText.text = "Checking file integrity..."
+                    } else if (step === 2) {
+                        bootProgressBar.width = 200
+                        bootLogText.text = "Loading security modules..."
+                    } else if (step === 3) {
+                        bootProgressBar.width = 300
+                        bootLogText.text = "System Ready."
+                        bootLogText.color = engineTheme.statusSecure
+                    } else if (step === 4) {
+                        stop()
+                        engineController.loadNextModule()
+                    }
+                }
+            }
+        }
+    }
+
+    // ==========================================
+    // PLACEHOLDER FOR FILE 6 (Guidelines)
+    // ==========================================
+    // Once you create Support_6_Guidelines.qml, you will use it directly.
+    // For now, this internal component prevents the StackView from crashing.
+    Component {
+        id: dummyGuidelinesComponent
+        
+        Item {
+            anchors.fill: parent
+            
+            Text {
+                anchors.centerIn: parent
+                text: "Support_6_Guidelines.qml\nWill be loaded here next."
+                color: engineTheme.textMuted
+                font.pixelSize: 18
+                horizontalAlignment: Text.AlignHCenter
+            }
+        }
+    }
+
+    // ==========================================
+    // MASTER ENGINE CONTROLLER (JS LOGIC)
     // ==========================================
     QtObject {
-        id: rootController
+        id: engineController
         
-        function handleHoverEnter() {
-            mnjnefSupportLauncherRoot.hoverStateChanged(true)
+        function secureCloseSequence() {
+            console.log("[MNJNEF_MASTER] Initiating secure termination sequence...");
+            // Log telemetry, clean up memory, clear fields if needed
+            engineState.isProcessing = true
             
-            titleText.color = theme.textHighEmphasis
-            containerBackground.color = theme.bgSurfaceLevel2
-            containerBackground.border.color = theme.borderHover
-            
-            ambientOuterGlow.opacity = 0.4
-            ambientOuterGlow.scale = 1.05
-            
-            avatarRing.border.color = theme.primaryCore
-            statusCoreDot.border.color = theme.bgSurfaceLevel2
-            
-            subtitleText.opacity = 0.85
-            subtitleText.text = qsTr("Click to Secure Connect")
-            subtitleText.color = theme.securitySafe
+            // Delay for realistic secure shutdown feel
+            closeTimer.start()
         }
         
-        function handleHoverExit() {
-            mnjnefSupportLauncherRoot.hoverStateChanged(false)
-            
-            titleText.color = theme.textLowEmphasis
-            containerBackground.color = theme.bgSurfaceLevel1
-            containerBackground.border.color = theme.borderDefault
-            
-            ambientOuterGlow.opacity = 0.0
-            ambientOuterGlow.scale = 1.0
-            
-            avatarRing.border.color = theme.borderDefault
-            statusCoreDot.border.color = theme.bgSurfaceLevel1
-            
-            subtitleText.opacity = 0.0
+        function navigateForward(componentOrUrl, title) {
+            console.log("[MNJNEF_MASTER] Pushing module: " + title);
+            engineState.currentModule = title
+            masterStackView.push(componentOrUrl)
         }
         
-        function handlePress() {
-            launcherMainContainer.scale = 0.96
-            ambientOuterGlow.scale = 0.95
-            ambientOuterGlow.opacity = 0.6
-            ambientOuterGlow.border.color = theme.primaryActive
-            bgHighlightLayer.opacity = 0.1
-        }
-        
-        function handleRelease() {
-            launcherMainContainer.scale = 1.0
-            ambientOuterGlow.scale = 1.05
-            ambientOuterGlow.border.color = theme.primaryGlow
-            bgHighlightLayer.opacity = 0.0
-        }
-        
-        function initiateLaunchSequence() {
-            console.log("[MNJNEF_CORE] Initiating Secure Support Launch Sequence.");
-            mnjnefSupportLauncherRoot.isSystemActive = true
-            
-            // Generate pseudo-secure session ID
-            let ts = new Date().getTime().toString()
-            let randomHash = Math.floor(Math.random() * 900000) + 100000
-            mnjnefSupportLauncherRoot.currentSessionId = "MNJ-SEC-" + randomHash
-            
-            console.log("[MNJNEF_CORE] Session ID Generated: " + mnjnefSupportLauncherRoot.currentSessionId);
-            
-            systemLaunchStateMachine.start()
-        }
-        
-        function abortSequence(reason) {
-            console.error("[MNJNEF_CORE] Launch Aborted: " + reason);
-            systemLaunchStateMachine.stop()
-            mnjnefSupportLauncherRoot.securityCheckFailed(reason)
-            resetLauncherState()
-        }
-        
-        function resetLauncherState() {
-            mnjnefSupportLauncherRoot.isSystemActive = false
-            handleHoverExit()
-            statusCoreDot.color = theme.statusSuccess
-            masterEngineLoader.active = false
-        }
-    }
-
-    // ==========================================
-    // SYSTEM LAUNCH STATE MACHINE (ANIMATIONS)
-    // ==========================================
-    SequentialAnimation {
-        id: systemLaunchStateMachine
-        
-        // STEP 1: UI Lock & Preparation
-        ScriptAction {
-            script: {
-                titleText.color = theme.primaryCore
-                subtitleText.opacity = 1.0
-                subtitleText.text = qsTr("Establishing Secure Link...")
-                subtitleText.color = theme.statusWarning
-                statusCoreDot.color = theme.statusWarning
-                containerBackground.border.color = theme.primaryCore
+        function navigateBack() {
+            if (masterStackView.depth > 1) {
+                console.log("[MNJNEF_MASTER] Popping to previous module.");
+                masterStackView.pop()
+                // Update title based on new top item
+                updateModuleTitle()
+            } else {
+                console.warn("[MNJNEF_MASTER] Cannot pop root item.");
             }
         }
         
-        PauseAnimation { duration: 400 }
-        
-        // STEP 2: Mock Security Handshake Validation
-        ScriptAction {
-            script: {
-                subtitleText.text = qsTr("Validating Environment...")
-                subtitleText.color = theme.securityScanning
-                statusCoreDot.color = theme.securityScanning
-                
-                // Telemetry logging
-                mnjnefSupportLauncherRoot.lastEventLog = "ENV_VALIDATION_STARTED"
-                console.log("[MNJNEF_SECURE] Running environment checks...")
-            }
+        function loadNextModule() {
+            console.log("[MNJNEF_MASTER] Boot complete. Transitioning to Guidelines.");
+            // In the future, this will be: navigateForward("Support_6_Guidelines.qml", "Support Guidelines")
+            navigateForward(dummyGuidelinesComponent, "Rules & Guidelines")
         }
         
-        PauseAnimation { duration: 600 }
-        
-        // STEP 3: Cryptographic Mock Allocation
-        ScriptAction {
-            script: {
-                subtitleText.text = qsTr("Allocating File 2 (Master Engine)...")
-                
-                if (mnjnefSupportLauncherRoot.securityLevel < 1) {
-                    rootController.abortSequence("ERR_SEC_LEVEL_TOO_LOW")
-                }
-            }
-        }
-        
-        PauseAnimation { duration: 500 }
-        
-        // STEP 4: Success State & Loader Trigger
-        ScriptAction {
-            script: {
-                subtitleText.text = qsTr("Link Established")
-                subtitleText.color = theme.statusSuccess
-                statusCoreDot.color = theme.statusSuccess
-                titleText.color = theme.textHighEmphasis
-                bgHighlightLayer.opacity = 0.2
-                
-                // Trigger dynamic loading of File 2 (Support_2_MasterEngine.qml)
-                console.log("[MNJNEF_CORE] Activating Loader for Support_2_MasterEngine.qml");
-                masterEngineLoader.active = true
-            }
-        }
-        
-        // STEP 5: Dispatch external signal for parent components
-        ScriptAction {
-            script: {
-                let timestamp = new Date().toISOString()
-                mnjnefSupportLauncherRoot.launcherTriggered(mnjnefSupportLauncherRoot.currentSessionId, timestamp)
-            }
-        }
-    }
-
-    // ==========================================
-    // DYNAMIC COMPONENT LOADER (FILE 2 INTEGRATION)
-    // ==========================================
-    Loader {
-        id: masterEngineLoader
-        active: false
-        asynchronous: true
-        // Important: Once you create Support_2_MasterEngine.qml, uncomment the source line below
-        // source: "Support_2_MasterEngine.qml"
-        
-        onStatusChanged: {
-            if (masterEngineLoader.status === Loader.Loading) {
-                console.log("[MNJNEF_LOADER] Loading Master Engine architecture in background...");
-            }
-            else if (masterEngineLoader.status === Loader.Ready) {
-                console.log("[MNJNEF_LOADER] Master Engine (File 2) is Ready and Mounted.");
-                mnjnefSupportLauncherRoot.isEngineReady = true
-                mnjnefSupportLauncherRoot.masterEngineLoaded()
-                
-                // If File 2 is a Popup or Window, we might need to open it here
-                if (masterEngineLoader.item && typeof masterEngineLoader.item.open === "function") {
-                    masterEngineLoader.item.open()
-                }
-            }
-            else if (masterEngineLoader.status === Loader.Error) {
-                console.error("[MNJNEF_LOADER_ERROR] Failed to load Support_2_MasterEngine.qml. File might be missing.");
-                rootController.abortSequence("ERR_FILE2_MISSING")
-            }
-        }
-    }
-
-    // ==========================================
-    // EXTERNAL API METHODS
-    // ==========================================
-    function externalForceReset() {
-        console.warn("[MNJNEF_CORE] External force reset triggered by parent application.");
-        rootController.resetLauncherState()
-    }
-    
-    function setSecurityClearanceLevel(level) {
-        if (level >= 1 && level <= 4) {
-            mnjnefSupportLauncherRoot.securityLevel = level
-            console.log("[MNJNEF_SECURE] Security clearance updated to level: " + level)
-        } else {
-            console.error("[MNJNEF_SECURE] Invalid clearance level attempt.")
+        function updateModuleTitle() {
+            // Dummy logic for now. Will be expanded when real files are linked.
+            engineState.currentModule = "Active Module" 
         }
     }
     
-    // Dummy Component just to handle Shape Path references if needed later
-    Component {
-        id: dummyShapeComponent
-        Item {}
+    Timer {
+        id: closeTimer
+        interval: 600
+        repeat: false
+        onTriggered: {
+            engineState.isProcessing = false
+            mnjnefMasterEngineRoot.close()
+            // Optionally, tell File 1 to reset its button state
+            // parent.externalForceReset() // If this popup is a direct child of Main
+        }
+    }
+    
+    // External API for files 3-10 to talk to the Master Engine
+    function triggerLoadingState(isProcessing) {
+        engineState.isProcessing = isProcessing;
+    }
+    
+    function setModuleTitle(title) {
+        engineState.currentModule = title;
     }
 }
