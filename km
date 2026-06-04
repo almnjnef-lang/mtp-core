@@ -1,28 +1,25 @@
+import QtQuick
+import QtQuick.Controls
+import QtQuick.Layouts
+
 Item {
-    id: supportComponentRoot
-    Layout.alignment: Qt.AlignRight
-    width: supportTriggerRow.implicitWidth + 20
-    height: 48
+    id: root
+    width: contactRow.implicitWidth
+    height: contactRow.implicitHeight
 
     property color accentColor: "#1f6feb"
     property color textColor: "#6f7fa0"
-    property color hoverTextColor: "#ffffff"
     property color backgroundColor: "#0a1428"
     property color surfaceColor: "#1e3257"
 
     Row {
-        id: supportTriggerRow
-        spacing: 8
+        id: contactRow
+        spacing: 6
         anchors.centerIn: parent
 
-        Behavior on opacity {
-            NumberAnimation { duration: 200; easing.type: Easing.OutQuad }
-        }
-
         Image {
-            id: supportIcon
-            width: 22
-            height: 22
+            width: 18
+            height: 18
             anchors.verticalCenter: parent.verticalCenter
             smooth: true
             antialiasing: true
@@ -30,36 +27,20 @@ Item {
         }
 
         Text {
-            id: supportText
             text: qsTr("Contact Us")
-            color: supportComponentRoot.textColor
-            font.pixelSize: 13
-            font.bold: true
+            color: root.textColor
+            font.pixelSize: 12
             anchors.verticalCenter: parent.verticalCenter
-
-            Behavior on color {
-                ColorAnimation { duration: 150 }
-            }
         }
     }
 
     MouseArea {
-        id: triggerMouseArea
         anchors.fill: parent
         cursorShape: Qt.PointingHandCursor
         hoverEnabled: true
-
-        onEntered: {
-            supportText.color = supportComponentRoot.hoverTextColor
-            supportTriggerRow.opacity = 0.8
-        }
-        onExited: {
-            supportText.color = supportComponentRoot.textColor
-            supportTriggerRow.opacity = 1.0
-        }
-        onClicked: {
-            supportPopup.open()
-        }
+        onEntered: root.opacity = 0.7
+        onExited: root.opacity = 1.0
+        onClicked: supportPopup.open()
     }
 
     Popup {
@@ -72,34 +53,11 @@ Item {
         focus: true
         closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
 
-        enter: Transition {
-            ParallelAnimation {
-                NumberAnimation { property: "opacity"; from: 0.0; to: 1.0; duration: 250; easing.type: Easing.OutCubic }
-                NumberAnimation { property: "scale"; from: 0.9; to: 1.0; duration: 250; easing.type: Easing.OutBack }
-            }
-        }
-
-        exit: Transition {
-            ParallelAnimation {
-                NumberAnimation { property: "opacity"; from: 1.0; to: 0.0; duration: 200; easing.type: Easing.InCubic }
-                NumberAnimation { property: "scale"; from: 1.0; to: 0.9; duration: 200; easing.type: Easing.InCubic }
-            }
-        }
-
         background: Rectangle {
-            color: supportComponentRoot.backgroundColor
+            color: root.backgroundColor
             radius: 12
-            border.color: supportComponentRoot.surfaceColor
+            border.color: root.surfaceColor
             border.width: 1
-
-            Rectangle {
-                anchors.fill: parent
-                radius: 12
-                color: "transparent"
-                border.color: "#2a2a2a"
-                border.width: 2
-                opacity: 0.3
-            }
         }
 
         Column {
@@ -109,7 +67,6 @@ Item {
 
             Row {
                 width: parent.width
-                
                 Text {
                     text: qsTr("Mnjnef Support")
                     color: "#ffffff"
@@ -117,130 +74,46 @@ Item {
                     font.bold: true
                     width: parent.width - closeButton.width
                 }
-
                 Rectangle {
                     id: closeButton
                     width: 24
                     height: 24
                     color: "transparent"
-                    radius: 12
-
-                    Text {
-                        anchors.centerIn: parent
-                        text: "✕"
-                        color: supportComponentRoot.textColor
-                        font.pixelSize: 16
-                        font.bold: true
-                    }
-
+                    Text { anchors.centerIn: parent; text: "✕"; color: root.textColor; font.pixelSize: 16 }
                     MouseArea {
                         anchors.fill: parent
                         cursorShape: Qt.PointingHandCursor
-                        hoverEnabled: true
-                        onEntered: closeButton.color = "#2a3a5a"
-                        onExited: closeButton.color = "transparent"
                         onClicked: supportPopup.close()
                     }
                 }
             }
 
-            Rectangle {
-                width: parent.width
-                height: 1
-                color: supportComponentRoot.surfaceColor
-            }
+            Rectangle { width: parent.width; height: 1; color: root.surfaceColor }
 
-            Text {
-                text: qsTr("How can we help you today?")
-                color: supportComponentRoot.textColor
-                font.pixelSize: 14
-            }
+            Text { text: qsTr("How can we help you today?"); color: root.textColor; font.pixelSize: 14 }
 
             Rectangle {
-                width: parent.width
-                height: 48
-                color: "#111827"
-                radius: 8
-                border.color: subjectField.activeFocus ? supportComponentRoot.accentColor : supportComponentRoot.surfaceColor
-                border.width: 1
-
+                width: parent.width; height: 48; color: "#111827"; radius: 8; border.color: root.surfaceColor
                 TextInput {
-                    id: subjectField
-                    anchors.fill: parent
-                    anchors.leftMargin: 12
-                    anchors.rightMargin: 12
-                    verticalAlignment: TextInput.AlignVCenter
-                    color: "#ffffff"
-                    font.pixelSize: 14
-                    clip: true
-                    
-                    Text {
-                        text: qsTr("Subject")
-                        color: "#4b5563"
-                        font.pixelSize: 14
-                        anchors.verticalCenter: parent.verticalCenter
-                        visible: !subjectField.text && !subjectField.activeFocus
-                    }
+                    id: subjectField; anchors.fill: parent; anchors.margins: 12; color: "#ffffff"; font.pixelSize: 14; verticalAlignment: TextInput.AlignVCenter
+                    Text { text: qsTr("Subject"); color: "#4b5563"; font.pixelSize: 14; anchors.verticalCenter: parent.verticalCenter; visible: !subjectField.text && !subjectField.activeFocus }
                 }
             }
 
             Rectangle {
-                width: parent.width
-                height: 180
-                color: "#111827"
-                radius: 8
-                border.color: messageArea.activeFocus ? supportComponentRoot.accentColor : supportComponentRoot.surfaceColor
-                border.width: 1
-
+                width: parent.width; height: 180; color: "#111827"; radius: 8; border.color: root.surfaceColor
                 TextEdit {
-                    id: messageArea
-                    anchors.fill: parent
-                    anchors.margins: 12
-                    color: "#ffffff"
-                    font.pixelSize: 14
-                    wrapMode: TextEdit.WordWrap
-                    clip: true
-
-                    Text {
-                        text: qsTr("Describe your issue in detail...")
-                        color: "#4b5563"
-                        font.pixelSize: 14
-                        visible: !messageArea.text && !messageArea.activeFocus
-                    }
+                    id: messageArea; anchors.fill: parent; anchors.margins: 12; color: "#ffffff"; font.pixelSize: 14; wrapMode: TextEdit.WordWrap
+                    Text { text: qsTr("Describe your issue..."); color: "#4b5563"; font.pixelSize: 14; visible: !messageArea.text && !messageArea.activeFocus }
                 }
             }
 
             Rectangle {
-                id: sendBtn
-                width: parent.width
-                height: 48
-                radius: 8
-                color: supportComponentRoot.accentColor
-                
-                Behavior on opacity {
-                    NumberAnimation { duration: 150 }
-                }
-
-                Text {
-                    anchors.centerIn: parent
-                    text: qsTr("Send Message")
-                    color: "#ffffff"
-                    font.pixelSize: 15
-                    font.bold: true
-                }
-
+                id: sendBtn; width: parent.width; height: 48; radius: 8; color: root.accentColor
+                Text { anchors.centerIn: parent; text: qsTr("Send Message"); color: "#ffffff"; font.pixelSize: 15; font.bold: true }
                 MouseArea {
-                    anchors.fill: parent
-                    cursorShape: Qt.PointingHandCursor
-                    hoverEnabled: true
-                    onEntered: sendBtn.opacity = 0.8
-                    onExited: sendBtn.opacity = 1.0
-                    onClicked: {
-                        console.log("Support Ticket Submitted: " + subjectField.text)
-                        subjectField.text = ""
-                        messageArea.text = ""
-                        supportPopup.close()
-                    }
+                    anchors.fill: parent; cursorShape: Qt.PointingHandCursor
+                    onClicked: { subjectField.text = ""; messageArea.text = ""; supportPopup.close() }
                 }
             }
         }
