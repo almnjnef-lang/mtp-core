@@ -30,87 +30,20 @@ Item {
             NumberAnimation { duration: 250; easing.type: Easing.OutQuart }
         }
 
-        Item {
-            id: avatarContainer
-            Layout.alignment: Qt.AlignVCenter
-            Layout.preferredWidth: 38
-            Layout.preferredHeight: 38
-
-            Rectangle {
-                anchors.fill: parent
-                radius: 19
-                color: mnjnefSupportSystem.isHovering ? mnjnefSupportSystem.themeSurfaceHighlight : "transparent"
-                border.color: mnjnefSupportSystem.isHovering ? mnjnefSupportSystem.themePrimary : "transparent"
-                border.width: 1
-                
-                Behavior on color { ColorAnimation { duration: 200 } }
-                Behavior on border.color { ColorAnimation { duration: 200 } }
-            }
-
-            Image {
-                id: agentAvatar
-                anchors.centerIn: parent
-                width: 32
-                height: 32
-                smooth: true
-                antialiasing: true
-                mipmap: true
-                
-                source: "data:image/svg+xml;utf8," +
-                    "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 128 128'>" +
-                    "<path d='M16 128 C16 80, 112 80, 112 128 Z' fill='%230f172a'/>" +
-                    "<path d='M26 128 C26 90, 102 90, 102 128 Z' fill='%231e3257'/>" +
-                    "<path d='M46 128 L64 96 L82 128 Z' fill='%231f6feb'/>" +
-                    "<rect x='52' y='76' width='24' height='30' rx='8' fill='%239a6b4e'/>" +
-                    "<path d='M52 86 Q64 98 76 86 L76 106 L52 106 Z' fill='%237d543b'/>" +
-                    "<path d='M40 40 L88 40 Q96 40 96 64 Q96 90 64 96 Q32 90 32 64 Q32 40 40 40 Z' fill='%23bc8a64'/>" +
-                    "<circle cx='64' cy='56' r='32' fill='%23bc8a64'/>" +
-                    "<path d='M32 64 Q32 94 64 100 Q96 94 96 64 Q92 76 80 84 Q64 90 48 84 Q36 76 32 64 Z' fill='%232a1e17'/>" +
-                    "<path d='M36 72 Q64 104 92 72 Q86 86 64 92 Q42 86 36 72 Z' fill='%231c130e'/>" +
-                    "<path d='M48 76 Q64 68 80 76 Q64 82 48 76 Z' fill='%232a1e17'/>" +
-                    "<path d='M52 77 Q64 72 76 77 Q64 80 52 77 Z' fill='%231c130e'/>" +
-                    "<path d='M28 50 C28 10, 100 10, 100 50 C100 24, 28 24, 28 50 Z' fill='%232a1e17'/>" +
-                    "<path d='M30 46 C30 16, 98 16, 98 46 C98 18, 30 18, 30 46 Z' fill='%233d2c22'/>" +
-                    "<path d='M40 22 Q64 10 88 22 Q64 16 40 22 Z' fill='%231c130e'/>" +
-                    "<circle cx='30' cy='60' r='8' fill='%239a6b4e'/>" +
-                    "<circle cx='98' cy='60' r='8' fill='%239a6b4e'/>" +
-                    "<path d='M40 44 Q48 40 54 44' fill='none' stroke='%232a1e17' stroke-width='4' stroke-linecap='round'/>" +
-                    "<path d='M74 44 Q82 40 88 44' fill='none' stroke='%232a1e17' stroke-width='4' stroke-linecap='round'/>" +
-                    "<path d='M42 54 Q48 48 54 54 Q48 58 42 54' fill='%23ffffff'/>" +
-                    "<path d='M74 54 Q80 48 86 54 Q80 58 74 54' fill='%23ffffff'/>" +
-                    "<circle cx='48' cy='53' r='3.5' fill='%233d2c22'/>" +
-                    "<circle cx='80' cy='53' r='3.5' fill='%233d2c22'/>" +
-                    "<circle cx='49' cy='52' r='1' fill='%23ffffff'/>" +
-                    "<circle cx='81' cy='52' r='1' fill='%23ffffff'/>" +
-                    "<path d='M64 54 L60 68 L64 70 L68 68 Z' fill='%239a6b4e'/>" +
-                    "<path d='M54 80 Q64 86 74 80 Q64 84 54 80' fill='%23ffffff'/>" +
-                    "<path d='M54 80 Q64 86 74 80' fill='none' stroke='%231c130e' stroke-width='1.5'/>" +
-                    "<path d='M24 64 A40 40 0 0 1 104 64' fill='none' stroke='%230f172a' stroke-width='14'/>" +
-                    "<path d='M24 64 A40 40 0 0 1 104 64' fill='none' stroke='%231e293b' stroke-width='8'/>" +
-                    "<path d='M28 60 A36 36 0 0 1 100 60' fill='none' stroke='%231f6feb' stroke-width='2'/>" +
-                    "<rect x='14' y='46' width='18' height='40' rx='9' fill='%230f172a'/>" +
-                    "<rect x='18' y='48' width='14' height='36' rx='7' fill='%231e293b'/>" +
-                    "<rect x='22' y='54' width='10' height='24' rx='5' fill='%23334155'/>" +
-                    "<circle cx='27' cy='66' r='4' fill='%231f6feb'/>" +
-                    "<rect x='96' y='46' width='18' height='40' rx='9' fill='%230f172a'/>" +
-                    "<rect x='96' y='48' width='14' height='36' rx='7' fill='%231e293b'/>" +
-                    "<rect x='96' y='54' width='10' height='24' rx='5' fill='%23334155'/>" +
-                    "<circle cx='101' cy='66' r='4' fill='%231f6feb'/>" +
-                    "<path d='M26 76 Q32 96 52 94' fill='none' stroke='%230f172a' stroke-width='5' stroke-linecap='round'/>" +
-                    "<path d='M26 76 Q32 96 52 94' fill='none' stroke='%23334155' stroke-width='2' stroke-linecap='round'/>" +
-                    "<ellipse cx='56' cy='93' rx='9' ry='6' fill='%23111827'/>" +
-                    "<ellipse cx='55' cy='92' rx='5' ry='3' fill='%23334155' opacity='0.7'/>" +
-                    "<circle cx='62' cy='93' r='2' fill='%231f6feb'/>" +
-                    "</svg>"
-            }
-        }
+        // Image Placeholder - Ready for your friend's PNG file in 2 days
+        // Example: 
+        // Image { 
+        //     Layout.preferredWidth: 34; Layout.preferredHeight: 34
+        //     source: "support_avatar.png"
+        //     smooth: true; antialiasing: true; mipmap: true 
+        // }
 
         Text {
             id: triggerLabel
-            text: qsTr("Contact Us")
+            text: qsTr("Mnjnef Support")
             Layout.alignment: Qt.AlignVCenter
             color: mnjnefSupportSystem.isHovering ? mnjnefSupportSystem.themeTextMain : mnjnefSupportSystem.themeTextSub
-            font.pixelSize: 13
+            font.pixelSize: 14
             font.bold: true
             font.family: "Segoe UI"
             font.letterSpacing: 0.5
@@ -450,7 +383,6 @@ Item {
                     Behavior on opacity { NumberAnimation { duration: 150 } }
                 }
 
-                // Custom Loading Spinner Animation
                 Item {
                     width: 24
                     height: 24
@@ -502,8 +434,6 @@ Item {
                         }
                         
                         submitStateMachine.state = "loading"
-                        
-                        // Simulate network delay for pro feel
                         fakeNetworkDelay.start()
                     }
                 }
