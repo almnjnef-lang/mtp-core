@@ -2,625 +2,539 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 
-Popup {
-    id: mnjnefMasterEngineRoot
-    width: 900
-    height: 680
-    x: Math.round((parent.width - width) / 2)
-    y: Math.round((parent.height - height) / 2)
-    modal: true
-    focus: true
-    closePolicy: Popup.NoAutoClose // Forces user to use our secure close button
+Item {
+    id: mnjnefUiLibrary
+    width: 1
+    height: 1
+    visible: false
 
     // ==========================================
-    // CORE SYSTEM PROPERTIES & THEME
+    // CENTRALIZED SHARED THEME PALETTE
     // ==========================================
     QtObject {
-        id: engineTheme
-        property color bgPrimary: "#070c14"
-        property color bgSecondary: "#0f172a"
-        property color bgTertiary: "#1e293b"
-        property color bgOverlay: "#cc000000"
+        id: gPalette
+        property color primary: "#1f6feb"
+        property color primaryHover: "#3b82f6"
+        property color primaryPressed: "#1d4ed8"
+        property color primaryGlow: "rgba(69, 137, 255, 0.4)"
         
-        property color accentMain: "#1f6feb"
-        property color accentHover: "#3b82f6"
-        property color accentActive: "#1d4ed8"
-        property color accentGlow: "#4589ff"
+        property color bgSurface: "#0f172a"
+        property color bgInput: "#070c14"
+        property color bgHover: "#1e293b"
         
-        property color textHeader: "#ffffff"
-        property color textBody: "#f8fafc"
-        property color textMuted: "#94a3b8"
-        property color textDisabled: "#475569"
+        property color textMain: "#ffffff"
+        property color textSub: "#94a3b8"
+        property color textDark: "#0f172a"
+        property color textError: "#f43f5e"
         
-        property color borderLight: "#334155"
-        property color borderMedium: "#1e293b"
+        property color borderDefault: "#334155"
         property color borderFocus: "#1f6feb"
+        property color borderError: "#ef4444"
         
-        property color statusSecure: "#10b981"
-        property color statusWarning: "#f59e0b"
-        property color statusDanger: "#ef4444"
-        property color statusScan: "#8b5cf6"
-    }
-
-    QtObject {
-        id: engineMetrics
-        property int headerHeight: 64
-        property int footerHeight: 32
-        property int sidebarWidth: 240
-        property int radiusWindow: 16
-        property int radiusElements: 8
-        property int paddingStandard: 24
-    }
-
-    QtObject {
-        id: engineState
-        property string currentModule: "System Initialization"
-        property int securityClearance: 3
-        property bool isNetworkSecure: true
-        property string sessionId: "MNJ-SEC-000000"
-        property bool isProcessing: false
+        property color stateSuccess: "#10b981"
+        property color stateWarning: "#f59e0b"
     }
 
     // ==========================================
-    // MASTER ENGINE ANIMATIONS (ENTER/EXIT)
+    // COMPONENT 1: ULTRA-PREMIUM BUTTON
     // ==========================================
-    enter: Transition {
-        ParallelAnimation {
-            NumberAnimation { property: "opacity"; from: 0.0; to: 1.0; duration: 400; easing.type: Easing.OutQuint }
-            NumberAnimation { property: "scale"; from: 0.95; to: 1.0; duration: 500; easing.type: Easing.OutElastic; easing.amplitude: 1.2 }
-        }
-    }
-    
-    exit: Transition {
-        ParallelAnimation {
-            NumberAnimation { property: "opacity"; from: 1.0; to: 0.0; duration: 300; easing.type: Easing.InQuint }
-            NumberAnimation { property: "scale"; from: 1.0; to: 0.95; duration: 300; easing.type: Easing.InQuint }
-        }
-    }
-
-    // ==========================================
-    // MODAL OVERLAY BACKGROUND
-    // ==========================================
-    Overlay.modal: Rectangle {
-        color: engineTheme.bgOverlay
+    component MnjnefButton : Rectangle {
+        id: btnRoot
+        property string text: "Button"
+        property bool isSecondary: false
+        property bool isLoading: false
+        property bool isButtonDisabled: false
+        property int customIconType: 0 // 0: None, 1: Arrow, 2: Lock
         
-        // Blurred background effect simulation
+        implicitWidth: 200
+        implicitHeight: 50
+        radius: 8
+        clip: true
+        
+        color: {
+            if (isButtonDisabled) return "#1e293b"
+            if (btnMouse.containsPress) return isSecondary ? "#1e293b" : gPalette.primaryPressed
+            if (btnMouse.containsMouse) return isSecondary ? "#1e293b" : gPalette.primaryHover
+            return isSecondary ? "transparent" : gPalette.primary
+        }
+        
+        border.color: {
+            if (isButtonDisabled) return "#334155"
+            if (isSecondary) return btnMouse.containsMouse ? gPalette.primaryHover : gPalette.borderDefault
+            return "transparent"
+        }
+        border.width: isSecondary ? 1 : 0
+        
+        Behavior on color { ColorAnimation { duration: 200; easing.type: Easing.OutQuad } }
+        Behavior on border.color { ColorAnimation { duration: 200 } }
+
+        // Glow Layer for Primary Hover State
         Rectangle {
             anchors.fill: parent
-            color: engineTheme.accentMain
-            opacity: 0.03
-        }
-        
-        Behavior on opacity { NumberAnimation { duration: 400 } }
-    }
-
-    // ==========================================
-    // MASTER WINDOW BACKGROUND & BORDERS
-    // ==========================================
-    background: Rectangle {
-        color: engineTheme.bgPrimary
-        radius: engineMetrics.radiusWindow
-        border.color: engineTheme.borderMedium
-        border.width: 1
-        
-        // Inner Glow / Reflection
-        Rectangle {
-            anchors.fill: parent
-            anchors.margins: 1
-            radius: engineMetrics.radiusWindow - 1
+            radius: parent.radius
             color: "transparent"
-            border.color: "#1a253a"
-            border.width: 1
+            border.color: gPalette.primaryGlow
+            border.width: 3
+            opacity: (!btnRoot.isSecondary && btnMouse.containsMouse && !btnRoot.isButtonDisabled) ? 1.0 : 0.0
+            Behavior on opacity { NumberAnimation { duration: 250 } }
+        }
+
+        RowLayout {
+            anchors.centerIn: parent
+            spacing: 8
+            opacity: btnRoot.isLoading ? 0.0 : 1.0
+            Behavior on opacity { NumberAnimation { duration: 150 } }
+
+            Text {
+                text: btnRoot.text
+                color: btnRoot.isButtonDisabled ? "#475569" : (btnRoot.isSecondary && btnMouse.containsMouse ? gPalette.primaryHover : gPalette.textMain)
+                font.pixelSize: 14
+                font.bold: true
+                font.family: "Segoe UI"
+                verticalAlignment: Text.AlignVCenter
+                Behavior on color { ColorAnimation { duration: 150 } }
+            }
+
+            // Optional Icon Drawing
+            Rectangle {
+                Layout.preferredWidth: 12
+                Layout.preferredHeight: 12
+                color: "transparent"
+                visible: btnRoot.customIconType > 0
+                Layout.alignment: Qt.AlignVCenter
+
+                Rectangle {
+                    width: 6
+                    height: 6
+                    color: "transparent"
+                    border.color: gPalette.textMain
+                    border.width: 1.5
+                    rotation: 45
+                    x: 2
+                    y: 3
+                    visible: btnRoot.customIconType === 1 // Arrow Right
+                    
+                    Rectangle {
+                        width: 6
+                        height: 6
+                        color: btnRoot.color
+                        x: -2
+                        y: -2
+                    }
+                }
+            }
+        }
+
+        // Embedded GPU Loading Spinner
+        Item {
+            id: spinnerItem
+            width: 22
+            height: 22
+            anchors.centerIn: parent
+            visible: btnRoot.isLoading
+            opacity: btnRoot.isLoading ? 1.0 : 0.0
+            Behavior on opacity { NumberAnimation { duration: 150 } }
+
+            Rectangle {
+                anchors.fill: parent
+                radius: 11
+                color: "transparent"
+                border.color: gPalette.textMain
+                border.width: 2.5
+                opacity: 0.2
+            }
+
+            Rectangle {
+                anchors.fill: parent
+                radius: 11
+                color: "transparent"
+                border.color: gPalette.textMain
+                border.width: 2.5
+                clip: true
+
+                RotationAnimation on rotation {
+                    loops: Animation.Infinite
+                    from: 0
+                    to: 360
+                    duration: 800
+                    running: btnRoot.isLoading
+                }
+            }
+        }
+
+        MouseArea {
+            id: btnMouse
+            anchors.fill: parent
+            hoverEnabled: !btnRoot.isButtonDisabled && !btnRoot.isLoading
+            cursorShape: (btnRoot.isButtonDisabled || btnRoot.isLoading) ? Qt.ForbiddenCursor : Qt.PointingHandCursor
+            onClicked: {
+                if (!btnRoot.isButtonDisabled && !btnRoot.isLoading) {
+                    btnRoot.parent.forceActiveFocus()
+                    btnRoot.clicked()
+                }
+            }
         }
         
-        // Decorative Top Line
-        Rectangle {
-            width: parent.width - 60
-            height: 2
-            anchors.top: parent.top
-            anchors.horizontalCenter: parent.horizontalCenter
-            color: engineTheme.accentMain
-            opacity: 0.5
-            radius: 1
-        }
+        signal clicked()
     }
 
     // ==========================================
-    // MAIN LAYOUT STRUCTURE
+    // COMPONENT 2: SECURE INPUT FIELD
     // ==========================================
-    ColumnLayout {
-        anchors.fill: parent
-        spacing: 0
+    component MnjnefInputField : ColumnLayout {
+        id: inputRoot
+        property string label: "Input Label"
+        property string placeholder: "Type here..."
+        property string value: txtInput.text
+        property bool isInvalid: false
+        property string errorText: "Required field missing"
+        property bool isEncrypted: false
+        property int maxCharacterLimit: 120
 
-        // ------------------------------------------
-        // 1. MASTER HEADER
-        // ------------------------------------------
-        Rectangle {
-            Layout.fillWidth: true
-            Layout.preferredHeight: engineMetrics.headerHeight
-            color: engineTheme.bgSecondary
-            radius: engineMetrics.radiusWindow
-            
-            // Fix bottom corners to be square so it blends with body
-            Rectangle {
-                width: parent.width
-                height: engineMetrics.radiusWindow
-                anchors.bottom: parent.bottom
-                color: engineTheme.bgSecondary
-            }
+        spacing: 6
+        Layout.fillWidth: true
 
-            Rectangle {
-                width: parent.width
-                height: 1
-                anchors.bottom: parent.bottom
-                color: engineTheme.borderLight
-            }
-
-            RowLayout {
-                anchors.fill: parent
-                anchors.leftMargin: engineMetrics.paddingStandard
-                anchors.rightMargin: engineMetrics.paddingStandard
-                spacing: 16
-
-                // Header Logo / Icon
-                Rectangle {
-                    Layout.preferredWidth: 36
-                    Layout.preferredHeight: 36
-                    radius: 8
-                    color: engineTheme.bgTertiary
-                    border.color: engineTheme.borderLight
-                    border.width: 1
-                    
-                    Text {
-                        anchors.centerIn: parent
-                        text: "M"
-                        color: engineTheme.accentMain
-                        font.pixelSize: 20
-                        font.bold: true
-                        font.family: "Segoe UI"
-                    }
-                }
-
-                // Header Titles
-                Column {
-                    Layout.alignment: Qt.AlignVCenter
-                    Layout.fillWidth: true
-                    spacing: 2
-                    
-                    Text {
-                        text: qsTr("Mnjnef Command Center")
-                        color: engineTheme.textHeader
-                        font.pixelSize: 18
-                        font.bold: true
-                        font.family: "Segoe UI"
-                        font.letterSpacing: 0.5
-                    }
-                    
-                    RowLayout {
-                        spacing: 8
-                        
-                        Rectangle {
-                            width: 6
-                            height: 6
-                            radius: 3
-                            color: engineTheme.statusSecure
-                            Layout.alignment: Qt.AlignVCenter
-                        }
-                        
-                        Text {
-                            text: engineState.currentModule
-                            color: engineTheme.textMuted
-                            font.pixelSize: 12
-                            font.bold: true
-                            font.family: "Segoe UI"
-                        }
-                    }
-                }
-
-                // Window Controls (Close Button)
-                Rectangle {
-                    id: headerCloseBtn
-                    Layout.preferredWidth: 36
-                    Layout.preferredHeight: 36
-                    radius: 18
-                    color: "transparent"
-                    
-                    Behavior on color { ColorAnimation { duration: 150 } }
-                    
-                    Text {
-                        anchors.centerIn: parent
-                        text: "✕"
-                        color: headerCloseBtnArea.containsMouse ? "#ffffff" : engineTheme.textMuted
-                        font.pixelSize: 16
-                        font.bold: true
-                        Behavior on color { ColorAnimation { duration: 150 } }
-                    }
-                    
-                    MouseArea {
-                        id: headerCloseBtnArea
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        cursorShape: Qt.PointingHandCursor
-                        
-                        onEntered: headerCloseBtn.color = engineTheme.statusDanger
-                        onExited: headerCloseBtn.color = "transparent"
-                        onClicked: engineController.secureCloseSequence()
-                    }
-                }
-            }
+        Text {
+            text: inputRoot.label
+            color: inputRoot.isInvalid ? gPalette.borderError : gPalette.textSub
+            font.pixelSize: 13
+            font.bold: true
+            font.family: "Segoe UI"
+            Behavior on color { ColorAnimation { duration: 150 } }
         }
 
-        // ------------------------------------------
-        // 2. MASTER STACKVIEW (BODY)
-        // ------------------------------------------
-        Item {
-            Layout.fillWidth: true
-            Layout.fillHeight: true
-            clip: true
-
-            StackView {
-                id: masterStackView
-                anchors.fill: parent
-                initialItem: initializationScreenComponent
-                
-                // Advanced AAA Push Transition
-                pushEnter: Transition {
-                    ParallelAnimation {
-                        NumberAnimation { property: "opacity"; from: 0.0; to: 1.0; duration: 300; easing.type: Easing.OutCubic }
-                        NumberAnimation { property: "x"; from: masterStackView.width * 0.2; to: 0; duration: 400; easing.type: Easing.OutExpo }
-                    }
-                }
-                pushExit: Transition {
-                    ParallelAnimation {
-                        NumberAnimation { property: "opacity"; from: 1.0; to: 0.0; duration: 300; easing.type: Easing.InCubic }
-                        NumberAnimation { property: "x"; from: 0; to: -(masterStackView.width * 0.2); duration: 400; easing.type: Easing.InExpo }
-                    }
-                }
-                
-                // Advanced AAA Pop Transition
-                popEnter: Transition {
-                    ParallelAnimation {
-                        NumberAnimation { property: "opacity"; from: 0.0; to: 1.0; duration: 300; easing.type: Easing.OutCubic }
-                        NumberAnimation { property: "x"; from: -(masterStackView.width * 0.2); to: 0; duration: 400; easing.type: Easing.OutExpo }
-                    }
-                }
-                popExit: Transition {
-                    ParallelAnimation {
-                        NumberAnimation { property: "opacity"; from: 1.0; to: 0.0; duration: 300; easing.type: Easing.InCubic }
-                        NumberAnimation { property: "x"; from: 0; to: masterStackView.width * 0.2; duration: 400; easing.type: Easing.InExpo }
-                    }
-                }
-            }
-            
-            // Security Overlay layer (blocks UI during processing)
-            Rectangle {
-                id: securityProcessingOverlay
-                anchors.fill: parent
-                color: engineTheme.bgOverlay
-                opacity: engineState.isProcessing ? 1.0 : 0.0
-                visible: opacity > 0
-                Behavior on opacity { NumberAnimation { duration: 250 } }
-                
-                // Block all inputs
-                MouseArea { anchors.fill: parent; hoverEnabled: true }
-                
-                Column {
-                    anchors.centerIn: parent
-                    spacing: 16
-                    
-                    // Spinner
-                    Item {
-                        width: 48
-                        height: 48
-                        anchors.horizontalCenter: parent.horizontalCenter
-                        
-                        Rectangle {
-                            anchors.fill: parent
-                            radius: 24
-                            color: "transparent"
-                            border.color: engineTheme.accentMain
-                            border.width: 4
-                            opacity: 0.2
-                        }
-                        
-                        Rectangle {
-                            anchors.fill: parent
-                            radius: 24
-                            color: "transparent"
-                            border.color: engineTheme.accentMain
-                            border.width: 4
-                            clip: true
-                            
-                            RotationAnimation on rotation {
-                                loops: Animation.Infinite
-                                from: 0
-                                to: 360
-                                duration: 1000
-                            }
-                        }
-                    }
-                    
-                    Text {
-                        text: qsTr("Encrypting payload & Verifying security...")
-                        color: engineTheme.textHeader
-                        font.pixelSize: 14
-                        font.family: "Segoe UI"
-                        anchors.horizontalCenter: parent.horizontalCenter
-                    }
-                }
-            }
-        }
-
-        // ------------------------------------------
-        // 3. MASTER FOOTER
-        // ------------------------------------------
         Rectangle {
+            id: fieldBackground
             Layout.fillWidth: true
-            Layout.preferredHeight: engineMetrics.footerHeight
-            color: engineTheme.bgSecondary
-            radius: engineMetrics.radiusWindow
-            
-            // Fix top corners to be square
-            Rectangle {
-                width: parent.width
-                height: engineMetrics.radiusWindow
-                anchors.top: parent.top
-                color: engineTheme.bgSecondary
+            Layout.preferredHeight: 48
+            color: gPalette.bgInput
+            radius: 8
+            border.color: {
+                if (inputRoot.isInvalid) return gPalette.borderError
+                if (txtInput.activeFocus) return gPalette.borderFocus
+                return gPalette.borderDefault
             }
+            border.width: (txtInput.activeFocus || inputRoot.isInvalid) ? 2 : 1
             
-            Rectangle {
-                width: parent.width
-                height: 1
-                anchors.top: parent.top
-                color: engineTheme.borderLight
-            }
+            Behavior on border.color { ColorAnimation { duration: 150 } }
 
-            RowLayout {
+            TextInput {
+                id: txtInput
                 anchors.fill: parent
                 anchors.leftMargin: 16
-                anchors.rightMargin: 16
-                
+                anchors.rightMargin: 40
+                color: gPalette.textMain
+                font.pixelSize: 14
+                font.family: "Segoe UI"
+                verticalAlignment: TextInput.AlignVCenter
+                echoMode: inputRoot.isEncrypted ? TextInput.Password : TextInput.Normal
+                clip: true
+                maximumLength: inputRoot.maxCharacterLimit
+
                 Text {
-                    text: qsTr("SESSION: ") + engineState.sessionId
-                    color: engineTheme.textDisabled
-                    font.pixelSize: 11
-                    font.family: "Consolas"
-                    Layout.alignment: Qt.AlignVCenter
+                    text: inputRoot.placeholder
+                    color: "#475569"
+                    font.pixelSize: 14
+                    font.family: "Segoe UI"
+                    anchors.verticalCenter: parent.verticalCenter
+                    visible: !txtInput.text && !txtInput.activeFocus
                 }
                 
-                Item { Layout.fillWidth: true }
-                
-                RowLayout {
-                    spacing: 8
-                    Layout.alignment: Qt.AlignVCenter
-                    
-                    Text {
-                        text: qsTr("Server: UAE-DXB-01")
-                        color: engineTheme.textDisabled
-                        font.pixelSize: 11
-                        font.family: "Segoe UI"
-                    }
-                    
-                    Rectangle {
-                        width: 1
-                        height: 12
-                        color: engineTheme.borderLight
-                    }
-                    
-                    Text {
-                        text: qsTr("Ping: 14ms")
-                        color: engineTheme.statusSecure
-                        font.pixelSize: 11
-                        font.family: "Segoe UI"
+                onTextChanged: inputRoot.valueChanged(txtInput.text)
+            }
+
+            // Inline Clear Text Action Button
+            Rectangle {
+                width: 18
+                height: 18
+                radius: 9
+                color: "#1e293b"
+                anchors.right: parent.right
+                anchors.rightMargin: 14
+                anchors.verticalCenter: parent.verticalCenter
+                visible: txtInput.text.length > 0 && txtInput.activeFocus
+
+                Text {
+                    anchors.centerIn: parent
+                    text: "×"
+                    color: gPalette.textSub
+                    font.pixelSize: 12
+                    y: -1
+                }
+
+                MouseArea {
+                    anchors.fill: parent
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: {
+                        txtInput.text = ""
+                        txtInput.forceActiveFocus()
                     }
                 }
             }
         }
-    }
 
-    // ==========================================
-    // INITIALIZATION MOCK COMPONENT (Boot Screen)
-    // ==========================================
-    Component {
-        id: initializationScreenComponent
+        Text {
+            text: inputRoot.errorText
+            color: gPalette.textError
+            font.pixelSize: 12
+            font.family: "Segoe UI"
+            visible: inputRoot.isInvalid
+            Layout.topMargin: 2
+        }
+
+        signal valueChanged(string newValue)
         
-        Item {
-            anchors.fill: parent
-            
-            Column {
-                anchors.centerIn: parent
-                spacing: 24
-                
-                // Mnjnef Logo / Shield
-                Rectangle {
-                    width: 80
-                    height: 80
-                    radius: 20
-                    color: engineTheme.bgTertiary
-                    border.color: engineTheme.borderFocus
-                    border.width: 2
-                    anchors.horizontalCenter: parent.horizontalCenter
-                    
-                    // Internal glow
-                    Rectangle {
-                        anchors.fill: parent
-                        anchors.margins: 2
-                        radius: 18
-                        color: engineTheme.accentMain
-                        opacity: 0.1
-                    }
-                    
-                    Text {
-                        anchors.centerIn: parent
-                        text: "M"
-                        color: engineTheme.accentMain
-                        font.pixelSize: 42
-                        font.bold: true
-                        font.family: "Segoe UI"
-                    }
-                }
-                
-                Column {
-                    spacing: 8
-                    anchors.horizontalCenter: parent.horizontalCenter
-                    
-                    Text {
-                        text: qsTr("MNJNEF SECURE PROTOCOL")
-                        color: engineTheme.textHeader
-                        font.pixelSize: 22
-                        font.bold: true
-                        font.family: "Segoe UI"
-                        font.letterSpacing: 2.0
-                        anchors.horizontalCenter: parent.horizontalCenter
-                    }
-                    
-                    Text {
-                        id: bootLogText
-                        text: qsTr("Establishing secure connection to mainframe...")
-                        color: engineTheme.textMuted
-                        font.pixelSize: 13
-                        font.family: "Consolas"
-                        anchors.horizontalCenter: parent.horizontalCenter
-                    }
-                }
-                
-                // Progress Bar
-                Rectangle {
-                    width: 300
-                    height: 6
-                    radius: 3
-                    color: engineTheme.bgTertiary
-                    anchors.horizontalCenter: parent.horizontalCenter
-                    clip: true
-                    
-                    Rectangle {
-                        id: bootProgressBar
-                        width: 0
-                        height: parent.height
-                        radius: 3
-                        color: engineTheme.accentMain
-                        
-                        Behavior on width { NumberAnimation { duration: 1500; easing.type: Easing.OutQuart } }
-                    }
-                }
-            }
-            
-            // Boot Sequence Logic
-            Component.onCompleted: {
-                engineState.currentModule = "System Initialization"
-                bootSequenceTimer.start()
-            }
-            
-            Timer {
-                id: bootSequenceTimer
-                interval: 500
-                repeat: true
-                property int step: 0
-                
-                onTriggered: {
-                    step++
-                    if (step === 1) {
-                        bootProgressBar.width = 100
-                        bootLogText.text = "Checking file integrity..."
-                    } else if (step === 2) {
-                        bootProgressBar.width = 200
-                        bootLogText.text = "Loading security modules..."
-                    } else if (step === 3) {
-                        bootProgressBar.width = 300
-                        bootLogText.text = "System Ready."
-                        bootLogText.color = engineTheme.statusSecure
-                    } else if (step === 4) {
-                        stop()
-                        engineController.loadNextModule()
-                    }
-                }
-            }
+        function forceClear() {
+            txtInput.text = ""
+        }
+        function setFocus() {
+            txtInput.forceActiveFocus()
         }
     }
 
     // ==========================================
-    // PLACEHOLDER FOR FILE 6 (Guidelines)
+    // COMPONENT 3: SECURE TEXT AREA (MULTILINE)
     // ==========================================
-    // Once you create Support_6_Guidelines.qml, you will use it directly.
-    // For now, this internal component prevents the StackView from crashing.
-    Component {
-        id: dummyGuidelinesComponent
-        
-        Item {
-            anchors.fill: parent
+    component MnjnefTextArea : ColumnLayout {
+        id: areaRoot
+        property string label: "Description Label"
+        property string placeholder: "Provide comprehensive description details..."
+        property string value: editInput.text
+        property bool isInvalid: false
+        property int maximumLength: 500
+
+        spacing: 6
+        Layout.fillWidth: true
+
+        RowLayout {
+            Layout.fillWidth: true
             
             Text {
-                anchors.centerIn: parent
-                text: "Support_6_Guidelines.qml\nWill be loaded here next."
-                color: engineTheme.textMuted
-                font.pixelSize: 18
-                horizontalAlignment: Text.AlignHCenter
+                text: areaRoot.label
+                color: areaRoot.isInvalid ? gPalette.borderError : gPalette.textSub
+                font.pixelSize: 13
+                font.bold: true
+                font.family: "Segoe UI"
+                Layout.fillWidth: true
             }
+            
+            Text {
+                text: editInput.text.length + " / " + areaRoot.maximumLength
+                color: editInput.text.length >= areaRoot.maximumLength ? gPalette.textError : gPalette.textMuted
+                font.pixelSize: 11
+                font.family: "Consolas"
+            }
+        }
+
+        Rectangle {
+            Layout.fillWidth: true
+            Layout.preferredHeight: 140
+            color: gPalette.bgInput
+            radius: 8
+            border.color: {
+                if (areaRoot.isInvalid) return gPalette.borderError
+                if (editInput.activeFocus) return gPalette.borderFocus
+                return gPalette.borderDefault
+            }
+            border.width: (editInput.activeFocus || areaRoot.isInvalid) ? 2 : 1
+            Behavior on border.color { ColorAnimation { duration: 150 } }
+
+            Flickable {
+                id: scrollFlick
+                anchors.fill: parent
+                anchors.margins: 14
+                contentWidth: width
+                contentHeight: editInput.implicitHeight
+                clip: true
+                
+                TextEdit {
+                    id: editInput
+                    width: scrollFlick.width
+                    color: gPalette.textMain
+                    font.pixelSize: 14
+                    font.family: "Segoe UI"
+                    wrapMode: TextEdit.WordWrap
+                    selectByMouse: true
+                    
+                    onTextChanged: {
+                        if (text.length > areaRoot.maximumLength) {
+                            text = text.substring(0, areaRoot.maximumLength)
+                        }
+                        areaRoot.valueChanged(text)
+                    }
+
+                    Text {
+                        text: areaRoot.placeholder
+                        color: "#475569"
+                        font.pixelSize: 14
+                        font.family: "Segoe UI"
+                        width: editInput.width
+                        wrapMode: Text.WordWrap
+                        visible: !editInput.text && !editInput.activeFocus
+                    }
+                }
+            }
+        }
+
+        signal valueChanged(string newValue)
+        
+        function clear() {
+            editInput.text = ""
         }
     }
 
     // ==========================================
-    // MASTER ENGINE CONTROLLER (JS LOGIC)
+    // COMPONENT 4: CYBERSECURITY CHECKBOX
     // ==========================================
-    QtObject {
-        id: engineController
-        
-        function secureCloseSequence() {
-            console.log("[MNJNEF_MASTER] Initiating secure termination sequence...");
-            // Log telemetry, clean up memory, clear fields if needed
-            engineState.isProcessing = true
+    component MnjnefCheckBox : RowLayout {
+        id: checkRoot
+        property string description: "Accept terms and system declarations."
+        property bool isChecked: false
+        property bool isRequiredAlert: false
+
+        spacing: 12
+        Layout.fillWidth: true
+
+        Rectangle {
+            id: checkboxBox
+            Layout.preferredWidth: 22
+            Layout.preferredHeight: 22
+            radius: 6
+            color: checkRoot.isChecked ? gPalette.primary : gPalette.bgInput
+            border.color: {
+                if (checkRoot.isRequiredAlert && !checkRoot.isChecked) return gPalette.borderError
+                if (checkMouse.containsMouse) return gPalette.borderFocus
+                return gPalette.borderDefault
+            }
+            border.width: checkRoot.isChecked ? 0 : 1.5
+            Layout.alignment: Qt.AlignTop
+            Layout.topMargin: 2
             
-            // Delay for realistic secure shutdown feel
-            closeTimer.start()
-        }
-        
-        function navigateForward(componentOrUrl, title) {
-            console.log("[MNJNEF_MASTER] Pushing module: " + title);
-            engineState.currentModule = title
-            masterStackView.push(componentOrUrl)
-        }
-        
-        function navigateBack() {
-            if (masterStackView.depth > 1) {
-                console.log("[MNJNEF_MASTER] Popping to previous module.");
-                masterStackView.pop()
-                // Update title based on new top item
-                updateModuleTitle()
-            } else {
-                console.warn("[MNJNEF_MASTER] Cannot pop root item.");
+            Behavior on color { ColorAnimation { duration: 150 } }
+            Behavior on border.color { ColorAnimation { duration: 150 } }
+
+            // Procedural Vector Checkmark
+            Item {
+                anchors.fill: parent
+                visible: checkRoot.isChecked
+                scale: checkRoot.isChecked ? 1.0 : 0.0
+                Behavior on scale { NumberAnimation { duration: 150; easing.type: Easing.OutBack } }
+
+                Rectangle {
+                    width: 2
+                    height: 6
+                    color: gPalette.textDark
+                    rotation: -45
+                    x: 6
+                    y: 10
+                }
+                Rectangle {
+                    width: 2
+                    height: 11
+                    color: gPalette.textDark
+                    rotation: 45
+                    x: 12
+                    y: 5
+                }
             }
         }
+
+        Text {
+            text: checkRoot.description
+            color: checkRoot.isChecked ? gPalette.textMain : gPalette.textSub
+            font.pixelSize: 13
+            font.family: "Segoe UI"
+            Layout.fillWidth: true
+            wrapMode: Text.WordWrap
+            lineHeight: 1.3
+            Behavior on color { ColorAnimation { duration: 150 } }
+        }
+
+        MouseArea {
+            id: checkMouse
+            anchors.fill: parent
+            hoverEnabled: true
+            cursorShape: Qt.PointingHandCursor
+            onClicked: {
+                checkRoot.isChecked = !checkRoot.isChecked
+                checkRoot.toggled(checkRoot.isChecked)
+            }
+        }
+
+        signal toggled(bool checkedState)
+    }
+
+    // ==========================================
+    // COMPONENT 5: SYSTEM STATE BADGE
+    // ==========================================
+    component MnjnefBadge : Rectangle {
+        id: badgeRoot
+        property string typeState: "SAFE" // SAFE, WARNING, SCANNING
         
-        function loadNextModule() {
-            console.log("[MNJNEF_MASTER] Boot complete. Transitioning to Guidelines.");
-            // In the future, this will be: navigateForward("Support_6_Guidelines.qml", "Support Guidelines")
-            navigateForward(dummyGuidelinesComponent, "Rules & Guidelines")
+        implicitWidth: textLabel.implicitWidth + 16
+        implicitHeight: 26
+        radius: 6
+        
+        color: {
+            if (typeState === "SAFE") return "rgba(16, 185, 129, 0.15)"
+            if (typeState === "WARNING") return "rgba(245, 158, 11, 0.15)"
+            return "rgba(139, 92, 246, 0.15)"
         }
         
-        function updateModuleTitle() {
-            // Dummy logic for now. Will be expanded when real files are linked.
-            engineState.currentModule = "Active Module" 
+        border.color: {
+            if (typeState === "SAFE") return gPalette.stateSuccess
+            if (typeState === "WARNING") return gPalette.stateWarning
+            return "#8b5cf6"
+        }
+        border.width: 1
+
+        Text {
+            id: textLabel
+            anchors.centerIn: parent
+            text: badgeRoot.typeState
+            color: parent.border.color
+            font.pixelSize: 11
+            font.bold: true
+            font.family: "Consolas"
         }
     }
-    
-    Timer {
-        id: closeTimer
-        interval: 600
-        repeat: false
-        onTriggered: {
-            engineState.isProcessing = false
-            mnjnefMasterEngineRoot.close()
-            // Optionally, tell File 1 to reset its button state
-            // parent.externalForceReset() // If this popup is a direct child of Main
+
+    // ==========================================
+    // COMPONENT 6: INFINITE HARDWARE SCANNER LINE
+    // ==========================================
+    component MnjnefLoadingLine : Item {
+        id: lineRoot
+        property bool isActive: false
+        
+        Layout.fillWidth: true
+        Layout.preferredHeight: 2
+        clip: true
+        visible: lineRoot.isActive
+
+        Rectangle {
+            id: track
+            anchors.fill: parent
+            color: gPalette.borderDefault
+            opacity: 0.2
         }
-    }
-    
-    // External API for files 3-10 to talk to the Master Engine
-    function triggerLoadingState(isProcessing) {
-        engineState.isProcessing = isProcessing;
-    }
-    
-    function setModuleTitle(title) {
-        engineState.currentModule = title;
+
+        Rectangle {
+            id: bar
+            width: parent.width * 0.4
+            height: parent.height
+            color: gPalette.primary
+            
+            SequentialAnimation on x {
+                loops: Animation.Infinite
+                running: lineRoot.isActive
+                
+                NumberAnimation {
+                    from: -bar.width
+                    to: lineRoot.width
+                    duration: 1000
+                    easing.type: Easing.InOutQuad
+                }
+            }
+        }
     }
 }
