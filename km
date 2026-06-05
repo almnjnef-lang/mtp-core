@@ -5,7 +5,7 @@
         anchors.fill: parent
         color: supTheme.bgPrimary
 
-        // تأثير شبكة خفيف جداً يعطي طابع تقني نظيف وبدون أي إزعاج أو دوائر
+        // Subtle grid overlay for a clean, technical look without distractions
         Canvas {
             anchors.fill: parent
             opacity: 0.04
