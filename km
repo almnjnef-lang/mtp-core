@@ -6,45 +6,47 @@ Item {
     id: supportMainRoot
     anchors.fill: parent
     clip: true
-    opacity: 1.0
-    visible: true
 
     // ==========================================
     // SYSTEM SIGNALS & STATE PROPERTIES
     // ==========================================
-    property string activeUser: "Commander"
+    property string activeUser: "System_Admin"
     property string currentTimeString: "00:00:00"
-    property real networkPing: 12.5
-    property int activeTickets: 2
+    property real networkPing: 18.5
+    property int activeTickets: 3
     property bool isSystemOnline: true
 
     // ==========================================
-    // HIGH-CONTRAST THEME CORE
+    // THEME & STYLING CORE (PROFESSIONAL GRAY THEME)
     // ==========================================
     QtObject {
-        id: supTheme
-        // Brighter dark theme for maximum readability
-        property color bgPrimary: "#0B132B" // Brightened deep blue background
-        property color bgPanel: "#131C31"   // Distinct panel color
-        property color bgElevated: "#1A2642"// Hover state color
-        property color bgInput: "#0A0F1C"   // Dark inset color
+        id: grayTheme
+        // Base backgrounds using professional grayscale palette
+        property color bgPrimary: "#121212"    // Very dark gray for deep background
+        property color bgPanel: "#1E1E1E"      // Standard dark gray for panels
+        property color bgElevated: "#2C2C2C"   // Elevated gray for cards/hover
+        property color bgInput: "#181818"      // Darker inset gray
         
-        property color accentCore: "#3B82F6"
-        property color accentHover: "#60A5FA"
-        property color accentActive: "#2563EB"
-        property color accentAlt: "#8B5CF6"
+        // Accents (subtle blue-gray for a tech feel without breaking the gray theme)
+        property color accentCore: "#607D8B"   // Blue Grey
+        property color accentHover: "#78909C"
+        property color accentActive: "#455A64"
+        property color accentHighlight: "#90A4AE"
         
+        // Text Colors
         property color textHeader: "#FFFFFF"
-        property color textBody: "#E2E8F0"
-        property color textMuted: "#94A3B8"
+        property color textBody: "#E0E0E0"
+        property color textMuted: "#9E9E9E"
         
-        property color borderDefault: "#1E293B"
-        property color borderHighlight: "#334155"
-        property color borderActive: "#3B82F6"
+        // Borders
+        property color borderDefault: "#333333"
+        property color borderHighlight: "#4D4D4D"
         
-        property color stateSuccess: "#10B981"
-        property color stateWarning: "#F59E0B"
-        property color stateDanger: "#EF4444"
+        // Status Indicators
+        property color stateSuccess: "#4CAF50"
+        property color stateWarning: "#FF9800"
+        property color stateDanger: "#F44336"
+        property color stateInfo: "#2196F3"
         
         property string fontMain: "Segoe UI"
         property string fontMono: "Consolas"
@@ -91,25 +93,18 @@ Item {
 
     ListModel {
         id: serverNodesModel
-        ListElement { node: "DXB-CORE-01"; region: "UAE"; status: "OPTIMAL"; load: 35; ping: 12 }
-        ListElement { node: "FRA-EDGE-04"; region: "EU"; status: "STABLE"; load: 68; ping: 115 }
-        ListElement { node: "SGP-RELAY-02"; region: "APAC"; status: "HIGH LOAD"; load: 92; ping: 85 }
+        ListElement { node: "DXB-CORE-01"; region: "UAE"; status: "OPTIMAL"; load: 39; ping: 5 }
+        ListElement { node: "FRA-EDGE-04"; region: "EU"; status: "STABLE"; load: 51; ping: 93 }
+        ListElement { node: "SGP-RELAY-02"; region: "APAC"; status: "HIGH LOAD"; load: 95; ping: 80 }
         ListElement { node: "NYC-MAIN-08"; region: "AMER"; status: "MAINTENANCE"; load: 0; ping: 999 }
     }
 
     ListModel {
         id: announcementsModel
-        ListElement { date: "TODAY"; badge: "UPDATE"; text: "Mnjnef Core Engine updated to v5.7.1. Rendering stability improved across all regions." }
-        ListElement { date: "YESTERDAY"; badge: "MAINT"; text: "Scheduled downtime for DXB-CORE-01 completed successfully without data loss." }
-        ListElement { date: "12 MAY"; badge: "SECURITY"; text: "Anti-Tamper protocol definitions updated globally. Memory heuristics optimized." }
-        ListElement { date: "10 MAY"; badge: "INFO"; text: "New localization packages have been added to the Translation Module." }
-    }
-    
-    ListModel {
-        id: activeAgentsModel
-        ListElement { agentName: "Vanguard_77"; role: "Network Routing Specialist"; status: "ONLINE" }
-        ListElement { agentName: "Cipher_Delta"; role: "Security & Authentication"; status: "BUSY" }
-        ListElement { agentName: "Atlas_Core"; role: "Platform Architecture"; status: "ONLINE" }
+        ListElement { date: "TODAY"; badge: "UPDATE"; text: "Mnjnef Core Engine updated to v5.7.1. Rendering stability improved." }
+        ListElement { date: "YESTERDAY"; badge: "MAINT"; text: "Scheduled downtime for DXB-CORE-01 completed successfully." }
+        ListElement { date: "12 MAY"; badge: "SECURITY"; text: "Anti-Tamper protocol definitions updated globally." }
+        ListElement { date: "10 MAY"; badge: "INFO"; text: "New localization packages are now available for deployment." }
     }
 
     // ==========================================
@@ -117,703 +112,727 @@ Item {
     // ==========================================
     Rectangle {
         anchors.fill: parent
-        color: supTheme.bgPrimary
-
-        // Very faint grid to keep the tech vibe without distractions
-        Canvas {
-            anchors.fill: parent
-            opacity: 0.05
-            onPaint: {
-                var ctx = getContext("2d");
-                ctx.strokeStyle = supTheme.accentCore;
-                ctx.lineWidth = 1;
-                var step = 50;
-                ctx.beginPath();
-                for (var x = 0; x < width; x += step) { ctx.moveTo(x, 0); ctx.lineTo(x, height); }
-                for (var y = 0; y < height; y += step) { ctx.moveTo(0, y); ctx.lineTo(width, y); }
-                ctx.stroke();
-            }
-        }
+        color: grayTheme.bgPrimary
+        z: -1
     }
 
     // ==========================================
-    // BULLETPROOF LAYOUT: TOP NAVIGATION BAR
+    // MAIN LAYOUT STRUCTURE
     // ==========================================
-    Rectangle {
-        id: topNavBar
-        anchors.top: parent.top
-        anchors.left: parent.left
-        anchors.right: parent.right
-        height: 75
-        color: supTheme.bgPanel
-        border.color: supTheme.borderDefault
-        border.width: 1
-        z: 100 // Always stays on top of everything
+    ColumnLayout {
+        anchors.fill: parent
+        spacing: 0
 
-        RowLayout {
-            anchors.fill: parent
-            anchors.leftMargin: 24
-            anchors.rightMargin: 24
-            spacing: 24
+        // ------------------------------------------
+        // TOP NAVIGATION BAR (FIXED HEIGHT)
+        // ------------------------------------------
+        Rectangle {
+            Layout.fillWidth: true
+            Layout.preferredHeight: 70
+            color: grayTheme.bgPanel
+            border.color: grayTheme.borderDefault
+            border.width: 1
+            z: 100 // Ensure it stays on top of flickable content
 
-            // Back Button
-            Rectangle {
-                Layout.preferredWidth: 46
-                Layout.preferredHeight: 46
-                radius: 10
-                color: backMouse.containsMouse ? supTheme.bgElevated : supTheme.bgInput
-                border.color: backMouse.containsMouse ? supTheme.borderHighlight : supTheme.borderDefault
-                border.width: 1
-                
-                Behavior on color { ColorAnimation { duration: 150 } }
-
-                Text {
-                    anchors.centerIn: parent
-                    text: "◀"
-                    color: supTheme.textHeader
-                    font.pixelSize: 16
-                }
-
-                MouseArea {
-                    id: backMouse
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: {
-                        // Safely return to Login/Main screen
-                        if (StackView.view) {
-                            StackView.view.pop();
-                        }
-                    }
-                }
-            }
-
-            // Logo & Title
             RowLayout {
-                spacing: 16
-                
+                anchors.fill: parent
+                anchors.leftMargin: 20
+                anchors.rightMargin: 24
+                spacing: 20
+
+                // Back Button
                 Rectangle {
-                    Layout.preferredWidth: 46
-                    Layout.preferredHeight: 46
-                    radius: 10
-                    color: supTheme.bgPrimary
-                    border.color: supTheme.accentCore
-                    border.width: 2
-                    
-                    Text {
-                        anchors.centerIn: parent
-                        text: "MNJ"
-                        color: supTheme.textHeader
-                        font.pixelSize: 14
-                        font.bold: true
-                        font.family: supTheme.fontMono
-                    }
-                }
-
-                ColumnLayout {
-                    spacing: 4
-                    Text {
-                        text: qsTr("MNJNEF SUPPORT PORTAL")
-                        color: supTheme.textHeader
-                        font.pixelSize: 18
-                        font.bold: true
-                        font.family: supTheme.fontMain
-                        font.letterSpacing: 1.5
-                    }
-                    Text {
-                        text: qsTr("Secure Diagnostic & Routing Facility")
-                        color: supTheme.accentCore
-                        font.pixelSize: 12
-                        font.family: supTheme.fontMono
-                    }
-                }
-            }
-
-            Item { Layout.fillWidth: true } // Pushes the next items to the right edge
-
-            // Live Clock & Status
-            RowLayout {
-                spacing: 24
-                
-                ColumnLayout {
-                    Layout.alignment: Qt.AlignVCenter
-                    spacing: 4
-                    
-                    Text {
-                        text: qsTr("SYSTEM TIME (UAE)")
-                        color: supTheme.textMuted
-                        font.pixelSize: 11
-                        font.bold: true
-                        font.family: supTheme.fontMono
-                        Layout.alignment: Qt.AlignRight
-                    }
-                    
-                    Text {
-                        text: supportMainRoot.currentTimeString
-                        color: supTheme.textHeader
-                        font.pixelSize: 18
-                        font.bold: true
-                        font.family: supTheme.fontMono
-                        Layout.alignment: Qt.AlignRight
-                    }
-                }
-                
-                Rectangle {
-                    Layout.preferredWidth: 1
-                    Layout.preferredHeight: 40
-                    color: supTheme.borderDefault
-                }
-                
-                RowLayout {
-                    spacing: 10
-                    Rectangle {
-                        width: 12
-                        height: 12
-                        radius: 6
-                        color: supportMainRoot.isSystemOnline ? supTheme.stateSuccess : supTheme.stateDanger
-                        
-                        SequentialAnimation on opacity {
-                            loops: Animation.Infinite
-                            running: supportMainRoot.isSystemOnline
-                            NumberAnimation { from: 1.0; to: 0.4; duration: 1000 }
-                            NumberAnimation { from: 0.4; to: 1.0; duration: 1000 }
-                        }
-                    }
-                    Text {
-                        text: supportMainRoot.isSystemOnline ? qsTr("NETWORK ONLINE") : qsTr("DISCONNECTED")
-                        color: supportMainRoot.isSystemOnline ? supTheme.stateSuccess : supTheme.stateDanger
-                        font.pixelSize: 13
-                        font.bold: true
-                        font.family: supTheme.fontMono
-                    }
-                }
-            }
-        }
-    }
-
-    // ==========================================
-    // BULLETPROOF LAYOUT: SCROLLABLE DASHBOARD
-    // ==========================================
-    Flickable {
-        anchors.top: topNavBar.bottom
-        anchors.left: parent.left
-        anchors.right: parent.right
-        anchors.bottom: parent.bottom
-        contentWidth: width
-        contentHeight: dashboardLayout.implicitHeight + 80 // Ensures scrolling
-        clip: true
-        boundsBehavior: Flickable.StopAtBounds
-
-        // Custom Scrollbar
-        ScrollBar.vertical: ScrollBar {
-            width: 8
-            contentItem: Rectangle {
-                implicitWidth: 8
-                radius: 4
-                color: supTheme.borderHighlight
-            }
-        }
-
-        // Main Content Container
-        RowLayout {
-            id: dashboardLayout
-            width: Math.min(parent.width - 64, 1200) // Caps maximum width, adds side margins
-            anchors.horizontalCenter: parent.horizontalCenter
-            anchors.top: parent.top
-            anchors.topMargin: 32
-            spacing: 32
-
-            // ==========================================
-            // LEFT COLUMN (ACTIONS & BROADCASTS)
-            // ==========================================
-            ColumnLayout {
-                Layout.fillWidth: true
-                Layout.fillHeight: true
-                spacing: 32
-                Layout.alignment: Qt.AlignTop
-
-                // 1. Welcome Banner
-                Rectangle {
-                    Layout.fillWidth: true
-                    Layout.preferredHeight: 130
-                    radius: 12
-                    color: supTheme.bgPanel
-                    border.color: supTheme.borderDefault
+                    Layout.preferredWidth: 44
+                    Layout.preferredHeight: 44
+                    radius: 8
+                    color: backMouse.containsMouse ? grayTheme.bgElevated : grayTheme.bgPrimary
+                    border.color: backMouse.containsMouse ? grayTheme.borderHighlight : grayTheme.borderDefault
                     border.width: 1
-                    clip: true
-
-                    // Left-side accent stripe
-                    Rectangle {
-                        width: 6
-                        height: parent.height
-                        anchors.left: parent.left
-                        color: supTheme.accentCore
-                    }
-
-                    RowLayout {
-                        anchors.fill: parent
-                        anchors.margins: 24
-                        anchors.leftMargin: 32
-                        spacing: 24
-
-                        ColumnLayout {
-                            Layout.fillWidth: true
-                            spacing: 8
-
-                            Text {
-                                text: qsTr("Welcome to the Support Operations Center.")
-                                color: supTheme.textHeader
-                                font.pixelSize: 22
-                                font.bold: true
-                                font.family: supTheme.fontMain
-                            }
-
-                            Text {
-                                text: qsTr("Your secure connection to Mnjnef Core is established. Select an action below to initiate diagnostic procedures, track existing tickets, or access the localization matrix.")
-                                color: supTheme.textMuted
-                                font.pixelSize: 14
-                                font.family: supTheme.fontMain
-                                wrapMode: Text.WordWrap
-                                Layout.fillWidth: true
-                                lineHeight: 1.4
-                            }
-                        }
-                    }
-                }
-
-                // 2. Action Grid Section
-                ColumnLayout {
-                    Layout.fillWidth: true
-                    spacing: 12
                     
-                    Text {
-                        text: qsTr("QUICK DEPLOYMENT ACTIONS")
-                        color: supTheme.textMuted
-                        font.pixelSize: 13
-                        font.bold: true
-                        font.family: supTheme.fontMono
-                        font.letterSpacing: 1.0
-                    }
+                    Behavior on color { ColorAnimation { duration: 150 } }
 
-                    GridLayout {
-                        Layout.fillWidth: true
-                        columns: 2
-                        rowSpacing: 16
-                        columnSpacing: 16
-
-                        Repeater {
-                            model: quickActionsModel
-                            
-                            Rectangle {
-                                Layout.fillWidth: true
-                                Layout.preferredHeight: 120
-                                radius: 12
-                                color: actionMouse.containsMouse ? (isPrimary ? supTheme.accentCore : supTheme.bgElevated) : supTheme.bgPanel
-                                border.color: actionMouse.containsMouse ? supTheme.accentHover : supTheme.borderDefault
-                                border.width: 1
-                                
-                                Behavior on color { ColorAnimation { duration: 150 } }
-
-                                RowLayout {
-                                    anchors.fill: parent
-                                    anchors.margins: 20
-                                    spacing: 16
-
-                                    // Action Icon
-                                    Rectangle {
-                                        Layout.preferredWidth: 56
-                                        Layout.preferredHeight: 56
-                                        radius: 12
-                                        color: isPrimary ? (actionMouse.containsMouse ? supTheme.accentHover : supTheme.accentActive) : supTheme.bgInput
-                                        border.color: supTheme.borderHighlight
-                                        border.width: 1
-                                        
-                                        Text {
-                                            anchors.centerIn: parent
-                                            text: icon
-                                            font.pixelSize: 28
-                                        }
-                                    }
-
-                                    // Action Text
-                                    ColumnLayout {
-                                        Layout.fillWidth: true
-                                        spacing: 6
-                                        
-                                        Text {
-                                            text: title
-                                            color: actionMouse.containsMouse && isPrimary ? "#FFFFFF" : supTheme.textHeader
-                                            font.pixelSize: 16
-                                            font.bold: true
-                                            font.family: supTheme.fontMain
-                                        }
-                                        
-                                        Text {
-                                            text: desc
-                                            color: actionMouse.containsMouse && isPrimary ? "#E2E8F0" : supTheme.textMuted
-                                            font.pixelSize: 13
-                                            font.family: supTheme.fontMain
-                                            wrapMode: Text.WordWrap
-                                            Layout.fillWidth: true
-                                            lineHeight: 1.3
-                                        }
-                                    }
-                                    
-                                    // Arrow Indicator
-                                    Text {
-                                        text: "➔"
-                                        color: actionMouse.containsMouse ? (isPrimary ? "#FFFFFF" : supTheme.accentCore) : supTheme.textMuted
-                                        font.pixelSize: 20
-                                        font.bold: true
-                                        x: actionMouse.containsMouse ? 8 : 0
-                                        Behavior on x { NumberAnimation { duration: 200; easing.type: Easing.OutBack } }
-                                    }
-                                }
-
-                                MouseArea {
-                                    id: actionMouse
-                                    anchors.fill: parent
-                                    hoverEnabled: true
-                                    cursorShape: Qt.PointingHandCursor
-                                    onClicked: {
-                                        if (StackView.view) {
-                                            StackView.view.push(targetFile);
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-
-                // 3. System Broadcasts
-                ColumnLayout {
-                    Layout.fillWidth: true
-                    spacing: 12
-
-                    Text {
-                        text: qsTr("SECURE PLATFORM BROADCASTS")
-                        color: supTheme.textMuted
-                        font.pixelSize: 13
-                        font.bold: true
-                        font.family: supTheme.fontMono
-                        font.letterSpacing: 1.0
-                    }
-
-                    Rectangle {
-                        Layout.fillWidth: true
-                        Layout.preferredHeight: announcementsModel.count * 64
-                        radius: 12
-                        color: supTheme.bgPanel
-                        border.color: supTheme.borderDefault
-                        border.width: 1
-                        clip: true
-
-                        ListView {
-                            anchors.fill: parent
-                            model: announcementsModel
-                            interactive: false
-                            
-                            delegate: Rectangle {
-                                width: ListView.view.width
-                                height: 64
-                                color: "transparent"
-                                
-                                // Divider Line
-                                Rectangle {
-                                    width: parent.width - 32
-                                    height: 1
-                                    anchors.bottom: parent.bottom
-                                    anchors.horizontalCenter: parent.horizontalCenter
-                                    color: supTheme.borderDefault
-                                    visible: index < announcementsModel.count - 1
-                                }
-
-                                RowLayout {
-                                    anchors.fill: parent
-                                    anchors.leftMargin: 20
-                                    anchors.rightMargin: 20
-                                    spacing: 20
-                                    
-                                    Text {
-                                        text: date
-                                        color: supTheme.textMuted
-                                        font.pixelSize: 12
-                                        font.bold: true
-                                        font.family: supTheme.fontMono
-                                        Layout.preferredWidth: 70
-                                    }
-                                    
-                                    Rectangle {
-                                        Layout.preferredWidth: 80
-                                        Layout.preferredHeight: 24
-                                        radius: 6
-                                        color: supTheme.bgInput
-                                        border.color: supTheme.borderHighlight
-                                        border.width: 1
-                                        
-                                        Text {
-                                            anchors.centerIn: parent
-                                            text: badge
-                                            color: {
-                                                if (badge === "UPDATE") return supTheme.accentCore;
-                                                if (badge === "MAINT") return supTheme.stateWarning;
-                                                if (badge === "SECURITY") return supTheme.stateDanger;
-                                                return supTheme.stateSuccess;
-                                            }
-                                            font.pixelSize: 11
-                                            font.bold: true
-                                            font.family: supTheme.fontMono
-                                        }
-                                    }
-                                    
-                                    Text {
-                                        text: text
-                                        color: supTheme.textBody
-                                        font.pixelSize: 14
-                                        font.family: supTheme.fontMain
-                                        Layout.fillWidth: true
-                                        elide: Text.ElideRight
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            // ==========================================
-            // RIGHT COLUMN (TRANSLATION & TELEMETRY)
-            // ==========================================
-            ColumnLayout {
-                Layout.preferredWidth: 420
-                Layout.fillHeight: true
-                spacing: 32
-                Layout.alignment: Qt.AlignTop
-
-                // 1. DEDICATED TRANSLATION MODULE CARD
-                Rectangle {
-                    Layout.fillWidth: true
-                    Layout.preferredHeight: 240
-                    radius: 16
-                    color: transMouse.containsMouse ? supTheme.bgElevated : supTheme.bgPanel
-                    border.color: transMouse.containsMouse ? supTheme.accentAlt : supTheme.borderDefault
-                    border.width: transMouse.containsMouse ? 2 : 1
-                    clip: true
-                    
-                    Behavior on color { ColorAnimation { duration: 200 } }
-                    Behavior on border.color { ColorAnimation { duration: 200 } }
-
-                    ColumnLayout {
-                        anchors.fill: parent
-                        anchors.margins: 24
-                        spacing: 16
-
-                        RowLayout {
-                            Layout.fillWidth: true
-                            
-                            Rectangle {
-                                Layout.preferredWidth: 56
-                                Layout.preferredHeight: 56
-                                radius: 16
-                                color: supTheme.bgInput
-                                border.color: supTheme.accentAlt
-                                border.width: 2
-                                
-                                Text {
-                                    anchors.centerIn: parent
-                                    text: "🌐"
-                                    font.pixelSize: 28
-                                }
-                            }
-                            
-                            Item { Layout.fillWidth: true }
-                            
-                            Rectangle {
-                                Layout.preferredWidth: 70
-                                Layout.preferredHeight: 28
-                                radius: 14
-                                color: "#2A" + supTheme.accentAlt.substring(1) // Semi-transparent
-                                border.color: supTheme.accentAlt
-                                border.width: 1
-                                
-                                Text {
-                                    anchors.centerIn: parent
-                                    text: "GLOBAL"
-                                    color: supTheme.accentAlt
-                                    font.pixelSize: 11
-                                    font.bold: true
-                                    font.family: supTheme.fontMono
-                                }
-                            }
-                        }
-
-                        Text {
-                            text: qsTr("Localization & Translation")
-                            color: supTheme.textHeader
-                            font.pixelSize: 22
-                            font.bold: true
-                            font.family: supTheme.fontMain
-                        }
-
-                        Text {
-                            text: qsTr("Install and configure regional language packs for the Mnjnef ecosystem. Fully supports Arabic and all major dialects.")
-                            color: supTheme.textMuted
-                            font.pixelSize: 14
-                            font.family: supTheme.fontMain
-                            wrapMode: Text.WordWrap
-                            Layout.fillWidth: true
-                            lineHeight: 1.4
-                        }
-                        
-                        Item { Layout.fillHeight: true }
-
-                        // Action Link Footer
-                        Rectangle {
-                            Layout.fillWidth: true
-                            Layout.preferredHeight: 1
-                            color: transMouse.containsMouse ? supTheme.accentAlt : supTheme.borderDefault
-                        }
-
-                        RowLayout {
-                            Layout.fillWidth: true
-                            Layout.topMargin: 8
-                            
-                            Text {
-                                text: qsTr("ENTER TRANSLATION MODULE")
-                                color: transMouse.containsMouse ? supTheme.accentAlt : supTheme.textBody
-                                font.pixelSize: 13
-                                font.bold: true
-                                font.family: supTheme.fontMono
-                                
-                                Behavior on color { ColorAnimation { duration: 150 } }
-                            }
-                            
-                            Item { Layout.fillWidth: true }
-                            
-                            Text {
-                                text: "→"
-                                color: transMouse.containsMouse ? supTheme.accentAlt : supTheme.textMuted
-                                font.pixelSize: 20
-                                x: transMouse.containsMouse ? 8 : 0
-                                Behavior on x { NumberAnimation { duration: 200; easing.type: Easing.OutBack } }
-                            }
-                        }
+                    Text { 
+                        anchors.centerIn: parent
+                        text: "◀"
+                        color: grayTheme.textMuted
+                        font.pixelSize: 14 
                     }
 
                     MouseArea {
-                        id: transMouse
+                        id: backMouse
                         anchors.fill: parent
                         hoverEnabled: true
                         cursorShape: Qt.PointingHandCursor
                         onClicked: {
                             if (StackView.view) {
-                                StackView.view.push("Support_11_TranslationModule.qml");
+                                StackView.view.pop();
                             }
                         }
                     }
                 }
 
-                // 2. LIVE TELEMETRY RADAR
-                ColumnLayout {
-                    Layout.fillWidth: true
-                    spacing: 12
-
-                    Text {
-                        text: qsTr("GLOBAL NODE TELEMETRY")
-                        color: supTheme.textMuted
-                        font.pixelSize: 13
-                        font.bold: true
-                        font.family: supTheme.fontMono
-                        font.letterSpacing: 1.0
+                // Logo & Title
+                RowLayout {
+                    spacing: 16
+                    
+                    Rectangle {
+                        Layout.preferredWidth: 44
+                        Layout.preferredHeight: 44
+                        radius: 8
+                        color: grayTheme.bgPrimary
+                        border.color: grayTheme.accentCore
+                        border.width: 1
+                        
+                        Text {
+                            anchors.centerIn: parent
+                            text: "MNJ"
+                            color: grayTheme.textHeader
+                            font.pixelSize: 13
+                            font.bold: true
+                            font.family: grayTheme.fontMono
+                        }
                     }
 
-                    Rectangle {
-                        Layout.fillWidth: true
-                        Layout.preferredHeight: serverNodesModel.count * 80
-                        radius: 12
-                        color: supTheme.bgPanel
-                        border.color: supTheme.borderDefault
-                        border.width: 1
-                        clip: true
+                    ColumnLayout {
+                        spacing: 2
+                        Text {
+                            text: qsTr("MNJNEF SUPPORT PORTAL")
+                            color: grayTheme.textHeader
+                            font.pixelSize: 18
+                            font.bold: true
+                            font.family: grayTheme.fontMain
+                            font.letterSpacing: 1.5
+                        }
+                        Text {
+                            text: qsTr("Secure Diagnostic & Routing Facility")
+                            color: grayTheme.accentCore
+                            font.pixelSize: 12
+                            font.family: grayTheme.fontMono
+                        }
+                    }
+                }
 
-                        ListView {
-                            anchors.fill: parent
-                            model: serverNodesModel
-                            interactive: false
+                Item { Layout.fillWidth: true } // Pushes clock to the right
+
+                // Live Clock & Status
+                RowLayout {
+                    spacing: 24
+                    
+                    ColumnLayout {
+                        Layout.alignment: Qt.AlignVCenter
+                        spacing: 2
+                        
+                        Text {
+                            text: qsTr("SYSTEM TIME (UAE)")
+                            color: grayTheme.textMuted
+                            font.pixelSize: 10
+                            font.family: grayTheme.fontMono
+                            Layout.alignment: Qt.AlignRight
+                        }
+                        
+                        Text {
+                            text: supportMainRoot.currentTimeString
+                            color: grayTheme.textHeader
+                            font.pixelSize: 16
+                            font.bold: true
+                            font.family: grayTheme.fontMono
+                            Layout.alignment: Qt.AlignRight
+                        }
+                    }
+                    
+                    Rectangle {
+                        Layout.preferredWidth: 1
+                        Layout.preferredHeight: 30
+                        color: grayTheme.borderDefault
+                    }
+                    
+                    RowLayout {
+                        spacing: 8
+                        Rectangle {
+                            width: 10
+                            height: 10
+                            radius: 5
+                            color: supportMainRoot.isSystemOnline ? grayTheme.stateSuccess : grayTheme.stateDanger
                             
-                            delegate: Rectangle {
-                                width: ListView.view.width
-                                height: 80
-                                color: "transparent"
-                                
-                                Rectangle {
-                                    width: parent.width - 32
-                                    height: 1
-                                    anchors.bottom: parent.bottom
-                                    anchors.horizontalCenter: parent.horizontalCenter
-                                    color: supTheme.borderDefault
-                                    visible: index < serverNodesModel.count - 1
-                                }
+                            SequentialAnimation on opacity {
+                                loops: Animation.Infinite
+                                running: supportMainRoot.isSystemOnline
+                                NumberAnimation { from: 1.0; to: 0.4; duration: 1000 }
+                                NumberAnimation { from: 0.4; to: 1.0; duration: 1000 }
+                            }
+                        }
+                        Text {
+                            text: supportMainRoot.isSystemOnline ? qsTr("NETWORK ONLINE") : qsTr("OFFLINE")
+                            color: supportMainRoot.isSystemOnline ? grayTheme.stateSuccess : grayTheme.stateDanger
+                            font.pixelSize: 12
+                            font.bold: true
+                            font.family: grayTheme.fontMono
+                        }
+                    }
+                }
+            }
+        }
+
+        // ------------------------------------------
+        // SCROLLABLE DASHBOARD CONTENT
+        // ------------------------------------------
+        Flickable {
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+            contentWidth: width
+            contentHeight: contentContainer.height + 60 // Added padding to bottom
+            clip: true
+            boundsBehavior: Flickable.StopAtBounds
+
+            ScrollBar.vertical: ScrollBar {
+                width: 8
+                policy: ScrollBar.AlwaysOn
+                contentItem: Rectangle {
+                    implicitWidth: 8
+                    radius: 4
+                    color: grayTheme.borderHighlight
+                }
+            }
+
+            // Wrapper item to strictly define layout boundaries and prevent overlap
+            Item {
+                id: contentContainer
+                width: parent.width - 48
+                anchors.horizontalCenter: parent.horizontalCenter
+                y: 24
+                
+                // Calculate implicit height based on children
+                height: mainContentRow.implicitHeight
+
+                RowLayout {
+                    id: mainContentRow
+                    anchors.fill: parent
+                    spacing: 24
+                    anchors.margins: 0
+
+                    // ==========================================
+                    // LEFT COLUMN (ACTIONS & BROADCASTS)
+                    // ==========================================
+                    ColumnLayout {
+                        Layout.fillWidth: true
+                        Layout.alignment: Qt.AlignTop
+                        spacing: 24
+
+                        // 1. Welcome Banner Card
+                        Rectangle {
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: 140
+                            radius: 12
+                            color: grayTheme.bgPanel
+                            border.color: grayTheme.borderDefault
+                            border.width: 1
+                            clip: true
+
+                            RowLayout {
+                                anchors.fill: parent
+                                anchors.margins: 24
+                                spacing: 20
 
                                 ColumnLayout {
-                                    anchors.fill: parent
-                                    anchors.margins: 16
+                                    Layout.fillWidth: true
                                     spacing: 8
-                                    
-                                    RowLayout {
+
+                                    Text {
+                                        text: qsTr("Welcome to the Support Operations Center")
+                                        color: grayTheme.textHeader
+                                        font.pixelSize: 22
+                                        font.bold: true
+                                        font.family: grayTheme.fontMain
+                                    }
+
+                                    Text {
+                                        text: qsTr("Your secure connection to Mnjnef Core is established. Select an action below to initiate diagnostic procedures, track existing tickets, or access the localization matrix.")
+                                        color: grayTheme.textMuted
+                                        font.pixelSize: 14
+                                        font.family: grayTheme.fontMain
+                                        wrapMode: Text.WordWrap
                                         Layout.fillWidth: true
-                                        
-                                        Text { 
-                                            text: node; 
-                                            color: status === "MAINTENANCE" ? supTheme.textMuted : supTheme.textHeader; 
-                                            font.pixelSize: 14; 
-                                            font.bold: true; 
-                                            font.family: supTheme.fontMono 
+                                        lineHeight: 1.4
+                                    }
+                                }
+                            }
+                        }
+
+                        // 2. Action Grid Section Title
+                        Text {
+                            text: qsTr("QUICK DEPLOYMENT ACTIONS")
+                            color: grayTheme.textMuted
+                            font.pixelSize: 12
+                            font.bold: true
+                            font.family: grayTheme.fontMono
+                            Layout.topMargin: 8
+                        }
+
+                        // 3. Dynamic Action Grid
+                        GridLayout {
+                            Layout.fillWidth: true
+                            columns: 2
+                            rowSpacing: 16
+                            columnSpacing: 16
+
+                            Repeater {
+                                model: quickActionsModel
+                                
+                                Rectangle {
+                                    Layout.fillWidth: true
+                                    Layout.preferredHeight: 120
+                                    radius: 12
+                                    color: actionMouse.containsMouse ? grayTheme.bgElevated : grayTheme.bgPanel
+                                    border.color: actionMouse.containsMouse ? grayTheme.accentCore : grayTheme.borderDefault
+                                    border.width: actionMouse.containsMouse ? 2 : 1
+                                    
+                                    Behavior on color { ColorAnimation { duration: 150 } }
+                                    Behavior on border.color { ColorAnimation { duration: 150 } }
+
+                                    RowLayout {
+                                        anchors.fill: parent
+                                        anchors.margins: 16
+                                        spacing: 16
+
+                                        // Icon Container
+                                        Rectangle {
+                                            Layout.preferredWidth: 50
+                                            Layout.preferredHeight: 50
+                                            radius: 12
+                                            color: grayTheme.bgInput
+                                            border.color: isPrimary ? grayTheme.accentCore : grayTheme.borderHighlight
+                                            border.width: 1
+                                            
+                                            Text {
+                                                anchors.centerIn: parent
+                                                text: icon
+                                                font.pixelSize: 24
+                                            }
+                                        }
+
+                                        // Text Content
+                                        ColumnLayout {
+                                            Layout.fillWidth: true
+                                            spacing: 4
+                                            
+                                            Text {
+                                                text: title
+                                                color: grayTheme.textHeader
+                                                font.pixelSize: 16
+                                                font.bold: true
+                                                font.family: grayTheme.fontMain
+                                            }
+                                            
+                                            Text {
+                                                text: desc
+                                                color: grayTheme.textMuted
+                                                font.pixelSize: 12
+                                                font.family: grayTheme.fontMain
+                                                wrapMode: Text.WordWrap
+                                                Layout.fillWidth: true
+                                                lineHeight: 1.3
+                                            }
                                         }
                                         
-                                        Item { Layout.fillWidth: true }
-                                        
-                                        Text { 
-                                            text: status; 
-                                            color: {
-                                                if (status === "OPTIMAL") return supTheme.stateSuccess;
-                                                if (status === "STABLE") return supTheme.accentCore;
-                                                if (status === "MAINTENANCE") return supTheme.textMuted;
-                                                return supTheme.stateWarning;
-                                            }
-                                            font.pixelSize: 11; 
-                                            font.bold: true; 
-                                            font.family: supTheme.fontMono 
+                                        // Arrow Indicator
+                                        Text {
+                                            text: "➔"
+                                            color: actionMouse.containsMouse ? grayTheme.accentCore : grayTheme.borderHighlight
+                                            font.pixelSize: 20
+                                            font.bold: true
+                                            x: actionMouse.containsMouse ? 5 : 0
+                                            Behavior on x { NumberAnimation { duration: 200; easing.type: Easing.OutBack } }
                                         }
                                     }
+
+                                    // Full Card Click Handler
+                                    MouseArea {
+                                        id: actionMouse
+                                        anchors.fill: parent
+                                        hoverEnabled: true
+                                        cursorShape: Qt.PointingHandCursor
+                                        onClicked: {
+                                            console.log("[ROUTING] Attempting to push: " + targetFile);
+                                            if (StackView.view) {
+                                                StackView.view.push(targetFile);
+                                            } else {
+                                                console.error("[ERROR] StackView.view is null! Navigation failed.");
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        // 4. System Broadcasts List
+                        Rectangle {
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: (announcementsModel.count * 60) + 50
+                            radius: 12
+                            color: grayTheme.bgPanel
+                            border.color: grayTheme.borderDefault
+                            border.width: 1
+                            clip: true
+
+                            ColumnLayout {
+                                anchors.fill: parent
+                                spacing: 0
+
+                                // Broadcast Header
+                                Rectangle {
+                                    Layout.fillWidth: true
+                                    Layout.preferredHeight: 50
+                                    color: grayTheme.bgElevated
+                                    border.color: grayTheme.borderDefault
+                                    border.width: 1
                                     
-                                    Rectangle {
-                                        Layout.fillWidth: true
-                                        Layout.preferredHeight: 8
-                                        radius: 4
-                                        color: supTheme.bgInput
-                                        clip: true
+                                    Text {
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        anchors.left: parent.left
+                                        anchors.leftMargin: 20
+                                        text: qsTr("SECURE PLATFORM BROADCASTS")
+                                        color: grayTheme.textHeader
+                                        font.pixelSize: 13
+                                        font.bold: true
+                                        font.family: grayTheme.fontMono
+                                    }
+                                }
+
+                                // Broadcast Items
+                                ListView {
+                                    Layout.fillWidth: true
+                                    Layout.fillHeight: true
+                                    model: announcementsModel
+                                    interactive: false
+                                    
+                                    delegate: Rectangle {
+                                        width: ListView.view.width
+                                        height: 60
+                                        color: "transparent"
                                         
                                         Rectangle {
-                                            width: (load / 100) * parent.width
-                                            height: parent.height
-                                            radius: 4
-                                            color: {
-                                                if (load === 0) return "transparent";
-                                                if (load < 50) return supTheme.stateSuccess;
-                                                if (load < 80) return supTheme.accentCore;
-                                                return supTheme.stateWarning;
+                                            width: parent.width
+                                            height: 1
+                                            anchors.bottom: parent.bottom
+                                            color: grayTheme.borderDefault
+                                            visible: index < announcementsModel.count - 1
+                                        }
+
+                                        RowLayout {
+                                            anchors.fill: parent
+                                            anchors.leftMargin: 20
+                                            anchors.rightMargin: 20
+                                            spacing: 16
+                                            
+                                            Text {
+                                                text: date
+                                                color: grayTheme.textMuted
+                                                font.pixelSize: 11
+                                                font.family: grayTheme.fontMono
+                                                Layout.preferredWidth: 70
                                             }
-                                            Behavior on width { NumberAnimation { duration: 300 } }
+                                            
+                                            Rectangle {
+                                                Layout.preferredWidth: 65
+                                                Layout.preferredHeight: 22
+                                                radius: 4
+                                                color: grayTheme.bgInput
+                                                border.color: grayTheme.borderHighlight
+                                                border.width: 1
+                                                
+                                                Text {
+                                                    anchors.centerIn: parent
+                                                    text: badge
+                                                    color: {
+                                                        if (badge === "UPDATE") return grayTheme.stateInfo;
+                                                        if (badge === "MAINT") return grayTheme.stateWarning;
+                                                        if (badge === "SECURITY") return grayTheme.stateDanger;
+                                                        return grayTheme.textHeader;
+                                                    }
+                                                    font.pixelSize: 10
+                                                    font.bold: true
+                                                    font.family: grayTheme.fontMono
+                                                }
+                                            }
+                                            
+                                            Text {
+                                                text: text
+                                                color: grayTheme.textBody
+                                                font.pixelSize: 13
+                                                font.family: grayTheme.fontMain
+                                                Layout.fillWidth: true
+                                                elide: Text.ElideRight
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // ==========================================
+                    // RIGHT COLUMN (FIXED WIDTH FOR NO OVERLAPS)
+                    // ==========================================
+                    ColumnLayout {
+                        Layout.preferredWidth: 420
+                        Layout.alignment: Qt.AlignTop
+                        spacing: 24
+
+                        // 1. TRANSLATION MODULE CARD (Dedicated Box)
+                        Rectangle {
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: 240
+                            radius: 12
+                            color: transMouse.containsMouse ? grayTheme.bgElevated : grayTheme.bgPanel
+                            border.color: transMouse.containsMouse ? grayTheme.accentCore : grayTheme.borderDefault
+                            border.width: transMouse.containsMouse ? 2 : 1
+                            clip: true
+                            
+                            Behavior on color { ColorAnimation { duration: 200 } }
+                            Behavior on border.color { ColorAnimation { duration: 200 } }
+
+                            ColumnLayout {
+                                anchors.fill: parent
+                                anchors.margins: 24
+                                spacing: 12
+
+                                RowLayout {
+                                    Layout.fillWidth: true
+                                    
+                                    Rectangle {
+                                        Layout.preferredWidth: 54
+                                        Layout.preferredHeight: 54
+                                        radius: 12
+                                        color: grayTheme.bgInput
+                                        border.color: grayTheme.borderHighlight
+                                        border.width: 1
+                                        
+                                        Text {
+                                            anchors.centerIn: parent
+                                            text: "🌐"
+                                            font.pixelSize: 28
                                         }
                                     }
                                     
+                                    Item { Layout.fillWidth: true }
+                                    
+                                    Rectangle {
+                                        Layout.preferredWidth: 70
+                                        Layout.preferredHeight: 26
+                                        radius: 13
+                                        color: grayTheme.bgPrimary
+                                        border.color: grayTheme.accentCore
+                                        border.width: 1
+                                        
+                                        Text {
+                                            anchors.centerIn: parent
+                                            text: "GLOBAL"
+                                            color: grayTheme.accentCore
+                                            font.pixelSize: 10
+                                            font.bold: true
+                                            font.family: grayTheme.fontMono
+                                        }
+                                    }
+                                }
+
+                                Text {
+                                    text: qsTr("Localization & Translation")
+                                    color: grayTheme.textHeader
+                                    font.pixelSize: 20
+                                    font.bold: true
+                                    font.family: grayTheme.fontMain
+                                    Layout.topMargin: 8
+                                }
+
+                                Text {
+                                    text: qsTr("Install and configure regional language packs for the Mnjnef ecosystem. Fully supports Arabic and all major dialects.")
+                                    color: grayTheme.textMuted
+                                    font.pixelSize: 13
+                                    font.family: grayTheme.fontMain
+                                    wrapMode: Text.WordWrap
+                                    Layout.fillWidth: true
+                                    lineHeight: 1.4
+                                }
+                                
+                                Item { Layout.fillHeight: true }
+
+                                // Interactive Link Footer
+                                Rectangle {
+                                    Layout.fillWidth: true
+                                    Layout.preferredHeight: 1
+                                    color: grayTheme.borderDefault
+                                }
+
+                                RowLayout {
+                                    Layout.fillWidth: true
+                                    Layout.topMargin: 4
+                                    
+                                    Text {
+                                        text: qsTr("ENTER TRANSLATION MODULE")
+                                        color: transMouse.containsMouse ? grayTheme.accentHover : grayTheme.accentCore
+                                        font.pixelSize: 12
+                                        font.bold: true
+                                        font.family: grayTheme.fontMono
+                                        Behavior on color { ColorAnimation { duration: 150 } }
+                                    }
+                                    
+                                    Item { Layout.fillWidth: true }
+                                    
+                                    Text {
+                                        text: "→"
+                                        color: transMouse.containsMouse ? grayTheme.accentHover : grayTheme.accentCore
+                                        font.pixelSize: 18
+                                        x: transMouse.containsMouse ? 5 : 0
+                                        Behavior on x { NumberAnimation { duration: 200; easing.type: Easing.OutBack } }
+                                    }
+                                }
+                            }
+
+                            // Click Area for Translation Box
+                            MouseArea {
+                                id: transMouse
+                                anchors.fill: parent
+                                hoverEnabled: true
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: {
+                                    console.log("[ROUTING] Accessing Translation Module...");
+                                    if (StackView.view) {
+                                        StackView.view.push("Support_11_TranslationModule.qml");
+                                    }
+                                }
+                            }
+                        }
+
+                        // 2. LIVE TELEMETRY RADAR
+                        Rectangle {
+                            Layout.fillWidth: true
+                            Layout.fillHeight: true // Will fill remaining space logically
+                            Layout.minimumHeight: 350
+                            radius: 12
+                            color: grayTheme.bgPanel
+                            border.color: grayTheme.borderDefault
+                            border.width: 1
+                            clip: true
+
+                            ColumnLayout {
+                                anchors.fill: parent
+                                spacing: 0
+
+                                // Telemetry Header
+                                Rectangle {
+                                    Layout.fillWidth: true
+                                    Layout.preferredHeight: 50
+                                    color: grayTheme.bgElevated
+                                    border.color: grayTheme.borderDefault
+                                    border.width: 1
+                                    
                                     RowLayout {
-                                        Layout.fillWidth: true
-                                        Text { text: qsTr("Load: ") + load + "%"; color: supTheme.textMuted; font.pixelSize: 11; font.family: supTheme.fontMono }
+                                        anchors.fill: parent
+                                        anchors.leftMargin: 20
+                                        anchors.rightMargin: 20
+                                        
+                                        Text {
+                                            text: qsTr("GLOBAL NODE TELEMETRY")
+                                            color: grayTheme.textHeader
+                                            font.pixelSize: 13
+                                            font.bold: true
+                                            font.family: grayTheme.fontMono
+                                        }
+                                        
                                         Item { Layout.fillWidth: true }
-                                        Text { text: ping === 999 ? "ERR" : ping + "ms"; color: supTheme.textMuted; font.pixelSize: 11; font.family: supTheme.fontMono }
+                                        
+                                        Text {
+                                            text: "AVG PING: " + supportMainRoot.networkPing.toFixed(0) + "ms"
+                                            color: supportMainRoot.networkPing < 50 ? grayTheme.stateSuccess : grayTheme.stateWarning
+                                            font.pixelSize: 12
+                                            font.bold: true
+                                            font.family: grayTheme.fontMono
+                                        }
+                                    }
+                                }
+
+                                // Telemetry List
+                                ListView {
+                                    Layout.fillWidth: true
+                                    Layout.fillHeight: true
+                                    Layout.margins: 20
+                                    model: serverNodesModel
+                                    interactive: false
+                                    spacing: 24
+                                    
+                                    delegate: ColumnLayout {
+                                        width: ListView.view.width
+                                        spacing: 8
+                                        
+                                        RowLayout {
+                                            Layout.fillWidth: true
+                                            
+                                            Text { 
+                                                text: node
+                                                color: grayTheme.textHeader
+                                                font.pixelSize: 13
+                                                font.bold: true
+                                                font.family: grayTheme.fontMono 
+                                            }
+                                            
+                                            Item { Layout.fillWidth: true }
+                                            
+                                            Text { 
+                                                text: status
+                                                color: {
+                                                    if (status === "OPTIMAL") return grayTheme.stateSuccess;
+                                                    if (status === "STABLE") return grayTheme.accentCore;
+                                                    if (status === "HIGH LOAD") return grayTheme.stateWarning;
+                                                    return grayTheme.stateDanger;
+                                                }
+                                                font.pixelSize: 11
+                                                font.bold: true
+                                                font.family: grayTheme.fontMono 
+                                            }
+                                        }
+                                        
+                                        // Custom Progress Bar
+                                        Rectangle {
+                                            Layout.fillWidth: true
+                                            Layout.preferredHeight: 6
+                                            radius: 3
+                                            color: grayTheme.bgInput
+                                            clip: true
+                                            
+                                            Rectangle {
+                                                width: (load / 100) * parent.width
+                                                height: parent.height
+                                                radius: 3
+                                                color: {
+                                                    if (load === 0) return "transparent";
+                                                    if (load < 50) return grayTheme.stateSuccess;
+                                                    if (load < 80) return grayTheme.accentInfo ? grayTheme.accentInfo : "#2196F3"; // Failsafe color
+                                                    return grayTheme.stateWarning;
+                                                }
+                                                Behavior on width { NumberAnimation { duration: 500; easing.type: Easing.OutQuad } }
+                                            }
+                                        }
+                                        
+                                        // Metrics Footer
+                                        RowLayout {
+                                            Layout.fillWidth: true
+                                            
+                                            Text { 
+                                                text: "Load: " + load + "%"
+                                                color: grayTheme.textMuted
+                                                font.pixelSize: 11
+                                                font.family: grayTheme.fontMono 
+                                            }
+                                            
+                                            Item { Layout.fillWidth: true }
+                                            
+                                            Text { 
+                                                text: ping + "ms"
+                                                color: grayTheme.textMuted
+                                                font.pixelSize: 11
+                                                font.family: grayTheme.fontMono 
+                                            }
+                                        }
                                     }
                                 }
                             }
@@ -825,12 +844,12 @@ Item {
     }
 
     // ==========================================
-    // LOGIC CONTROLLERS & TIMERS
+    // LOGIC CONTROLLERS & BACKGROUND TIMERS
     // ==========================================
     QtObject {
-        id: sysController
+        id: sysLogic
         
-        function updateClock() {
+        function updateSystemClock() {
             let d = new Date();
             let h = d.getHours().toString().padStart(2, '0');
             let m = d.getMinutes().toString().padStart(2, '0');
@@ -838,44 +857,58 @@ Item {
             supportMainRoot.currentTimeString = h + ":" + m + ":" + s;
         }
         
-        function simulateTelemetry() {
+        function refreshTelemetryData() {
+            // Simulate global ping fluctuation safely
+            var pingShift = (Math.random() * 4) - 2;
+            var newGlobalPing = supportMainRoot.networkPing + pingShift;
+            if (newGlobalPing < 10) newGlobalPing = 10;
+            if (newGlobalPing > 150) newGlobalPing = 150;
+            supportMainRoot.networkPing = newGlobalPing;
+            
+            // Randomly adjust individual node loads (except maintenance ones)
             for (let i = 0; i < serverNodesModel.count; i++) {
                 let nodeStatus = serverNodesModel.get(i).status;
                 if (nodeStatus !== "MAINTENANCE") {
-                    let currentLoad = serverNodesModel.get(i).load;
-                    let loadChange = Math.floor((Math.random() * 8) - 4);
-                    let finalLoad = currentLoad + loadChange;
-                    if (finalLoad > 99) finalLoad = 99;
-                    if (finalLoad < 10) finalLoad = 10;
-                    serverNodesModel.setProperty(i, "load", finalLoad);
-                    
-                    let pingChange = Math.floor((Math.random() * 4) - 2);
-                    let currentPing = serverNodesModel.get(i).ping;
-                    let finalPing = currentPing + pingChange;
-                    if (finalPing < 5) finalPing = 5;
-                    serverNodesModel.setProperty(i, "ping", finalPing);
+                    if (Math.random() > 0.4) {
+                        let currentLoad = serverNodesModel.get(i).load;
+                        let loadChange = Math.floor((Math.random() * 8) - 4);
+                        let finalLoad = currentLoad + loadChange;
+                        
+                        if (finalLoad > 99) finalLoad = 99;
+                        if (finalLoad < 15) finalLoad = 15;
+                        
+                        serverNodesModel.setProperty(i, "load", finalLoad);
+                        
+                        // Update status text based on load dynamically
+                        if (finalLoad < 45) serverNodesModel.setProperty(i, "status", "OPTIMAL");
+                        else if (finalLoad < 75) serverNodesModel.setProperty(i, "status", "STABLE");
+                        else serverNodesModel.setProperty(i, "status", "HIGH LOAD");
+                    }
                 }
             }
         }
     }
 
     Timer {
-        id: globalClockTimer
+        id: clockTimer
         interval: 1000
         repeat: true
         running: true
-        onTriggered: sysController.updateClock()
+        onRunningChanged: { if(running){} }
+        onTriggered: sysLogic.updateSystemClock()
     }
     
     Timer {
-        id: telemetryTimer
-        interval: 2500
+        id: networkSimTimer
+        interval: 3000
         repeat: true
         running: true
-        onTriggered: sysController.simulateTelemetry()
+        onRunningChanged: { if(running){} }
+        onTriggered: sysLogic.refreshTelemetryData()
     }
     
     Component.onCompleted: {
-        sysController.updateClock();
+        sysLogic.updateSystemClock();
+        console.log("[SYSTEM] Support_1_Main initialized securely.");
     }
 }
