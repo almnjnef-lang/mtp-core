@@ -1,7 +1,907 @@
-        // Animated Ambient Glows
+import QtQuick
+import QtQuick.Controls
+import QtQuick.Layouts
+
+Item {
+    id: mnjnefTranslationRoot
+    anchors.fill: parent
+    clip: true
+
+    // ==========================================
+    // SYSTEM SIGNALS & GLOBAL PROPERTIES
+    // ==========================================
+    signal languageApplied(string langCode, string langName)
+    signal moduleClosed()
+
+    property string activeRegion: "MENA"
+    property string selectedLangCode: "ar_SA"
+    property string currentSystemLang: "en_US"
+    
+    // Status Properties
+    property bool isProcessing: false
+    property real downloadProgress: 0.0
+    property string currentOperation: "IDLE"
+    property int logCounter: 0
+
+    // ==========================================
+    // THEME & STYLING CORE
+    // ==========================================
+    QtObject {
+        id: transTheme
+        property color bgPrimary: "#020617"
+        property color bgPanel: "#0f172a"
+        property color bgSidebar: "#090d16"
+        property color bgElevated: "#1e293b"
+        property color bgInput: "#020617"
+        
+        property color accentCore: "#3b82f6"
+        property color accentHover: "#60a5fa"
+        property color accentActive: "#2563eb"
+        property color accentGlow: "#8b5cf6"
+        
+        property color textHeader: "#f8fafc"
+        property color textBody: "#cbd5e1"
+        property color textMuted: "#64748b"
+        
+        property color borderDefault: "#1e293b"
+        property color borderHighlight: "#334155"
+        property color borderActive: "#3b82f6"
+        
+        property color stateSuccess: "#10b981"
+        property color stateWarning: "#f59e0b"
+        property color stateInfo: "#0ea5e9"
+        
+        property string fontMain: "Segoe UI"
+        property string fontMono: "Consolas"
+    }
+
+    // ==========================================
+    // DATA MODELS
+    // ==========================================
+    
+    // Geographic Language Regions
+    ListModel {
+        id: regionsModel
+        ListElement { regionId: "MENA"; title: "Middle East & N. Africa"; icon: "🌍"; count: 4 }
+        ListElement { regionId: "EU"; title: "Europe"; icon: "🇪🇺"; count: 12 }
+        ListElement { regionId: "APAC"; title: "Asia-Pacific"; icon: "🌏"; count: 8 }
+        ListElement { regionId: "AMER"; title: "Americas"; icon: "🌎"; count: 4 }
+        ListElement { regionId: "AFR"; title: "Sub-Saharan Africa"; icon: "🌍"; count: 3 }
+    }
+
+    // Comprehensive Language Database
+    ListModel {
+        id: masterLanguageModel
+        
+        // MENA Region
+        ListElement { langCode: "ar_SA"; region: "MENA"; name: "Arabic (العربية)"; nativeName: "العربية"; status: "INSTALLED"; coverage: "100%"; size: "12.4 MB"; desc: "Unified Arabic translation covering all GCC and MENA dialects. RTL fully supported." }
+        ListElement { langCode: "he_IL"; region: "MENA"; name: "Hebrew (עברית)"; nativeName: "עברית"; status: "AVAILABLE"; coverage: "98%"; size: "8.1 MB"; desc: "Standard Hebrew translation. RTL layout engine required." }
+        ListElement { langCode: "fa_IR"; region: "MENA"; name: "Persian (فارسی)"; nativeName: "فارسی"; status: "AVAILABLE"; coverage: "95%"; size: "9.2 MB"; desc: "Persian/Farsi translation. Includes localized calendar support." }
+        ListElement { langCode: "tr_TR"; region: "MENA"; name: "Turkish (Türkçe)"; nativeName: "Türkçe"; status: "AVAILABLE"; coverage: "100%"; size: "10.5 MB"; desc: "Standard Turkish translation. LTR layout." }
+        
+        // Europe Region
+        ListElement { langCode: "en_GB"; region: "EU"; name: "English (UK)"; nativeName: "English (UK)"; status: "AVAILABLE"; coverage: "100%"; size: "5.0 MB"; desc: "British English localization including regional date formats." }
+        ListElement { langCode: "fr_FR"; region: "EU"; name: "French (Français)"; nativeName: "Français"; status: "AVAILABLE"; coverage: "100%"; size: "11.2 MB"; desc: "Standard French translation." }
+        ListElement { langCode: "de_DE"; region: "EU"; name: "German (Deutsch)"; nativeName: "Deutsch"; status: "AVAILABLE"; coverage: "100%"; size: "11.8 MB"; desc: "Standard German translation." }
+        ListElement { langCode: "es_ES"; region: "EU"; name: "Spanish (Español)"; nativeName: "Español"; status: "AVAILABLE"; coverage: "100%"; size: "10.9 MB"; desc: "Castilian Spanish for the European region." }
+        ListElement { langCode: "it_IT"; region: "EU"; name: "Italian (Italiano)"; nativeName: "Italiano"; status: "AVAILABLE"; coverage: "99%"; size: "10.1 MB"; desc: "Standard Italian translation." }
+        ListElement { langCode: "ru_RU"; region: "EU"; name: "Russian (Русский)"; nativeName: "Русский"; status: "AVAILABLE"; coverage: "100%"; size: "14.2 MB"; desc: "Cyrillic script support included." }
+        ListElement { langCode: "pl_PL"; region: "EU"; name: "Polish (Polski)"; nativeName: "Polski"; status: "AVAILABLE"; coverage: "96%"; size: "9.8 MB"; desc: "Standard Polish translation." }
+        
+        // Asia-Pacific
+        ListElement { langCode: "ja_JP"; region: "APAC"; name: "Japanese (日本語)"; nativeName: "日本語"; status: "AVAILABLE"; coverage: "100%"; size: "18.5 MB"; desc: "Includes Kanji, Hiragana, and Katakana rendering engines." }
+        ListElement { langCode: "ko_KR"; region: "APAC"; name: "Korean (한국어)"; nativeName: "한국어"; status: "AVAILABLE"; coverage: "100%"; size: "15.3 MB"; desc: "Hangul font rendering pack included." }
+        ListElement { langCode: "zh_CN"; region: "APAC"; name: "Chinese (Simplified)"; nativeName: "简体中文"; status: "AVAILABLE"; coverage: "100%"; size: "22.1 MB"; desc: "Mainland China simplified characters." }
+        ListElement { langCode: "zh_TW"; region: "APAC"; name: "Chinese (Traditional)"; nativeName: "繁體中文"; status: "AVAILABLE"; coverage: "98%"; size: "22.5 MB"; desc: "Traditional characters for Taiwan/Hong Kong." }
+        ListElement { langCode: "hi_IN"; region: "APAC"; name: "Hindi (हिन्दी)"; nativeName: "हिन्दी"; status: "AVAILABLE"; coverage: "94%"; size: "11.0 MB"; desc: "Devanagari script support included." }
+        
+        // Americas
+        ListElement { langCode: "en_US"; region: "AMER"; name: "English (US)"; nativeName: "English (US)"; status: "INSTALLED"; coverage: "100%"; size: "Base"; desc: "System default language pack." }
+        ListElement { langCode: "es_419"; region: "AMER"; name: "Spanish (Latin America)"; nativeName: "Español (Latinoamérica)"; status: "AVAILABLE"; coverage: "100%"; size: "10.8 MB"; desc: "Unified Latin American Spanish." }
+        ListElement { langCode: "pt_BR"; region: "AMER"; name: "Portuguese (Brazil)"; nativeName: "Português (Brasil)"; status: "AVAILABLE"; coverage: "99%"; size: "11.1 MB"; desc: "Brazilian Portuguese translation." }
+    }
+
+    // Filtered model for current view
+    ListModel { id: filteredLanguageModel }
+
+    // Terminal Output Model
+    ListModel { id: terminalLogModel }
+
+    // ==========================================
+    // AMBIENT BACKGROUND SYSTEM
+    // ==========================================
+    Rectangle {
+        anchors.fill: parent
+        color: transTheme.bgPrimary
+
+        // Geometric overlay
+        Canvas {
+            anchors.fill: parent
+            opacity: 0.03
+            onPaint: {
+                var ctx = getContext("2d");
+                ctx.strokeStyle = transTheme.textHeader;
+                ctx.lineWidth = 1;
+                
+                var size = 60;
+                for(var y = 0; y < height; y += size) {
+                    for(var x = 0; x < width; x += size) {
+                        ctx.beginPath();
+                        ctx.rect(x, y, size, size);
+                        ctx.stroke();
+                        
+                        if ((x+y) % 120 === 0) {
+                            ctx.beginPath();
+                            ctx.moveTo(x, y);
+                            ctx.lineTo(x+size, y+size);
+                            ctx.stroke();
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Subtle Gradient Overlay
         Rectangle {
-            width: 800; height: 800; radius: 400
-            x: parent.width * 0.1; y: parent.height * 0.1
-            color: mnjTheme.accentPrimary
-            opacity: 0.15
-            antialiasing: true
+            anchors.fill: parent
+            gradient: Gradient {
+                GradientStop { position: 0.0; color: "transparent" }
+                GradientStop { position: 1.0; color: "#aa020617" }
+            }
+        }
+    }
+
+    // ==========================================
+    // MAIN LAYOUT (SIDEBAR + CONTENT)
+    // ==========================================
+    RowLayout {
+        anchors.fill: parent
+        spacing: 0
+
+        // ------------------------------------------
+        // LEFT SIDEBAR: REGION SELECTOR
+        // ------------------------------------------
+        Rectangle {
+            Layout.preferredWidth: 260
+            Layout.fillHeight: true
+            color: transTheme.bgSidebar
+            border.color: transTheme.borderDefault
+            border.width: 1
+
+            ColumnLayout {
+                anchors.fill: parent
+                spacing: 0
+
+                // Sidebar Header
+                Rectangle {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 80
+                    color: "transparent"
+                    border.color: transTheme.borderDefault
+                    border.width: 1
+                    
+                    RowLayout {
+                        anchors.fill: parent
+                        anchors.margins: 20
+                        spacing: 12
+                        
+                        Rectangle {
+                            Layout.preferredWidth: 40
+                            Layout.preferredHeight: 40
+                            radius: 8
+                            color: transTheme.bgElevated
+                            border.color: transTheme.accentCore
+                            border.width: 1
+                            
+                            Text { anchors.centerIn: parent; text: "🌐"; font.pixelSize: 20 }
+                        }
+                        
+                        ColumnLayout {
+                            Layout.fillWidth: true
+                            spacing: 2
+                            Text { text: qsTr("MNJNEF"); color: transTheme.textMuted; font.pixelSize: 10; font.bold: true; font.family: transTheme.fontMono }
+                            Text { text: qsTr("LOCALIZATION"); color: transTheme.textHeader; font.pixelSize: 16; font.bold: true; font.family: transTheme.fontMain; font.letterSpacing: 1.0 }
+                        }
+                    }
+                }
+
+                // Region List
+                ListView {
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    model: regionsModel
+                    clip: true
+                    
+                    delegate: Rectangle {
+                        width: ListView.view.width
+                        height: 64
+                        color: mnjnefTranslationRoot.activeRegion === regionId ? transTheme.bgPanel : (regionMouse.containsMouse ? transTheme.bgElevated : "transparent")
+                        
+                        Behavior on color { ColorAnimation { duration: 150 } }
+                        
+                        // Active indicator line
+                        Rectangle {
+                            width: 4
+                            height: parent.height
+                            color: transTheme.accentCore
+                            visible: mnjnefTranslationRoot.activeRegion === regionId
+                        }
+
+                        RowLayout {
+                            anchors.fill: parent
+                            anchors.leftMargin: 20
+                            anchors.rightMargin: 16
+                            spacing: 16
+                            
+                            Text {
+                                text: icon
+                                font.pixelSize: 20
+                                opacity: mnjnefTranslationRoot.activeRegion === regionId ? 1.0 : 0.6
+                            }
+                            
+                            ColumnLayout {
+                                Layout.fillWidth: true
+                                spacing: 2
+                                
+                                Text {
+                                    text: title
+                                    color: mnjnefTranslationRoot.activeRegion === regionId ? transTheme.accentCore : transTheme.textBody
+                                    font.pixelSize: 14
+                                    font.bold: true
+                                    font.family: transTheme.fontMain
+                                }
+                                
+                                Text {
+                                    text: count + qsTr(" Supported Languages")
+                                    color: transTheme.textMuted
+                                    font.pixelSize: 11
+                                    font.family: transTheme.fontMain
+                                }
+                            }
+                            
+                            Text {
+                                text: "›"
+                                color: mnjnefTranslationRoot.activeRegion === regionId ? transTheme.accentCore : transTheme.textMuted
+                                font.pixelSize: 20
+                            }
+                        }
+
+                        MouseArea {
+                            id: regionMouse
+                            anchors.fill: parent
+                            hoverEnabled: !mnjnefTranslationRoot.isProcessing
+                            cursorShape: mnjnefTranslationRoot.isProcessing ? Qt.ForbiddenCursor : Qt.PointingHandCursor
+                            onClicked: {
+                                if (!mnjnefTranslationRoot.isProcessing) {
+                                    mnjnefTranslationRoot.activeRegion = regionId;
+                                    transController.filterLanguages(regionId);
+                                    // Reset selection to first item in new region
+                                    if(filteredLanguageModel.count > 0) {
+                                        mnjnefTranslationRoot.selectedLangCode = filteredLanguageModel.get(0).langCode;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // ------------------------------------------
+        // RIGHT MAIN AREA: LANGUAGES & DETAILS
+        // ------------------------------------------
+        Rectangle {
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+            color: transTheme.bgPrimary
+
+            ColumnLayout {
+                anchors.fill: parent
+                anchors.margins: 32
+                spacing: 24
+
+                // Header
+                RowLayout {
+                    Layout.fillWidth: true
+                    
+                    ColumnLayout {
+                        Layout.fillWidth: true
+                        spacing: 6
+                        
+                        Text {
+                            text: qsTr("AVAILABLE LANGUAGE PACKS")
+                            color: transTheme.textHeader
+                            font.pixelSize: 20
+                            font.bold: true
+                            font.family: transTheme.fontMain
+                        }
+                        
+                        Text {
+                            text: qsTr("Select a language package to download and compile into the Mnjnef core engine.")
+                            color: transTheme.textMuted
+                            font.pixelSize: 13
+                            font.family: transTheme.fontMain
+                        }
+                    }
+                    
+                    // Search/Filter Input (Visual only)
+                    Rectangle {
+                        Layout.preferredWidth: 250
+                        Layout.preferredHeight: 40
+                        color: transTheme.bgInput
+                        radius: 8
+                        border.color: transTheme.borderDefault
+                        border.width: 1
+                        
+                        RowLayout {
+                            anchors.fill: parent
+                            anchors.margins: 10
+                            spacing: 8
+                            Text { text: "🔍"; color: transTheme.textMuted; font.pixelSize: 14 }
+                            Text { text: qsTr("Search languages..."); color: transTheme.textMuted; font.pixelSize: 13; font.family: transTheme.fontMain }
+                        }
+                    }
+                }
+
+                // Split View: Grid of Languages & Selected Details
+                RowLayout {
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    spacing: 24
+
+                    // Grid View for Languages
+                    Rectangle {
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+                        color: transTheme.bgPanel
+                        radius: 12
+                        border.color: transTheme.borderDefault
+                        border.width: 1
+                        clip: true
+
+                        GridView {
+                            id: langGrid
+                            anchors.fill: parent
+                            anchors.margins: 16
+                            cellWidth: Math.floor(width / Math.max(1, Math.floor(width / 220)))
+                            cellHeight: 110
+                            model: filteredLanguageModel
+                            clip: true
+                            
+                            // Custom Scrollbar
+                            ScrollBar.vertical: ScrollBar {
+                                width: 8
+                                contentItem: Rectangle {
+                                    implicitWidth: 8; radius: 4; color: transTheme.borderHighlight
+                                }
+                            }
+
+                            delegate: Rectangle {
+                                width: langGrid.cellWidth - 16
+                                height: langGrid.cellHeight - 16
+                                radius: 8
+                                color: mnjnefTranslationRoot.selectedLangCode === langCode ? transTheme.accentCore : (langMouse.containsMouse ? transTheme.bgElevated : transTheme.bgInput)
+                                border.color: mnjnefTranslationRoot.selectedLangCode === langCode ? transTheme.accentHover : transTheme.borderDefault
+                                border.width: mnjnefTranslationRoot.selectedLangCode === langCode ? 2 : 1
+                                
+                                Behavior on color { ColorAnimation { duration: 150 } }
+
+                                ColumnLayout {
+                                    anchors.fill: parent
+                                    anchors.margins: 12
+                                    spacing: 4
+
+                                    RowLayout {
+                                        Layout.fillWidth: true
+                                        
+                                        Text {
+                                            text: nativeName
+                                            color: mnjnefTranslationRoot.selectedLangCode === langCode ? "#ffffff" : transTheme.textHeader
+                                            font.pixelSize: 16
+                                            font.bold: true
+                                            font.family: transTheme.fontMain
+                                        }
+                                        
+                                        Item { Layout.fillWidth: true }
+                                        
+                                        Rectangle {
+                                            Layout.preferredWidth: 8
+                                            Layout.preferredHeight: 8
+                                            radius: 4
+                                            color: {
+                                                if (status === "INSTALLED") return transTheme.stateSuccess;
+                                                return mnjnefTranslationRoot.selectedLangCode === langCode ? "#ffffff" : transTheme.textMuted;
+                                            }
+                                        }
+                                    }
+
+                                    Text {
+                                        text: name
+                                        color: mnjnefTranslationRoot.selectedLangCode === langCode ? "#e2e8f0" : transTheme.textMuted
+                                        font.pixelSize: 12
+                                        font.family: transTheme.fontMain
+                                        Layout.fillWidth: true
+                                    }
+
+                                    Item { Layout.fillHeight: true }
+
+                                    Text {
+                                        text: status === "INSTALLED" ? qsTr("Installed") : size
+                                        color: mnjnefTranslationRoot.selectedLangCode === langCode ? "#ffffff" : (status === "INSTALLED" ? transTheme.stateSuccess : transTheme.accentCore)
+                                        font.pixelSize: 11
+                                        font.bold: true
+                                        font.family: transTheme.fontMono
+                                    }
+                                }
+
+                                MouseArea {
+                                    id: langMouse
+                                    anchors.fill: parent
+                                    hoverEnabled: !mnjnefTranslationRoot.isProcessing
+                                    cursorShape: mnjnefTranslationRoot.isProcessing ? Qt.ForbiddenCursor : Qt.PointingHandCursor
+                                    onClicked: {
+                                        if (!mnjnefTranslationRoot.isProcessing) {
+                                            mnjnefTranslationRoot.selectedLangCode = langCode;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // Selected Language Details & Terminal
+                    Rectangle {
+                        Layout.preferredWidth: 350
+                        Layout.fillHeight: true
+                        color: transTheme.bgPanel
+                        radius: 12
+                        border.color: transTheme.borderDefault
+                        border.width: 1
+                        clip: true
+
+                        ColumnLayout {
+                            anchors.fill: parent
+                            spacing: 0
+
+                            // Details Section
+                            Item {
+                                Layout.fillWidth: true
+                                Layout.preferredHeight: 280
+                                
+                                ColumnLayout {
+                                    anchors.fill: parent
+                                    anchors.margins: 20
+                                    spacing: 16
+
+                                    // Dynamic property bindings based on selection
+                                    property var currentLangObj: transController.getLangObj(mnjnefTranslationRoot.selectedLangCode)
+
+                                    Rectangle {
+                                        Layout.preferredWidth: 64
+                                        Layout.preferredHeight: 64
+                                        radius: 12
+                                        color: transTheme.bgElevated
+                                        border.color: transTheme.borderHighlight
+                                        border.width: 1
+                                        
+                                        Text {
+                                            anchors.centerIn: parent
+                                            text: currentLangObj ? currentLangObj.langCode.substring(0,2).toUpperCase() : ""
+                                            color: transTheme.textHeader
+                                            font.pixelSize: 24
+                                            font.bold: true
+                                            font.family: transTheme.fontMono
+                                        }
+                                    }
+
+                                    Text {
+                                        text: currentLangObj ? currentLangObj.name : ""
+                                        color: transTheme.textHeader
+                                        font.pixelSize: 20
+                                        font.bold: true
+                                        font.family: transTheme.fontMain
+                                    }
+
+                                    Rectangle {
+                                        Layout.fillWidth: true
+                                        Layout.preferredHeight: 1
+                                        color: transTheme.borderDefault
+                                    }
+
+                                    GridLayout {
+                                        Layout.fillWidth: true
+                                        columns: 2
+                                        rowSpacing: 12
+                                        columnSpacing: 16
+                                        
+                                        Text { text: qsTr("Code:"); color: transTheme.textMuted; font.pixelSize: 12; font.family: transTheme.fontMono }
+                                        Text { text: currentLangObj ? currentLangObj.langCode : ""; color: transTheme.textBody; font.pixelSize: 12; font.bold: true; font.family: transTheme.fontMono }
+                                        
+                                        Text { text: qsTr("Coverage:"); color: transTheme.textMuted; font.pixelSize: 12; font.family: transTheme.fontMono }
+                                        Text { text: currentLangObj ? currentLangObj.coverage : ""; color: transTheme.stateSuccess; font.pixelSize: 12; font.bold: true; font.family: transTheme.fontMono }
+                                        
+                                        Text { text: qsTr("Pack Size:"); color: transTheme.textMuted; font.pixelSize: 12; font.family: transTheme.fontMono }
+                                        Text { text: currentLangObj ? currentLangObj.size : ""; color: transTheme.textBody; font.pixelSize: 12; font.bold: true; font.family: transTheme.fontMono }
+                                        
+                                        Text { text: qsTr("Status:"); color: transTheme.textMuted; font.pixelSize: 12; font.family: transTheme.fontMono }
+                                        Text { 
+                                            text: currentLangObj ? currentLangObj.status : ""
+                                            color: currentLangObj && currentLangObj.status === "INSTALLED" ? transTheme.stateSuccess : transTheme.accentHover
+                                            font.pixelSize: 12; font.bold: true; font.family: transTheme.fontMono 
+                                        }
+                                    }
+
+                                    Text {
+                                        text: currentLangObj ? currentLangObj.desc : ""
+                                        color: transTheme.textMuted
+                                        font.pixelSize: 13
+                                        font.family: transTheme.fontMain
+                                        Layout.fillWidth: true
+                                        wrapMode: Text.WordWrap
+                                        lineHeight: 1.4
+                                    }
+                                }
+                            }
+
+                            // Terminal Output Window
+                            Rectangle {
+                                Layout.fillWidth: true
+                                Layout.fillHeight: true
+                                color: "#000000"
+                                border.color: transTheme.borderDefault
+                                border.width: 1
+                                clip: true
+
+                                ColumnLayout {
+                                    anchors.fill: parent
+                                    spacing: 0
+                                    
+                                    Rectangle {
+                                        Layout.fillWidth: true
+                                        Layout.preferredHeight: 24
+                                        color: transTheme.bgElevated
+                                        
+                                        Text {
+                                            anchors.verticalCenter: parent.verticalCenter
+                                            anchors.left: parent.left
+                                            anchors.leftMargin: 10
+                                            text: "root@mnjnef-compile:~#"
+                                            color: transTheme.textMuted
+                                            font.pixelSize: 10
+                                            font.family: transTheme.fontMono
+                                        }
+                                    }
+
+                                    ListView {
+                                        id: terminalList
+                                        Layout.fillWidth: true
+                                        Layout.fillHeight: true
+                                        Layout.margins: 8
+                                        model: terminalLogModel
+                                        spacing: 4
+                                        
+                                        onCountChanged: {
+                                            Qt.callLater(function() { terminalList.positionViewAtEnd() })
+                                        }
+                                        
+                                        delegate: Text {
+                                            text: logText
+                                            color: isError ? transTheme.stateWarning : (isSuccess ? transTheme.stateSuccess : transTheme.textMuted)
+                                            font.pixelSize: 11
+                                            font.family: transTheme.fontMono
+                                            width: ListView.view.width
+                                            wrapMode: Text.WrapAnywhere
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // ------------------------------------------
+                // BOTTOM ACTION BAR
+                // ------------------------------------------
+                Rectangle {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 80
+                    color: transTheme.bgPanel
+                    radius: 12
+                    border.color: transTheme.borderDefault
+                    border.width: 1
+
+                    RowLayout {
+                        anchors.fill: parent
+                        anchors.margins: 16
+                        spacing: 20
+
+                        // Progress Indicator
+                        ColumnLayout {
+                            Layout.fillWidth: true
+                            spacing: 8
+                            visible: mnjnefTranslationRoot.isProcessing
+                            
+                            RowLayout {
+                                Layout.fillWidth: true
+                                Text { text: mnjnefTranslationRoot.currentOperation; color: transTheme.accentCore; font.pixelSize: 12; font.bold: true; font.family: transTheme.fontMono }
+                                Item { Layout.fillWidth: true }
+                                Text { text: Math.floor(mnjnefTranslationRoot.downloadProgress) + "%"; color: transTheme.textHeader; font.pixelSize: 12; font.bold: true; font.family: transTheme.fontMono }
+                            }
+                            
+                            Rectangle {
+                                Layout.fillWidth: true
+                                Layout.preferredHeight: 6
+                                radius: 3
+                                color: transTheme.bgInput
+                                clip: true
+                                
+                                Rectangle {
+                                    width: (mnjnefTranslationRoot.downloadProgress / 100) * parent.width
+                                    height: parent.height
+                                    radius: 3
+                                    color: transTheme.accentCore
+                                    Behavior on width { NumberAnimation { duration: 200 } }
+                                }
+                            }
+                        }
+                        
+                        // Status text when not processing
+                        ColumnLayout {
+                            Layout.fillWidth: true
+                            visible: !mnjnefTranslationRoot.isProcessing
+                            spacing: 2
+                            
+                            Text {
+                                text: qsTr("SYSTEM LANGUAGE:") + " " + mnjnefTranslationRoot.currentSystemLang
+                                color: transTheme.textMuted
+                                font.pixelSize: 11
+                                font.bold: true
+                                font.family: transTheme.fontMono
+                            }
+                            Text {
+                                text: qsTr("Changing language will restart the Mnjnef rendering engine.")
+                                color: transTheme.textMuted
+                                font.pixelSize: 12
+                                font.family: transTheme.fontMain
+                            }
+                        }
+
+                        // Apply Button
+                        Rectangle {
+                            id: applyBtn
+                            Layout.preferredWidth: 200
+                            Layout.fillHeight: true
+                            radius: 8
+                            
+                            property bool isInstalled: {
+                                var obj = transController.getLangObj(mnjnefTranslationRoot.selectedLangCode);
+                                return obj ? obj.status === "INSTALLED" : false;
+                            }
+                            
+                            color: {
+                                if (mnjnefTranslationRoot.isProcessing) return transTheme.bgElevated;
+                                if (isInstalled && mnjnefTranslationRoot.currentSystemLang === mnjnefTranslationRoot.selectedLangCode) return transTheme.bgInput;
+                                if (applyMouse.containsPress) return transTheme.accentActive;
+                                if (applyMouse.containsMouse) return transTheme.accentHover;
+                                return transTheme.accentCore;
+                            }
+                            
+                            border.color: mnjnefTranslationRoot.isProcessing ? transTheme.borderHighlight : "transparent"
+                            border.width: mnjnefTranslationRoot.isProcessing ? 1 : 0
+                            
+                            Behavior on color { ColorAnimation { duration: 200 } }
+
+                            RowLayout {
+                                anchors.centerIn: parent
+                                spacing: 10
+                                
+                                Text {
+                                    text: {
+                                        if (mnjnefTranslationRoot.isProcessing) return "⏳";
+                                        if (applyBtn.isInstalled) return "✓";
+                                        return "⬇️";
+                                    }
+                                    font.pixelSize: 14
+                                    visible: !applyBtn.isInstalled || mnjnefTranslationRoot.currentSystemLang !== mnjnefTranslationRoot.selectedLangCode || mnjnefTranslationRoot.isProcessing
+                                }
+
+                                Text {
+                                    text: {
+                                        if (mnjnefTranslationRoot.isProcessing) return qsTr("PROCESSING...");
+                                        if (applyBtn.isInstalled) {
+                                            if (mnjnefTranslationRoot.currentSystemLang === mnjnefTranslationRoot.selectedLangCode) return qsTr("ACTIVE");
+                                            return qsTr("SET AS ACTIVE");
+                                        }
+                                        return qsTr("DOWNLOAD & COMPILE");
+                                    }
+                                    color: (applyBtn.isInstalled && mnjnefTranslationRoot.currentSystemLang === mnjnefTranslationRoot.selectedLangCode && !mnjnefTranslationRoot.isProcessing) ? transTheme.textMuted : transTheme.textHeader
+                                    font.pixelSize: 14
+                                    font.bold: true
+                                    font.family: transTheme.fontMain
+                                    font.letterSpacing: 1.0
+                                }
+                            }
+
+                            MouseArea {
+                                id: applyMouse
+                                anchors.fill: parent
+                                hoverEnabled: !mnjnefTranslationRoot.isProcessing && !(applyBtn.isInstalled && mnjnefTranslationRoot.currentSystemLang === mnjnefTranslationRoot.selectedLangCode)
+                                cursorShape: hoverEnabled ? Qt.PointingHandCursor : Qt.ForbiddenCursor
+                                onClicked: {
+                                    if (hoverEnabled) {
+                                        if (applyBtn.isInstalled) {
+                                            transController.setActiveLanguage();
+                                        } else {
+                                            transController.startDownloadProcess();
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // ==========================================
+    // JAVASCRIPT LOGIC CONTROLLER
+    // ==========================================
+    QtObject {
+        id: transController
+        
+        function filterLanguages(regionId) {
+            filteredLanguageModel.clear();
+            for (let i = 0; i < masterLanguageModel.count; i++) {
+                let item = masterLanguageModel.get(i);
+                if (item.region === regionId) {
+                    filteredLanguageModel.append({
+                        "langCode": item.langCode,
+                        "name": item.name,
+                        "nativeName": item.nativeName,
+                        "status": item.status,
+                        "coverage": item.coverage,
+                        "size": item.size,
+                        "desc": item.desc
+                    });
+                }
+            }
+        }
+        
+        function getLangObj(code) {
+            for (let i = 0; i < masterLanguageModel.count; i++) {
+                if (masterLanguageModel.get(i).langCode === code) {
+                    return masterLanguageModel.get(i);
+                }
+            }
+            return null;
+        }
+        
+        function logToTerminal(msg, isErr = false, isSucc = false) {
+            let d = new Date();
+            let timeStr = "[" + d.getHours().toString().padStart(2, '0') + ":" + 
+                              d.getMinutes().toString().padStart(2, '0') + ":" + 
+                              d.getSeconds().toString().padStart(2, '0') + "." + 
+                              d.getMilliseconds().toString().padStart(3, '0') + "] ";
+                              
+            terminalLogModel.append({
+                "logText": timeStr + msg,
+                "isError": isErr,
+                "isSuccess": isSucc
+            });
+            
+            if (terminalLogModel.count > 50) {
+                terminalLogModel.remove(0, 1);
+            }
+        }
+        
+        function startDownloadProcess() {
+            mnjnefTranslationRoot.isProcessing = true;
+            mnjnefTranslationRoot.downloadProgress = 0.0;
+            mnjnefTranslationRoot.logCounter = 0;
+            terminalLogModel.clear();
+            
+            let obj = getLangObj(mnjnefTranslationRoot.selectedLangCode);
+            logToTerminal("INITIATING SECURE DOWNLOAD PROTOCOL...");
+            logToTerminal("Target: " + obj.langCode + " | Package: " + obj.size);
+            logToTerminal("Establishing connection to Mnjnef Content Delivery Network...");
+            
+            mnjnefTranslationRoot.currentOperation = "CONNECTING TO CDN...";
+            compileTimer.start();
+        }
+        
+        function setActiveLanguage() {
+            let obj = getLangObj(mnjnefTranslationRoot.selectedLangCode);
+            terminalLogModel.clear();
+            logToTerminal("Switching system language context...");
+            logToTerminal("Flushing current UI cache...");
+            logToTerminal("Injecting " + obj.langCode + " string tables...", false, true);
+            
+            mnjnefTranslationRoot.currentSystemLang = obj.langCode;
+            mnjnefTranslationRoot.languageApplied(obj.langCode, obj.name);
+        }
+    }
+
+    // ==========================================
+    // TIMERS FOR SIMULATION
+    // ==========================================
+    
+    // Initial Load Setup
+    Component.onCompleted: {
+        transController.filterLanguages(mnjnefTranslationRoot.activeRegion);
+        if(filteredLanguageModel.count > 0) {
+            mnjnefTranslationRoot.selectedLangCode = filteredLanguageModel.get(0).langCode;
+        }
+        transController.logToTerminal("Mnjnef Translation Subsystem v2.1 loaded.");
+        transController.logToTerminal("Awaiting language selection.");
+    }
+
+    // Simulates the download, unpacking, and compilation process
+    Timer {
+        id: compileTimer
+        interval: 100
+        repeat: true
+        onRunningChanged: { if(running){} }
+        onTriggered: {
+            mnjnefTranslationRoot.downloadProgress += (Math.random() * 3) + 0.5;
+            mnjnefTranslationRoot.logCounter++;
+            
+            // Step 1: Downloading
+            if (mnjnefTranslationRoot.downloadProgress < 40) {
+                mnjnefTranslationRoot.currentOperation = "DOWNLOADING ASSETS...";
+                if (mnjnefTranslationRoot.logCounter % 5 === 0) {
+                    transController.logToTerminal("Receiving binary chunks [" + Math.floor(mnjnefTranslationRoot.downloadProgress) + "%]...");
+                }
+            } 
+            // Step 2: Unpacking
+            else if (mnjnefTranslationRoot.downloadProgress < 75) {
+                mnjnefTranslationRoot.currentOperation = "DECRYPTING & UNPACKING...";
+                if (mnjnefTranslationRoot.logCounter % 4 === 0) {
+                    let hex = Math.floor(Math.random() * 0xFFFFFF).toString(16).toUpperCase();
+                    transController.logToTerminal("Unpacking block 0x" + hex + " -> verified.");
+                }
+            } 
+            // Step 3: Compiling
+            else if (mnjnefTranslationRoot.downloadProgress < 99) {
+                mnjnefTranslationRoot.currentOperation = "COMPILING INTO ENGINE...";
+                if (mnjnefTranslationRoot.logCounter % 3 === 0) {
+                    transController.logToTerminal("Rebuilding UI layout cache for RTL/LTR rules...");
+                }
+            } 
+            // Step 4: Finish
+            else {
+                mnjnefTranslationRoot.downloadProgress = 100;
+                mnjnefTranslationRoot.currentOperation = "COMPLETE";
+                stop();
+                
+                transController.logToTerminal("Compilation successful.", false, true);
+                transController.logToTerminal("Updating Master Language Model...");
+                
+                // Update Model Status
+                for (let i = 0; i < masterLanguageModel.count; i++) {
+                    if (masterLanguageModel.get(i).langCode === mnjnefTranslationRoot.selectedLangCode) {
+                        masterLanguageModel.setProperty(i, "status", "INSTALLED");
+                        break;
+                    }
+                }
+                
+                // Refresh filtered view
+                transController.filterLanguages(mnjnefTranslationRoot.activeRegion);
+                
+                finishDelayTimer.start();
+            }
+        }
+    }
+    
+    // Small delay before enabling the "SET AS ACTIVE" state
+    Timer {
+        id: finishDelayTimer
+        interval: 1000
+        repeat: false
+        onRunningChanged: { if(running){} }
+        onTriggered: {
+            mnjnefTranslationRoot.isProcessing = false;
+            transController.setActiveLanguage();
+        }
+    }
+}
