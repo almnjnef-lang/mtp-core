@@ -3,527 +3,395 @@ import QtQuick.Controls
 import QtQuick.Layouts
 
 Item {
-    id: supportMainRoot
+    id: mnjnefTicketTrackerRoot
     anchors.fill: parent
     clip: true
 
     // ==========================================
-    // SYSTEM SIGNALS & ROUTING PROPERTIES
-    // ==========================================
-    property string activeUser: "Mnjnef_Admin"
-    property int activeTicketsCount: 0
-    property string lastLogin: "Just now"
-
-    // ==========================================
-    // THEME & STYLING (ULTRA-CLEAN GRAYSCALE)
+    // THEME & STYLING (PROFESSIONAL GRAYSCALE)
     // ==========================================
     QtObject {
         id: modernTheme
-        // Base backgrounds
-        property color bgApp: "#09090B"         // Very dark, almost black
-        property color bgSidebar: "#121214"     // Slightly lighter for depth
-        property color bgCard: "#18181B"        // Card background
-        property color bgCardHover: "#27272A"   // Card hover state
+        property color bgApp: "#09090B"
+        property color bgCard: "#18181B"
+        property color bgElevated: "#27272A"
+        property color bgInput: "#121214"
         
-        // Borders & Dividers
-        property color borderSubtle: "#27272A"  // Soft border
-        property color borderFocus: "#3F3F46"   // Distinct border
+        property color borderSubtle: "#27272A"
+        property color borderFocus: "#3F3F46"
         
-        // Text Colors
-        property color textPrimary: "#FAFAFA"   // Pure white text
-        property color textSecondary: "#A1A1AA" // Gray text for descriptions
-        property color textMuted: "#52525B"     // Dark gray for tertiary info
+        property color textPrimary: "#FAFAFA"
+        property color textSecondary: "#A1A1AA"
+        property color textMuted: "#52525B"
         
-        // Accents (Strictly Grayscale/Neutral)
         property color accent: "#FFFFFF"
-        property color iconBg: "#27272A"
+        property color stateActive: "#10B981" // Green for active status
         
         property string fontMain: "Segoe UI"
         property string fontMono: "Consolas"
     }
 
-    // ==========================================
-    // DATA MODELS
-    // ==========================================
-    ListModel {
-        id: supportModulesModel
-        
-        ListElement { 
-            moduleId: "TICKET_SUBMIT"
-            title: "Submit a New Ticket"
-            subtitle: "Report platform bugs, crashes, or account routing issues."
-            iconBadge: "📝"
-            targetFile: "Support_8_TicketForm.qml"
-            isUrgent: false
-        }
-        ListElement { 
-            moduleId: "TICKET_TRACK"
-            title: "Track Active Tickets"
-            subtitle: "Monitor ongoing resolutions and agent communications."
-            iconBadge: "📡"
-            targetFile: "Support_9_TicketTracker.qml"
-            isUrgent: true
-        }
-        ListElement { 
-            moduleId: "TRANSLATION"
-            title: "Localization & Translation"
-            subtitle: "Install and configure regional language packs for the Mnjnef ecosystem."
-            iconBadge: "🌐"
-            targetFile: "Support_11_TranslationModule.qml"
-            isUrgent: false
-        }
-        ListElement { 
-            moduleId: "GUIDELINES"
-            title: "Support Guidelines"
-            subtitle: "Review Terms of Service, SLA, and platform reporting protocols."
-            iconBadge: "⚖️"
-            targetFile: "Support_6_Guidelines.qml"
-            isUrgent: false
-        }
-    }
-
-    ListModel {
-        id: recentActivityModel
-        ListElement { activityTitle: "Login detected"; activityTime: "2 mins ago"; activityStatus: "Success" }
-        ListElement { activityTitle: "Language pack updated"; activityTime: "Yesterday"; activityStatus: "System" }
-        ListElement { activityTitle: "Ticket #8492 closed"; activityTime: "3 days ago"; activityStatus: "Resolved" }
-    }
-
-    // ==========================================
-    // SOLID BACKGROUND
-    // ==========================================
     Rectangle {
         anchors.fill: parent
         color: modernTheme.bgApp
     }
 
     // ==========================================
-    // MAIN LAYOUT (SIDEBAR + CONTENT)
+    // TOP NAVIGATION BAR (WITH BACK BUTTON)
     // ==========================================
-    RowLayout {
-        anchors.fill: parent
-        spacing: 0
+    Rectangle {
+        id: topNavBar
+        width: parent.width
+        height: 70
+        color: modernTheme.bgApp
+        border.color: modernTheme.borderSubtle
+        border.width: 1
+        z: 10
 
-        // ------------------------------------------
-        // LEFT SIDEBAR (FIXED NAVIGATION & INFO)
-        // ------------------------------------------
-        Rectangle {
-            Layout.preferredWidth: 280
-            Layout.fillHeight: true
-            color: modernTheme.bgSidebar
-            border.color: modernTheme.borderSubtle
-            border.width: 1
+        RowLayout {
+            anchors.fill: parent
+            anchors.leftMargin: 30
+            anchors.rightMargin: 30
+            spacing: 20
 
-            ColumnLayout {
-                anchors.fill: parent
-                spacing: 0
+            // Back Button
+            Rectangle {
+                Layout.preferredWidth: 40
+                Layout.preferredHeight: 40
+                radius: 8
+                color: backMouse.containsMouse ? modernTheme.bgElevated : modernTheme.bgCard
+                border.color: modernTheme.borderSubtle
+                border.width: 1
+                
+                Behavior on color { ColorAnimation { duration: 150 } }
 
-                // 1. Sidebar Header / Back Button
-                Rectangle {
-                    Layout.fillWidth: true
-                    Layout.preferredHeight: 80
-                    color: "transparent"
-                    border.color: modernTheme.borderSubtle
-                    border.width: 1
+                Text {
+                    anchors.centerIn: parent
+                    text: "◀"
+                    color: modernTheme.textPrimary
+                    font.pixelSize: 14
+                }
 
-                    RowLayout {
-                        anchors.fill: parent
-                        anchors.margins: 20
-                        spacing: 16
-
-                        Rectangle {
-                            Layout.preferredWidth: 36
-                            Layout.preferredHeight: 36
-                            radius: 8
-                            color: backMouse.containsMouse ? modernTheme.borderFocus : modernTheme.iconBg
-                            border.color: modernTheme.borderSubtle
-                            border.width: 1
-                            
-                            Behavior on color { ColorAnimation { duration: 150 } }
-
-                            Text {
-                                anchors.centerIn: parent
-                                text: "◀"
-                                color: modernTheme.textPrimary
-                                font.pixelSize: 12
-                            }
-
-                            MouseArea {
-                                id: backMouse
-                                anchors.fill: parent
-                                hoverEnabled: true
-                                cursorShape: Qt.PointingHandCursor
-                                onClicked: {
-                                    if (supportMainRoot.StackView.view) {
-                                        supportMainRoot.StackView.view.pop();
-                                    } else {
-                                        console.log("[ERROR] StackView not found.");
-                                    }
-                                }
-                            }
-                        }
-
-                        Text {
-                            text: qsTr("Return")
-                            color: modernTheme.textSecondary
-                            font.pixelSize: 14
-                            font.family: modernTheme.fontMain
-                            font.bold: true
+                MouseArea {
+                    id: backMouse
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: {
+                        if (StackView.view) {
+                            StackView.view.pop();
                         }
                     }
                 }
+            }
 
-                // 2. User Profile Area
-                Item {
-                    Layout.fillWidth: true
-                    Layout.preferredHeight: 120
-                    
-                    ColumnLayout {
-                        anchors.centerIn: parent
-                        spacing: 12
+            Text {
+                text: qsTr("Ticket Tracking")
+                color: modernTheme.textPrimary
+                font.pixelSize: 18
+                font.bold: true
+                font.family: modernTheme.fontMain
+            }
+            
+            Item { Layout.fillWidth: true }
+        }
+    }
+
+    // ==========================================
+    // MAIN CONTENT
+    // ==========================================
+    Flickable {
+        anchors.top: topNavBar.bottom
+        anchors.bottom: parent.bottom
+        anchors.left: parent.left
+        anchors.right: parent.right
+        contentWidth: width
+        contentHeight: contentLayout.implicitHeight + 60
+        clip: true
+        boundsBehavior: Flickable.StopAtBounds
+
+        ColumnLayout {
+            id: contentLayout
+            width: Math.min(parent.width - 60, 1000)
+            anchors.horizontalCenter: parent.horizontalCenter
+            anchors.top: parent.top
+            anchors.topMargin: 30
+            spacing: 24
+
+            // 1. TICKET HEADER INFO
+            Rectangle {
+                Layout.fillWidth: true
+                Layout.preferredHeight: 100
+                radius: 12
+                color: modernTheme.bgCard
+                border.color: modernTheme.borderSubtle
+                border.width: 1
+
+                RowLayout {
+                    anchors.fill: parent
+                    anchors.margins: 20
+                    spacing: 20
+
+                    Rectangle {
+                        Layout.preferredWidth: 56
+                        Layout.preferredHeight: 56
+                        radius: 12
+                        color: modernTheme.bgElevated
+                        border.color: modernTheme.borderFocus
+                        border.width: 1
                         
-                        Rectangle {
-                            Layout.preferredWidth: 48
-                            Layout.preferredHeight: 48
-                            radius: 24
-                            color: modernTheme.iconBg
-                            border.color: modernTheme.borderFocus
-                            border.width: 2
-                            Layout.alignment: Qt.AlignHCenter
-                            
-                            Text {
-                                anchors.centerIn: parent
-                                text: "MNJ"
-                                color: modernTheme.textPrimary
-                                font.pixelSize: 14
-                                font.bold: true
-                                font.family: modernTheme.fontMono
-                            }
-                        }
-
-                        ColumnLayout {
-                            spacing: 4
-                            Layout.alignment: Qt.AlignHCenter
-                            
-                            Text {
-                                text: supportMainRoot.activeUser
-                                color: modernTheme.textPrimary
-                                font.pixelSize: 16
-                                font.bold: true
-                                font.family: modernTheme.fontMain
-                                Layout.alignment: Qt.AlignHCenter
-                            }
-                            
-                            Text {
-                                text: qsTr("Session Secured")
-                                color: modernTheme.textSecondary
-                                font.pixelSize: 12
-                                font.family: modernTheme.fontMain
-                                Layout.alignment: Qt.AlignHCenter
-                            }
+                        Text {
+                            anchors.centerIn: parent
+                            text: "📡"
+                            font.pixelSize: 24
                         }
                     }
-                }
 
-                Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: modernTheme.borderSubtle }
-
-                // 3. System Status / Activity List
-                ColumnLayout {
-                    Layout.fillWidth: true
-                    Layout.fillHeight: true
-                    Layout.margins: 24
-                    spacing: 16
-                    Layout.alignment: Qt.AlignTop
-
-                    Text {
-                        text: qsTr("RECENT ACTIVITY")
-                        color: modernTheme.textMuted
-                        font.pixelSize: 11
-                        font.bold: true
-                        font.family: modernTheme.fontMono
-                    }
-
-                    ListView {
+                    ColumnLayout {
                         Layout.fillWidth: true
-                        Layout.fillHeight: true
-                        model: recentActivityModel
-                        interactive: false
-                        spacing: 16
-
-                        delegate: RowLayout {
-                            width: ListView.view.width
-                            spacing: 12
+                        spacing: 4
+                        
+                        Text {
+                            text: qsTr("TRACKING TERMINAL")
+                            color: modernTheme.textMuted
+                            font.pixelSize: 11
+                            font.bold: true
+                            font.family: modernTheme.fontMono
+                        }
+                        
+                        Text {
+                            text: "TKT-849201" // Static ID waiting for real backend data
+                            color: modernTheme.textPrimary
+                            font.pixelSize: 22
+                            font.bold: true
+                            font.family: modernTheme.fontMain
+                        }
+                    }
+                    
+                    // Status Badge
+                    Rectangle {
+                        Layout.preferredWidth: 100
+                        Layout.preferredHeight: 32
+                        radius: 16
+                        color: "transparent"
+                        border.color: modernTheme.stateActive
+                        border.width: 1
+                        
+                        RowLayout {
+                            anchors.centerIn: parent
+                            spacing: 8
                             
                             Rectangle {
-                                Layout.preferredWidth: 8
-                                Layout.preferredHeight: 8
+                                width: 8
+                                height: 8
                                 radius: 4
-                                color: modernTheme.textMuted
-                                Layout.alignment: Qt.AlignTop
-                                Layout.topMargin: 4
+                                color: modernTheme.stateActive
                             }
                             
-                            ColumnLayout {
-                                Layout.fillWidth: true
-                                spacing: 4
-                                
-                                Text {
-                                    text: activityTitle
-                                    color: modernTheme.textPrimary
-                                    font.pixelSize: 13
-                                    font.family: modernTheme.fontMain
-                                }
-                                
-                                RowLayout {
-                                    spacing: 8
-                                    Text {
-                                        text: activityTime
-                                        color: modernTheme.textSecondary
-                                        font.pixelSize: 11
-                                        font.family: modernTheme.fontMain
-                                    }
-                                    Text {
-                                        text: "• " + activityStatus
-                                        color: modernTheme.textMuted
-                                        font.pixelSize: 11
-                                        font.family: modernTheme.fontMain
-                                    }
-                                }
+                            Text {
+                                text: qsTr("ACTIVE")
+                                color: modernTheme.stateActive
+                                font.pixelSize: 12
+                                font.bold: true
+                                font.family: modernTheme.fontMono
                             }
                         }
                     }
                 }
             }
-        }
 
-        // ------------------------------------------
-        // RIGHT MAIN AREA (CONTENT & CARDS)
-        // ------------------------------------------
-        Rectangle {
-            Layout.fillWidth: true
-            Layout.fillHeight: true
-            color: "transparent"
+            // 2. METADATA & TIMELINE SPLIT
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: 24
+                Layout.alignment: Qt.AlignTop
 
-            ColumnLayout {
-                anchors.fill: parent
-                spacing: 0
-
-                // 1. Top Header
+                // Left Column: Metadata
                 Rectangle {
-                    Layout.fillWidth: true
-                    Layout.preferredHeight: 80
-                    color: "transparent"
+                    Layout.preferredWidth: 350
+                    Layout.preferredHeight: 250
+                    radius: 12
+                    color: modernTheme.bgCard
                     border.color: modernTheme.borderSubtle
                     border.width: 1
+                    Layout.alignment: Qt.AlignTop
 
-                    RowLayout {
+                    ColumnLayout {
                         anchors.fill: parent
-                        anchors.leftMargin: 40
-                        anchors.rightMargin: 40
+                        anchors.margins: 20
+                        spacing: 16
+                        
+                        Text {
+                            text: qsTr("PAYLOAD METADATA")
+                            color: modernTheme.textPrimary
+                            font.pixelSize: 14
+                            font.bold: true
+                            font.family: modernTheme.fontMain
+                        }
+                        
+                        Rectangle {
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: 1
+                            color: modernTheme.borderSubtle
+                        }
+                        
+                        GridLayout {
+                            Layout.fillWidth: true
+                            columns: 2
+                            rowSpacing: 16
+                            columnSpacing: 16
+                            
+                            // Static metadata awaiting C++ model
+                            MetadataItem { label: "Category"; value: "Technical Issue" }
+                            MetadataItem { label: "Priority"; value: "HIGH" }
+                            MetadataItem { label: "Environment"; value: "Win64 / DX12" }
+                            MetadataItem { label: "Session ID"; value: "MNJ-88A9B2" }
+                        }
+                    }
+                }
+
+                // Right Column: Timeline
+                Rectangle {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 350
+                    radius: 12
+                    color: modernTheme.bgCard
+                    border.color: modernTheme.borderSubtle
+                    border.width: 1
+                    Layout.alignment: Qt.AlignTop
+
+                    ColumnLayout {
+                        anchors.fill: parent
+                        anchors.margins: 20
+                        spacing: 24
 
                         Text {
-                            text: qsTr("Mnjnef Support Operations")
+                            text: qsTr("RESOLUTION PROTOCOL SEQUENCE")
                             color: modernTheme.textPrimary
-                            font.pixelSize: 20
+                            font.pixelSize: 14
                             font.bold: true
                             font.family: modernTheme.fontMain
                         }
 
-                        Item { Layout.fillWidth: true }
-
-                        Rectangle {
-                            Layout.preferredWidth: 200
-                            Layout.preferredHeight: 36
-                            radius: 18
-                            color: modernTheme.bgSidebar
-                            border.color: modernTheme.borderSubtle
-                            border.width: 1
-
-                            RowLayout {
-                                anchors.fill: parent
-                                anchors.margins: 12
-                                spacing: 8
-
-                                Text { text: "🔍"; color: modernTheme.textMuted; font.pixelSize: 12 }
-                                Text { 
-                                    text: qsTr("Search resources...")
-                                    color: modernTheme.textMuted
-                                    font.pixelSize: 13
-                                    font.family: modernTheme.fontMain 
-                                }
-                            }
-                        }
-                    }
-                }
-
-                // 2. Scrollable Module List (Bulletproof Routing)
-                Flickable {
-                    Layout.fillWidth: true
-                    Layout.fillHeight: true
-                    contentWidth: width
-                    contentHeight: contentColumn.implicitHeight + 80
-                    clip: true
-                    boundsBehavior: Flickable.StopAtBounds
-
-                    ScrollBar.vertical: ScrollBar {
-                        width: 8
-                        contentItem: Rectangle {
-                            implicitWidth: 8
-                            radius: 4
-                            color: modernTheme.borderFocus
-                        }
-                    }
-
-                    ColumnLayout {
-                        id: contentColumn
-                        width: Math.min(parent.width - 80, 800)
-                        anchors.horizontalCenter: parent.horizontalCenter
-                        y: 40
-                        spacing: 24
-
-                        // Welcome Text
+                        // Static Timeline waiting for backend integration
                         ColumnLayout {
                             Layout.fillWidth: true
-                            spacing: 8
-                            Layout.bottomMargin: 16
-
-                            Text {
-                                text: qsTr("How can we assist you?")
-                                color: modernTheme.textPrimary
-                                font.pixelSize: 28
-                                font.bold: true
-                                font.family: modernTheme.fontMain
-                            }
-
-                            Text {
-                                text: qsTr("Select a module below to manage your account, report issues, or configure local environment settings.")
-                                color: modernTheme.textSecondary
-                                font.pixelSize: 15
-                                font.family: modernTheme.fontMain
-                                wrapMode: Text.WordWrap
-                                Layout.fillWidth: true
-                                lineHeight: 1.4
-                            }
-                        }
-
-                        // Module List using Repeater (Safest approach for routing)
-                        Repeater {
-                            model: supportModulesModel
-
-                            Rectangle {
-                                Layout.fillWidth: true
-                                Layout.preferredHeight: 110
-                                radius: 12
-                                color: moduleMouse.containsMouse ? modernTheme.bgCardHover : modernTheme.bgCard
-                                border.color: moduleMouse.containsMouse ? modernTheme.borderFocus : modernTheme.borderSubtle
-                                border.width: 1
-
-                                Behavior on color { ColorAnimation { duration: 150 } }
-                                Behavior on border.color { ColorAnimation { duration: 150 } }
-
-                                RowLayout {
-                                    anchors.fill: parent
-                                    anchors.margins: 20
-                                    spacing: 24
-
-                                    // Icon Container
-                                    Rectangle {
-                                        Layout.preferredWidth: 64
-                                        Layout.preferredHeight: 64
-                                        radius: 16
-                                        color: modernTheme.iconBg
-                                        border.color: modernTheme.borderSubtle
-                                        border.width: 1
-
-                                        Text {
-                                            anchors.centerIn: parent
-                                            text: iconBadge
-                                            font.pixelSize: 28
-                                        }
-                                        
-                                        // Notification Dot for urgent items
-                                        Rectangle {
-                                            width: 12
-                                            height: 12
-                                            radius: 6
-                                            color: modernTheme.textPrimary
-                                            anchors.top: parent.top
-                                            anchors.right: parent.right
-                                            anchors.margins: -4
-                                            border.color: modernTheme.bgCard
-                                            border.width: 2
-                                            visible: isUrgent
-                                        }
-                                    }
-
-                                    // Text Content
-                                    ColumnLayout {
-                                        Layout.fillWidth: true
-                                        spacing: 6
-
-                                        Text {
-                                            text: title
-                                            color: modernTheme.textPrimary
-                                            font.pixelSize: 18
-                                            font.bold: true
-                                            font.family: modernTheme.fontMain
-                                        }
-
-                                        Text {
-                                            text: subtitle
-                                            color: modernTheme.textSecondary
-                                            font.pixelSize: 14
-                                            font.family: modernTheme.fontMain
-                                            wrapMode: Text.WordWrap
-                                            Layout.fillWidth: true
-                                            lineHeight: 1.3
-                                        }
-                                    }
-
-                                    // Action Arrow
-                                    Rectangle {
-                                        Layout.preferredWidth: 40
-                                        Layout.preferredHeight: 40
-                                        radius: 20
-                                        color: moduleMouse.containsMouse ? modernTheme.borderFocus : "transparent"
-                                        
-                                        Behavior on color { ColorAnimation { duration: 150 } }
-
-                                        Text {
-                                            anchors.centerIn: parent
-                                            text: "➔"
-                                            color: moduleMouse.containsMouse ? modernTheme.textPrimary : modernTheme.textMuted
-                                            font.pixelSize: 18
-                                            font.bold: true
-                                        }
-                                    }
-                                }
-
-                                // Interactive Click Logic
-                                MouseArea {
-                                    id: moduleMouse
-                                    anchors.fill: parent
-                                    hoverEnabled: true
-                                    cursorShape: Qt.PointingHandCursor
-                                    onClicked: {
-                                        console.log("[ROUTING] Attempting to navigate to: " + targetFile);
-                                        
-                                        // Safe Routing Check
-                                        if (supportMainRoot.StackView.view) {
-                                            supportMainRoot.StackView.view.push(targetFile);
-                                            console.log("[ROUTING SUCCESS]");
-                                        } else {
-                                            console.log("[ROUTING ERROR] StackView context is missing!");
-                                        }
-                                    }
-                                }
-                            }
+                            spacing: 0
+                            
+                            TimelineItem { isCompleted: true; isCurrent: false; title: "Ticket Submitted"; desc: "Secure transmission complete"; time: "10:42 AM"; showLine: true }
+                            TimelineItem { isCompleted: true; isCurrent: false; title: "Heuristic Scan"; desc: "Payload sanitized & verified"; time: "10:43 AM"; showLine: true }
+                            TimelineItem { isCompleted: false; isCurrent: true; title: "Agent Assigned"; desc: "Routing to specialized operative"; time: "10:45 AM"; showLine: true }
+                            TimelineItem { isCompleted: false; isCurrent: false; title: "Resolution"; desc: "Awaiting final diagnostics"; time: "--:--"; showLine: false }
                         }
                         
-                        // Extra spacer at bottom
-                        Item { Layout.preferredHeight: 40; Layout.fillWidth: true }
+                        Item { Layout.fillHeight: true }
                     }
                 }
+            }
+        }
+    }
+
+    // ==========================================
+    // HELPER COMPONENTS
+    // ==========================================
+    component MetadataItem: ColumnLayout {
+        property string label: ""
+        property string value: ""
+        spacing: 4
+        
+        Text {
+            text: parent.label
+            color: modernTheme.textSecondary
+            font.pixelSize: 12
+            font.family: modernTheme.fontMain
+        }
+        Text {
+            text: parent.value
+            color: modernTheme.textPrimary
+            font.pixelSize: 14
+            font.bold: true
+            font.family: modernTheme.fontMono
+        }
+    }
+
+    component TimelineItem: Item {
+        property bool isCompleted: false
+        property bool isCurrent: false
+        property string title: ""
+        property string desc: ""
+        property string time: ""
+        property bool showLine: true
+        
+        Layout.fillWidth: true
+        Layout.preferredHeight: 60
+        
+        Rectangle {
+            width: 2
+            height: parent.height
+            color: isCompleted ? modernTheme.accent : modernTheme.borderSubtle
+            x: 11
+            y: 24
+            visible: showLine
+        }
+        
+        RowLayout {
+            anchors.fill: parent
+            spacing: 20
+            
+            Rectangle {
+                Layout.preferredWidth: 24
+                Layout.preferredHeight: 24
+                radius: 12
+                Layout.alignment: Qt.AlignTop
+                color: isCompleted || isCurrent ? modernTheme.accent : "transparent"
+                border.color: isCompleted || isCurrent ? modernTheme.accent : modernTheme.borderFocus
+                border.width: 2
+                
+                Text {
+                    anchors.centerIn: parent
+                    text: isCompleted ? "✓" : ""
+                    color: modernTheme.bgApp
+                    font.pixelSize: 12
+                    font.bold: true
+                    visible: isCompleted
+                }
+                
+                Rectangle {
+                    anchors.centerIn: parent
+                    width: 8
+                    height: 8
+                    radius: 4
+                    color: modernTheme.bgApp
+                    visible: isCurrent
+                }
+            }
+            
+            ColumnLayout {
+                Layout.fillWidth: true
+                spacing: 2
+                
+                Text {
+                    text: parent.parent.title
+                    color: parent.parent.isCurrent || parent.parent.isCompleted ? modernTheme.textPrimary : modernTheme.textSecondary
+                    font.pixelSize: 15
+                    font.bold: true
+                    font.family: modernTheme.fontMain
+                }
+                Text {
+                    text: parent.parent.desc
+                    color: modernTheme.textMuted
+                    font.pixelSize: 13
+                    font.family: modernTheme.fontMain
+                }
+            }
+            
+            Text {
+                text: parent.time
+                color: modernTheme.textMuted
+                font.pixelSize: 12
+                font.family: modernTheme.fontMono
+                Layout.alignment: Qt.AlignTop
+                Layout.topMargin: 4
             }
         }
     }
