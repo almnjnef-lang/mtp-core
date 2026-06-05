@@ -1,26 +1,20 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import QtQuick.Window
 
-Item {
-    id: ticketFormRoot
-    anchors.fill: parent
-    clip: true
-
-    // ==========================================
-    // C++ INTEGRATION SIGNALS
-    // ==========================================
-    // This signal will be caught by your C++ TicketManager to send data to the backend
-    signal submitTicketRequest(string category, string subject, string description)
-
-    // ==========================================
-    // SYSTEM STATE
-    // ==========================================
-    property string selectedCategory: ""
-    property bool isSubmitting: false
+ApplicationWindow {
+    id: mnjnefRootWindow
+    width: 1280
+    height: 720
+    visible: true
+    title: "Mnjnef Platform - Authentication"
+    
+    // Global background color to prevent white flashes during transitions
+    color: "#09090B" 
 
     // ==========================================
-    // THEME & STYLING (ENTERPRISE GRAYSCALE)
+    // GLOBAL THEME (ENTERPRISE GRAYSCALE)
     // ==========================================
     QtObject {
         id: modernTheme
@@ -31,7 +25,6 @@ Item {
         
         property color borderSubtle: "#27272A"
         property color borderFocus: "#3F3F46"
-        property color borderActive: "#FFFFFF"
         
         property color textPrimary: "#FAFAFA"
         property color textSecondary: "#A1A1AA"
@@ -39,382 +32,292 @@ Item {
         
         property color accent: "#FFFFFF"
         property color error: "#EF4444"
+        property color success: "#10B981"
         
         property string fontMain: "Segoe UI"
         property string fontMono: "Consolas"
     }
 
-    Rectangle {
+    // ==========================================
+    // CENTRAL ROUTING ENGINE (STACKVIEW)
+    // ==========================================
+    // This is the core engine that holds all pages. By anchoring it to the root,
+    // all pushed children will correctly inherit the StackView.view context.
+    StackView {
+        id: mainRouter
         anchors.fill: parent
-        color: modernTheme.bgApp
+        initialItem: loginComponent
+
+        // Smooth transition animations
+        pushEnter: Transition {
+            PropertyAnimation { property: "opacity"; from: 0.0; to: 1.0; duration: 250 }
+            PropertyAnimation { property: "scale"; from: 0.98; to: 1.0; duration: 250; easing.type: Easing.OutQuad }
+        }
+        pushExit: Transition {
+            PropertyAnimation { property: "opacity"; from: 1.0; to: 0.0; duration: 250 }
+        }
+        popEnter: Transition {
+            PropertyAnimation { property: "opacity"; from: 0.0; to: 1.0; duration: 250 }
+        }
+        popExit: Transition {
+            PropertyAnimation { property: "opacity"; from: 1.0; to: 0.0; duration: 250 }
+            PropertyAnimation { property: "scale"; from: 1.0; to: 0.98; duration: 250; easing.type: Easing.OutQuad }
+        }
     }
 
     // ==========================================
-    // TOP NAVIGATION BAR (WITH BACK BUTTON)
+    // LOGIN COMPONENT (INITIAL SCREEN)
     // ==========================================
-    Rectangle {
-        id: topNavBar
-        width: parent.width
-        height: 70
-        color: modernTheme.bgApp
-        border.color: modernTheme.borderSubtle
-        border.width: 1
-        z: 10
+    Component {
+        id: loginComponent
 
-        RowLayout {
+        Item {
             anchors.fill: parent
-            anchors.leftMargin: 30
-            anchors.rightMargin: 30
-            spacing: 20
 
-            // Back Button
             Rectangle {
-                Layout.preferredWidth: 40
-                Layout.preferredHeight: 40
-                radius: 8
-                color: backMouse.containsMouse ? modernTheme.bgHover : modernTheme.bgCard
+                anchors.fill: parent
+                color: modernTheme.bgApp
+            }
+
+            // LOGIN PANEL
+            Rectangle {
+                id: loginPanel
+                width: 440
+                height: 560
+                anchors.centerIn: parent
+                color: modernTheme.bgCard
+                radius: 12
                 border.color: modernTheme.borderSubtle
                 border.width: 1
-                
-                Behavior on color { ColorAnimation { duration: 150 } }
 
-                Text {
-                    anchors.centerIn: parent
-                    text: "◀"
-                    color: modernTheme.textPrimary
-                    font.pixelSize: 14
-                }
-
-                MouseArea {
-                    id: backMouse
+                ColumnLayout {
                     anchors.fill: parent
-                    hoverEnabled: true
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: {
-                        if (StackView.view) {
-                            StackView.view.pop();
-                        }
-                    }
-                }
-            }
+                    anchors.margins: 40
+                    spacing: 24
 
-            ColumnLayout {
-                spacing: 2
-                Text {
-                    text: qsTr("Submit a New Ticket")
-                    color: modernTheme.textPrimary
-                    font.pixelSize: 18
-                    font.bold: true
-                    font.family: modernTheme.fontMain
-                }
-                Text {
-                    text: qsTr("Diagnostic Routing Form")
-                    color: modernTheme.textSecondary
-                    font.pixelSize: 11
-                    font.family: modernTheme.fontMono
-                }
-            }
-            
-            Item { Layout.fillWidth: true }
-        }
-    }
-
-    // ==========================================
-    // MAIN FORM CONTENT
-    // ==========================================
-    Flickable {
-        anchors.top: topNavBar.bottom
-        anchors.bottom: parent.bottom
-        anchors.left: parent.left
-        anchors.right: parent.right
-        contentWidth: width
-        contentHeight: formLayout.implicitHeight + 80
-        clip: true
-        boundsBehavior: Flickable.StopAtBounds
-
-        ScrollBar.vertical: ScrollBar {
-            width: 8
-            contentItem: Rectangle {
-                implicitWidth: 8; radius: 4; color: modernTheme.borderFocus
-            }
-        }
-
-        ColumnLayout {
-            id: formLayout
-            width: Math.min(parent.width - 60, 800)
-            anchors.horizontalCenter: parent.horizontalCenter
-            anchors.top: parent.top
-            anchors.topMargin: 40
-            spacing: 30
-
-            // 1. INSTRUCTIONS
-            ColumnLayout {
-                Layout.fillWidth: true
-                spacing: 8
-                
-                Text {
-                    text: qsTr("Provide Issue Details")
-                    color: modernTheme.textPrimary
-                    font.pixelSize: 22
-                    font.bold: true
-                    font.family: modernTheme.fontMain
-                }
-                Text {
-                    text: qsTr("Please select a category and provide as much detail as possible. This information is securely transmitted to the Mnjnef technical team for immediate review.")
-                    color: modernTheme.textSecondary
-                    font.pixelSize: 14
-                    font.family: modernTheme.fontMain
-                    wrapMode: Text.WordWrap
-                    Layout.fillWidth: true
-                    lineHeight: 1.4
-                }
-            }
-
-            // 2. CATEGORY SELECTION
-            ColumnLayout {
-                Layout.fillWidth: true
-                spacing: 12
-
-                Text {
-                    text: qsTr("ISSUE CATEGORY")
-                    color: modernTheme.textMuted
-                    font.pixelSize: 12
-                    font.bold: true
-                    font.family: modernTheme.fontMono
-                }
-
-                RowLayout {
-                    Layout.fillWidth: true
-                    spacing: 16
-
-                    CategoryButton { label: "Account / Billing"; catId: "ACCOUNT"; Layout.fillWidth: true }
-                    CategoryButton { label: "Technical Bug"; catId: "BUG"; Layout.fillWidth: true }
-                    CategoryButton { label: "Network / Ping"; catId: "NETWORK"; Layout.fillWidth: true }
-                }
-            }
-
-            // 3. SUBJECT LINE
-            ColumnLayout {
-                Layout.fillWidth: true
-                spacing: 12
-
-                Text {
-                    text: qsTr("SUBJECT")
-                    color: modernTheme.textMuted
-                    font.pixelSize: 12
-                    font.bold: true
-                    font.family: modernTheme.fontMono
-                }
-
-                Rectangle {
-                    Layout.fillWidth: true
-                    Layout.preferredHeight: 50
-                    radius: 8
-                    color: modernTheme.bgInput
-                    border.color: subjectInput.activeFocus ? modernTheme.borderActive : modernTheme.borderSubtle
-                    border.width: subjectInput.activeFocus ? 2 : 1
-                    
-                    Behavior on border.color { ColorAnimation { duration: 150 } }
-
-                    TextInput {
-                        id: subjectInput
-                        anchors.fill: parent
-                        anchors.margins: 16
-                        color: modernTheme.textPrimary
-                        font.pixelSize: 15
-                        font.family: modernTheme.fontMain
-                        verticalAlignment: TextInput.AlignVCenter
-                        selectByMouse: true
+                    // HEADER
+                    ColumnLayout {
+                        Layout.fillWidth: true
+                        spacing: 8
+                        Layout.alignment: Qt.AlignHCenter
 
                         Text {
-                            text: qsTr("Brief summary of the issue...")
-                            color: modernTheme.textMuted
-                            font.pixelSize: 15
+                            text: "MNJNEF"
+                            color: modernTheme.textPrimary
+                            font.pixelSize: 32
+                            font.bold: true
                             font.family: modernTheme.fontMain
-                            visible: !subjectInput.text && !subjectInput.activeFocus
-                            anchors.verticalCenter: parent.verticalCenter
+                            font.letterSpacing: 4.0
+                            Layout.alignment: Qt.AlignHCenter
+                        }
+
+                        Text {
+                            text: "Secure Authentication Gateway"
+                            color: modernTheme.textSecondary
+                            font.pixelSize: 13
+                            font.family: modernTheme.fontMono
+                            Layout.alignment: Qt.AlignHCenter
                         }
                     }
-                }
-            }
 
-            // 4. DESCRIPTION BOX
-            ColumnLayout {
-                Layout.fillWidth: true
-                spacing: 12
+                    // INPUT FIELDS
+                    ColumnLayout {
+                        Layout.fillWidth: true
+                        spacing: 16
+                        Layout.topMargin: 20
 
-                Text {
-                    text: qsTr("DETAILED DESCRIPTION")
-                    color: modernTheme.textMuted
-                    font.pixelSize: 12
-                    font.bold: true
-                    font.family: modernTheme.fontMono
-                }
-
-                Rectangle {
-                    Layout.fillWidth: true
-                    Layout.preferredHeight: 200
-                    radius: 8
-                    color: modernTheme.bgInput
-                    border.color: descInput.activeFocus ? modernTheme.borderActive : modernTheme.borderSubtle
-                    border.width: descInput.activeFocus ? 2 : 1
-                    
-                    Behavior on border.color { ColorAnimation { duration: 150 } }
-
-                    Flickable {
-                        anchors.fill: parent
-                        anchors.margins: 16
-                        contentWidth: width
-                        contentHeight: descInput.implicitHeight
-                        clip: true
-                        
-                        TextEdit {
-                            id: descInput
-                            width: parent.width
-                            color: modernTheme.textPrimary
-                            font.pixelSize: 15
-                            font.family: modernTheme.fontMain
-                            wrapMode: TextEdit.Wrap
-                            selectByMouse: true
+                        // Username Input
+                        Rectangle {
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: 50
+                            radius: 8
+                            color: modernTheme.bgInput
+                            border.color: usernameInput.activeFocus ? modernTheme.accent : modernTheme.borderSubtle
+                            border.width: usernameInput.activeFocus ? 2 : 1
                             
-                            Text {
-                                text: qsTr("Describe the steps to reproduce, error codes, or relevant details...")
-                                color: modernTheme.textMuted
+                            Behavior on border.color { ColorAnimation { duration: 150 } }
+
+                            TextInput {
+                                id: usernameInput
+                                anchors.fill: parent
+                                anchors.margins: 16
+                                color: modernTheme.textPrimary
                                 font.pixelSize: 15
                                 font.family: modernTheme.fontMain
-                                visible: !descInput.text && !descInput.activeFocus
+                                verticalAlignment: TextInput.AlignVCenter
+                                selectByMouse: true
+                                
+                                Text {
+                                    text: "System ID / Username"
+                                    color: modernTheme.textMuted
+                                    font.pixelSize: 15
+                                    font.family: modernTheme.fontMain
+                                    visible: !usernameInput.text && !usernameInput.activeFocus
+                                    anchors.verticalCenter: parent.verticalCenter
+                                }
+                            }
+                        }
+
+                        // Password Input
+                        Rectangle {
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: 50
+                            radius: 8
+                            color: modernTheme.bgInput
+                            border.color: passwordInput.activeFocus ? modernTheme.accent : modernTheme.borderSubtle
+                            border.width: passwordInput.activeFocus ? 2 : 1
+                            
+                            Behavior on border.color { ColorAnimation { duration: 150 } }
+
+                            RowLayout {
+                                anchors.fill: parent
+                                anchors.margins: 16
+                                spacing: 8
+
+                                TextInput {
+                                    id: passwordInput
+                                    Layout.fillWidth: true
+                                    Layout.fillHeight: true
+                                    color: modernTheme.textPrimary
+                                    font.pixelSize: 15
+                                    font.family: modernTheme.fontMain
+                                    verticalAlignment: TextInput.AlignVCenter
+                                    echoMode: visibilityIcon.isVisible ? TextInput.Normal : TextInput.Password
+                                    selectByMouse: true
+                                    
+                                    Text {
+                                        text: "Access Key / Password"
+                                        color: modernTheme.textMuted
+                                        font.pixelSize: 15
+                                        font.family: modernTheme.fontMain
+                                        visible: !passwordInput.text && !passwordInput.activeFocus
+                                        anchors.verticalCenter: parent.verticalCenter
+                                    }
+                                }
+
+                                Text {
+                                    id: visibilityIcon
+                                    property bool isVisible: false
+                                    text: isVisible ? "👁️" : "👁️‍🗨️"
+                                    color: modernTheme.textMuted
+                                    font.pixelSize: 14
+                                    Layout.alignment: Qt.AlignVCenter
+                                    
+                                    MouseArea {
+                                        anchors.fill: parent
+                                        anchors.margins: -10
+                                        cursorShape: Qt.PointingHandCursor
+                                        onClicked: visibilityIcon.isVisible = !visibilityIcon.isVisible
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // LOGIN BUTTON
+                    Rectangle {
+                        id: loginBtn
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 50
+                        Layout.topMargin: 10
+                        radius: 8
+                        color: {
+                            if (authController.isLoggingIn) return modernTheme.borderSubtle;
+                            if (loginMouse.containsPress) return modernTheme.textMuted;
+                            if (loginMouse.containsMouse) return modernTheme.borderFocus;
+                            return modernTheme.accent;
+                        }
+                        
+                        Behavior on color { ColorAnimation { duration: 150 } }
+
+                        Text {
+                            anchors.centerIn: parent
+                            text: authController.isLoggingIn ? "AUTHENTICATING..." : "INITIALIZE SESSION"
+                            color: authController.isLoggingIn ? modernTheme.textPrimary : modernTheme.bgApp
+                            font.pixelSize: 14
+                            font.bold: true
+                            font.family: modernTheme.fontMain
+                            font.letterSpacing: 1.0
+                        }
+
+                        MouseArea {
+                            id: loginMouse
+                            anchors.fill: parent
+                            hoverEnabled: !authController.isLoggingIn
+                            cursorShape: hoverEnabled ? Qt.PointingHandCursor : Qt.ForbiddenCursor
+                            onClicked: {
+                                if (!authController.isLoggingIn) {
+                                    authController.isLoggingIn = true;
+                                    authTimer.start();
+                                }
+                            }
+                        }
+                    }
+
+                    Item { Layout.fillHeight: true } // Spacer pushes footer down
+
+                    // FOOTER: SUPPORT ROUTING
+                    Rectangle {
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 1
+                        color: modernTheme.borderSubtle
+                    }
+
+                    RowLayout {
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 30
+
+                        Text {
+                            text: "System Integrity Verified"
+                            color: modernTheme.textMuted
+                            font.pixelSize: 11
+                            font.family: modernTheme.fontMono
+                        }
+
+                        Item { Layout.fillWidth: true }
+
+                        // Support Routing Button
+                        Text {
+                            text: "Mnjnef Support"
+                            color: supportMouse.containsMouse ? modernTheme.textPrimary : modernTheme.textSecondary
+                            font.pixelSize: 13
+                            font.bold: true
+                            font.family: modernTheme.fontMain
+                            
+                            Behavior on color { ColorAnimation { duration: 150 } }
+
+                            MouseArea {
+                                id: supportMouse
+                                anchors.fill: parent
+                                anchors.margins: -8
+                                hoverEnabled: true
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: {
+                                    console.log("[ROUTING] Pushing Support_1_Main.qml onto StackView");
+                                    mainRouter.push("Support_1_Main.qml");
+                                }
                             }
                         }
                     }
                 }
             }
-            
-            // Error Message Placeholder
-            Text {
-                id: errorText
-                text: ""
-                color: modernTheme.error
-                font.pixelSize: 13
-                font.family: modernTheme.fontMain
-                visible: text !== ""
-                Layout.alignment: Qt.AlignHCenter
+
+            // Fake Auth Timer for UI testing
+            QtObject {
+                id: authController
+                property bool isLoggingIn: false
             }
 
-            // 5. SUBMIT BUTTON
-            Rectangle {
-                Layout.fillWidth: true
-                Layout.preferredHeight: 54
-                Layout.topMargin: 20
-                radius: 8
-                
-                color: {
-                    if (ticketFormRoot.isSubmitting) return modernTheme.borderSubtle;
-                    if (submitMouse.containsPress) return modernTheme.textMuted;
-                    if (submitMouse.containsMouse) return modernTheme.borderFocus;
-                    return modernTheme.accent;
-                }
-                
-                Behavior on color { ColorAnimation { duration: 150 } }
-
-                Text {
-                    anchors.centerIn: parent
-                    text: ticketFormRoot.isSubmitting ? qsTr("TRANSMITTING...") : qsTr("SUBMIT SECURE TICKET")
-                    color: ticketFormRoot.isSubmitting ? modernTheme.textPrimary : modernTheme.bgApp
-                    font.pixelSize: 14
-                    font.bold: true
-                    font.family: modernTheme.fontMain
-                }
-
-                MouseArea {
-                    id: submitMouse
-                    anchors.fill: parent
-                    hoverEnabled: !ticketFormRoot.isSubmitting
-                    cursorShape: hoverEnabled ? Qt.PointingHandCursor : Qt.ForbiddenCursor
-                    onClicked: {
-                        if (!ticketFormRoot.isSubmitting) {
-                            errorText.text = "";
-                            
-                            // Basic Form Validation
-                            if (ticketFormRoot.selectedCategory === "") {
-                                errorText.text = qsTr("Please select an issue category.");
-                                return;
-                            }
-                            if (subjectInput.text.trim() === "") {
-                                errorText.text = qsTr("Please enter a subject.");
-                                subjectInput.forceActiveFocus();
-                                return;
-                            }
-                            if (descInput.text.trim() === "") {
-                                errorText.text = qsTr("Please provide a description.");
-                                descInput.forceActiveFocus();
-                                return;
-                            }
-                            
-                            // Simulate processing & Fire Signal
-                            ticketFormRoot.isSubmitting = true;
-                            console.log("[C++ BINDING] Emitting submitTicketRequest...");
-                            ticketFormRoot.submitTicketRequest(ticketFormRoot.selectedCategory, subjectInput.text, descInput.text);
-                            
-                            resetTimer.start();
-                        }
-                    }
+            Timer {
+                id: authTimer
+                interval: 1500
+                repeat: false
+                onTriggered: {
+                    authController.isLoggingIn = false;
+                    console.log("[AUTH] Simulating successful login.");
+                    // Add routing to main platform dashboard here later
                 }
             }
-        }
-    }
-
-    // Timer to reset form after "submission" (Temporary until C++ backend is linked)
-    Timer {
-        id: resetTimer
-        interval: 1500
-        repeat: false
-        onTriggered: {
-            ticketFormRoot.isSubmitting = false;
-            subjectInput.text = "";
-            descInput.text = "";
-            ticketFormRoot.selectedCategory = "";
-            console.log("[UI] Form reset. Ticket transmitted.");
-            
-            // Optionally auto-pop back to main menu
-            if (StackView.view) {
-                StackView.view.pop();
-            }
-        }
-    }
-
-    // ==========================================
-    // REUSABLE COMPONENTS
-    // ==========================================
-    component CategoryButton: Rectangle {
-        property string label: ""
-        property string catId: ""
-        
-        property bool isSelected: ticketFormRoot.selectedCategory === catId
-        
-        height: 50
-        radius: 8
-        color: isSelected ? modernTheme.borderFocus : (catMouse.containsMouse ? modernTheme.bgHover : modernTheme.bgCard)
-        border.color: isSelected ? modernTheme.borderActive : modernTheme.borderSubtle
-        border.width: isSelected ? 2 : 1
-        
-        Behavior on color { ColorAnimation { duration: 150 } }
-        Behavior on border.color { ColorAnimation { duration: 150 } }
-        
-        Text {
-            anchors.centerIn: parent
-            text: parent.label
-            color: parent.isSelected ? modernTheme.textPrimary : modernTheme.textSecondary
-            font.pixelSize: 14
-            font.bold: parent.isSelected
-            font.family: modernTheme.fontMain
-        }
-        
-        MouseArea {
-            id: catMouse
-            anchors.fill: parent
-            hoverEnabled: true
-            cursorShape: Qt.PointingHandCursor
-            onClicked: ticketFormRoot.selectedCategory = parent.catId
         }
     }
 }
