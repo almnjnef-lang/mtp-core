@@ -3,19 +3,37 @@ import QtQuick.Controls
 import QtQuick.Layouts
 
 Item {
-    id: mnjnefTicketTrackerRoot
+    id: translationModuleRoot
     anchors.fill: parent
     clip: true
 
     // ==========================================
-    // THEME & STYLING (PROFESSIONAL GRAYSCALE)
+    // C++ INTEGRATION SIGNALS
+    // ==========================================
+    // This signal MUST be caught by your C++ backend (e.g., via QObject::connect)
+    // to load the corresponding .qm file and trigger an engine layout update.
+    signal requestLanguageChange(string localeCode, bool requiresRtl)
+
+    // ==========================================
+    // SYSTEM STATE PROPERTIES
+    // ==========================================
+    // Defaulting to MENA based on your primary region
+    property string activeRegionFilter: "MENA"
+    property string selectedLanguageCode: "ar_SA"
+    
+    // This represents the currently active language in the C++ engine
+    property string currentEngineLanguage: "en_US"
+    property bool isApplying: false
+
+    // ==========================================
+    // THEME & STYLING (ENTERPRISE GRAYSCALE)
     // ==========================================
     QtObject {
         id: modernTheme
         property color bgApp: "#09090B"
+        property color bgSidebar: "#121214"
         property color bgCard: "#18181B"
-        property color bgElevated: "#27272A"
-        property color bgInput: "#121214"
+        property color bgCardHover: "#27272A"
         
         property color borderSubtle: "#27272A"
         property color borderFocus: "#3F3F46"
@@ -25,12 +43,66 @@ Item {
         property color textMuted: "#52525B"
         
         property color accent: "#FFFFFF"
-        property color stateActive: "#10B981" // Green for active status
+        property color activeSelection: "#3F3F46"
+        
+        property color stateSuccess: "#10B981"
+        property color stateWarning: "#F59E0B"
         
         property string fontMain: "Segoe UI"
         property string fontMono: "Consolas"
     }
 
+    // ==========================================
+    // DATA MODELS
+    // ==========================================
+    
+    // Geographic Regions
+    ListModel {
+        id: regionsModel
+        ListElement { regionId: "MENA"; title: "Middle East & N. Africa"; iconPath: "🌍" }
+        ListElement { regionId: "EU"; title: "Europe"; iconPath: "🇪🇺" }
+        ListElement { regionId: "APAC"; title: "Asia-Pacific"; iconPath: "🌏" }
+        ListElement { regionId: "AMER"; title: "Americas"; iconPath: "🌎" }
+    }
+
+    // Comprehensive Language Database (Real Metadata for C++)
+    ListModel {
+        id: masterLanguageModel
+        
+        // MENA
+        ListElement { langCode: "ar_SA"; region: "MENA"; engName: "Arabic (Saudi Arabia)"; nativeName: "العربية"; isRtl: true; status: "READY"; desc: "Standard Arabic localization. Fully supports RTL rendering engine." }
+        ListElement { langCode: "ar_AE"; region: "MENA"; engName: "Arabic (UAE)"; nativeName: "العربية (الإمارات)"; isRtl: true; status: "READY"; desc: "UAE specific localization and date formats." }
+        ListElement { langCode: "fa_IR"; region: "MENA"; engName: "Persian"; nativeName: "فارسی"; isRtl: true; status: "PENDING"; desc: "Persian localization. Requires font update." }
+        ListElement { langCode: "tr_TR"; region: "MENA"; engName: "Turkish"; nativeName: "Türkçe"; isRtl: false; status: "READY"; desc: "Standard Turkish localization." }
+        ListElement { langCode: "he_IL"; region: "MENA"; engName: "Hebrew"; nativeName: "עברית"; isRtl: true; status: "PENDING"; desc: "Hebrew RTL layout support." }
+        
+        // EU
+        ListElement { langCode: "en_GB"; region: "EU"; engName: "English (UK)"; nativeName: "English (UK)"; isRtl: false; status: "READY"; desc: "British English and EU date formats." }
+        ListElement { langCode: "fr_FR"; region: "EU"; engName: "French"; nativeName: "Français"; isRtl: false; status: "READY"; desc: "Standard French localization." }
+        ListElement { langCode: "de_DE"; region: "EU"; engName: "German"; nativeName: "Deutsch"; isRtl: false; status: "READY"; desc: "Standard German localization." }
+        ListElement { langCode: "es_ES"; region: "EU"; engName: "Spanish"; nativeName: "Español"; isRtl: false; status: "READY"; desc: "Castilian Spanish localization." }
+        ListElement { langCode: "it_IT"; region: "EU"; engName: "Italian"; nativeName: "Italiano"; isRtl: false; status: "READY"; desc: "Standard Italian localization." }
+        ListElement { langCode: "pl_PL"; region: "EU"; engName: "Polish"; nativeName: "Polski"; isRtl: false; status: "PENDING"; desc: "Polish localization." }
+        ListElement { langCode: "ru_RU"; region: "EU"; engName: "Russian"; nativeName: "Русский"; isRtl: false; status: "READY"; desc: "Cyrillic character set support." }
+        
+        // APAC
+        ListElement { langCode: "ja_JP"; region: "APAC"; engName: "Japanese"; nativeName: "日本語"; isRtl: false; status: "READY"; desc: "Full Kanji and Kana support." }
+        ListElement { langCode: "ko_KR"; region: "APAC"; engName: "Korean"; nativeName: "한국어"; isRtl: false; status: "READY"; desc: "Hangul text rendering support." }
+        ListElement { langCode: "zh_CN"; region: "APAC"; engName: "Chinese (Simplified)"; nativeName: "简体中文"; isRtl: false; status: "READY"; desc: "Mainland China character set." }
+        ListElement { langCode: "zh_TW"; region: "APAC"; engName: "Chinese (Traditional)"; nativeName: "繁體中文"; isRtl: false; status: "READY"; desc: "Taiwan/Hong Kong character set." }
+        
+        // AMER
+        ListElement { langCode: "en_US"; region: "AMER"; engName: "English (US)"; nativeName: "English (US)"; isRtl: false; status: "ACTIVE"; desc: "System default core language." }
+        ListElement { langCode: "es_419"; region: "AMER"; engName: "Spanish (LATAM)"; nativeName: "Español (Latinoamérica)"; isRtl: false; status: "READY"; desc: "Latin American Spanish." }
+        ListElement { langCode: "pt_BR"; region: "AMER"; engName: "Portuguese (BR)"; nativeName: "Português (Brasil)"; isRtl: false; status: "READY"; desc: "Brazilian Portuguese." }
+    }
+
+    // Filtered model based on selected region
+    ListModel { id: filteredLanguageModel }
+
+    // ==========================================
+    // BACKGROUND
+    // ==========================================
     Rectangle {
         anchors.fill: parent
         color: modernTheme.bgApp
@@ -46,7 +118,7 @@ Item {
         color: modernTheme.bgApp
         border.color: modernTheme.borderSubtle
         border.width: 1
-        z: 10
+        z: 10 // Keeps bar above scrolling content
 
         RowLayout {
             anchors.fill: parent
@@ -59,7 +131,7 @@ Item {
                 Layout.preferredWidth: 40
                 Layout.preferredHeight: 40
                 radius: 8
-                color: backMouse.containsMouse ? modernTheme.bgElevated : modernTheme.bgCard
+                color: backMouse.containsMouse ? modernTheme.bgCardHover : modernTheme.bgCard
                 border.color: modernTheme.borderSubtle
                 border.width: 1
                 
@@ -80,319 +152,528 @@ Item {
                     onClicked: {
                         if (StackView.view) {
                             StackView.view.pop();
+                        } else {
+                            console.log("[ROUTING ERROR] No StackView context found to pop.");
                         }
                     }
                 }
             }
 
-            Text {
-                text: qsTr("Ticket Tracking")
-                color: modernTheme.textPrimary
-                font.pixelSize: 18
-                font.bold: true
-                font.family: modernTheme.fontMain
+            // Title
+            ColumnLayout {
+                spacing: 2
+                Text {
+                    text: qsTr("Localization & Translation")
+                    color: modernTheme.textPrimary
+                    font.pixelSize: 18
+                    font.bold: true
+                    font.family: modernTheme.fontMain
+                }
+                Text {
+                    text: qsTr("Configure Engine Language")
+                    color: modernTheme.textSecondary
+                    font.pixelSize: 11
+                    font.family: modernTheme.fontMono
+                }
             }
             
-            Item { Layout.fillWidth: true }
+            Item { Layout.fillWidth: true } // Spacer
+            
+            // Current Active Indicator
+            Rectangle {
+                Layout.preferredHeight: 36
+                Layout.preferredWidth: 160
+                radius: 18
+                color: modernTheme.bgSidebar
+                border.color: modernTheme.borderSubtle
+                border.width: 1
+                
+                RowLayout {
+                    anchors.fill: parent
+                    anchors.margins: 12
+                    spacing: 8
+                    
+                    Rectangle {
+                        width: 8; height: 8; radius: 4
+                        color: modernTheme.stateSuccess
+                    }
+                    
+                    Text {
+                        text: qsTr("ACTIVE: ") + translationModuleRoot.currentEngineLanguage
+                        color: modernTheme.textPrimary
+                        font.pixelSize: 11
+                        font.bold: true
+                        font.family: modernTheme.fontMono
+                    }
+                }
+            }
         }
     }
 
     // ==========================================
-    // MAIN CONTENT
+    // MAIN SPLIT LAYOUT
     // ==========================================
-    Flickable {
+    RowLayout {
         anchors.top: topNavBar.bottom
         anchors.bottom: parent.bottom
         anchors.left: parent.left
         anchors.right: parent.right
-        contentWidth: width
-        contentHeight: contentLayout.implicitHeight + 60
-        clip: true
-        boundsBehavior: Flickable.StopAtBounds
+        spacing: 0
 
-        ColumnLayout {
-            id: contentLayout
-            width: Math.min(parent.width - 60, 1000)
-            anchors.horizontalCenter: parent.horizontalCenter
-            anchors.top: parent.top
-            anchors.topMargin: 30
-            spacing: 24
+        // ------------------------------------------
+        // LEFT SIDEBAR: REGION SELECTOR
+        // ------------------------------------------
+        Rectangle {
+            Layout.preferredWidth: 260
+            Layout.fillHeight: true
+            color: modernTheme.bgSidebar
+            border.color: modernTheme.borderSubtle
+            border.width: 1
 
-            // 1. TICKET HEADER INFO
-            Rectangle {
-                Layout.fillWidth: true
-                Layout.preferredHeight: 100
-                radius: 12
-                color: modernTheme.bgCard
-                border.color: modernTheme.borderSubtle
-                border.width: 1
+            ColumnLayout {
+                anchors.fill: parent
+                spacing: 0
 
-                RowLayout {
-                    anchors.fill: parent
-                    anchors.margins: 20
-                    spacing: 20
+                Rectangle {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 60
+                    color: "transparent"
+                    border.color: modernTheme.borderSubtle
+                    border.width: 1
 
-                    Rectangle {
-                        Layout.preferredWidth: 56
-                        Layout.preferredHeight: 56
-                        radius: 12
-                        color: modernTheme.bgElevated
-                        border.color: modernTheme.borderFocus
-                        border.width: 1
-                        
-                        Text {
-                            anchors.centerIn: parent
-                            text: "📡"
-                            font.pixelSize: 24
-                        }
+                    Text {
+                        anchors.verticalCenter: parent.verticalCenter
+                        anchors.left: parent.left
+                        anchors.leftMargin: 20
+                        text: qsTr("GLOBAL REGIONS")
+                        color: modernTheme.textMuted
+                        font.pixelSize: 12
+                        font.bold: true
+                        font.family: modernTheme.fontMono
                     }
+                }
 
-                    ColumnLayout {
-                        Layout.fillWidth: true
-                        spacing: 4
-                        
-                        Text {
-                            text: qsTr("TRACKING TERMINAL")
-                            color: modernTheme.textMuted
-                            font.pixelSize: 11
-                            font.bold: true
-                            font.family: modernTheme.fontMono
-                        }
-                        
-                        Text {
-                            text: "TKT-849201" // Static ID waiting for real backend data
-                            color: modernTheme.textPrimary
-                            font.pixelSize: 22
-                            font.bold: true
-                            font.family: modernTheme.fontMain
-                        }
-                    }
+                ListView {
+                    id: regionListView
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    model: regionsModel
+                    clip: true
                     
-                    // Status Badge
-                    Rectangle {
-                        Layout.preferredWidth: 100
-                        Layout.preferredHeight: 32
-                        radius: 16
-                        color: "transparent"
-                        border.color: modernTheme.stateActive
-                        border.width: 1
+                    delegate: RegionDelegate {
+                        width: ListView.view.width
+                        height: 64
+                        isCurrentRegion: translationModuleRoot.activeRegionFilter === regionId
                         
-                        RowLayout {
-                            anchors.centerIn: parent
-                            spacing: 8
-                            
-                            Rectangle {
-                                width: 8
-                                height: 8
-                                radius: 4
-                                color: modernTheme.stateActive
+                        onRegionClicked: {
+                            translationModuleRoot.activeRegionFilter = regionId;
+                            dataController.updateFilteredLanguages(regionId);
+                        }
+                    }
+                }
+            }
+        }
+
+        // ------------------------------------------
+        // RIGHT AREA: LANGUAGES & DETAILS
+        // ------------------------------------------
+        Rectangle {
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+            color: "transparent"
+
+            ColumnLayout {
+                anchors.fill: parent
+                anchors.margins: 40
+                spacing: 24
+
+                // Header
+                Text {
+                    text: qsTr("Available Language Packages")
+                    color: modernTheme.textPrimary
+                    font.pixelSize: 22
+                    font.bold: true
+                    font.family: modernTheme.fontMain
+                }
+
+                // Grid View for Languages
+                GridView {
+                    id: langGridView
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    cellWidth: 320
+                    cellHeight: 100
+                    model: filteredLanguageModel
+                    clip: true
+                    
+                    ScrollBar.vertical: ScrollBar {
+                        width: 8
+                        contentItem: Rectangle {
+                            implicitWidth: 8; radius: 4; color: modernTheme.borderFocus
+                        }
+                    }
+
+                    delegate: LanguageCard {
+                        width: langGridView.cellWidth - 20
+                        height: langGridView.cellHeight - 20
+                        isSelected: translationModuleRoot.selectedLanguageCode === langCode
+                        isActiveEngine: translationModuleRoot.currentEngineLanguage === langCode
+                        
+                        onCardClicked: {
+                            translationModuleRoot.selectedLanguageCode = langCode;
+                        }
+                    }
+                }
+
+                // ------------------------------------------
+                // BOTTOM DETAIL & ACTION PANEL
+                // ------------------------------------------
+                Rectangle {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 180
+                    radius: 12
+                    color: modernTheme.bgCard
+                    border.color: modernTheme.borderSubtle
+                    border.width: 1
+
+                    property var currentLangData: dataController.getLanguageData(translationModuleRoot.selectedLanguageCode)
+
+                    RowLayout {
+                        anchors.fill: parent
+                        anchors.margins: 24
+                        spacing: 30
+
+                        // Metadata Column
+                        ColumnLayout {
+                            Layout.fillWidth: true
+                            Layout.fillHeight: true
+                            spacing: 12
+
+                            RowLayout {
+                                spacing: 16
+                                Text {
+                                    text: parent.parent.parent.currentLangData ? parent.parent.parent.currentLangData.nativeName : ""
+                                    color: modernTheme.textPrimary
+                                    font.pixelSize: 24
+                                    font.bold: true
+                                    font.family: modernTheme.fontMain
+                                }
+                                Rectangle {
+                                    Layout.preferredHeight: 24
+                                    Layout.preferredWidth: 60
+                                    radius: 12
+                                    color: modernTheme.bgSidebar
+                                    border.color: modernTheme.borderFocus
+                                    border.width: 1
+                                    
+                                    Text {
+                                        anchors.centerIn: parent
+                                        text: parent.parent.parent.parent.currentLangData ? parent.parent.parent.parent.currentLangData.langCode : ""
+                                        color: modernTheme.textSecondary
+                                        font.pixelSize: 11
+                                        font.bold: true
+                                        font.family: modernTheme.fontMono
+                                    }
+                                }
+                            }
+
+                            Text {
+                                text: parent.parent.parent.currentLangData ? parent.parent.parent.currentLangData.desc : ""
+                                color: modernTheme.textSecondary
+                                font.pixelSize: 14
+                                font.family: modernTheme.fontMain
+                                wrapMode: Text.WordWrap
+                                Layout.fillWidth: true
+                                lineHeight: 1.4
                             }
                             
+                            Item { Layout.fillHeight: true }
+                            
+                            // RTL Warning if applicable
+                            RowLayout {
+                                visible: parent.parent.parent.currentLangData ? parent.parent.parent.currentLangData.isRtl : false
+                                spacing: 8
+                                Text { text: "⚠️"; font.pixelSize: 12 }
+                                Text {
+                                    text: qsTr("Applying this language will mirror the entire user interface to Right-To-Left (RTL).")
+                                    color: modernTheme.stateWarning
+                                    font.pixelSize: 12
+                                    font.family: modernTheme.fontMain
+                                }
+                            }
+                        }
+
+                        // Divider
+                        Rectangle {
+                            Layout.preferredWidth: 1
+                            Layout.fillHeight: true
+                            color: modernTheme.borderSubtle
+                        }
+
+                        // Action Column
+                        ColumnLayout {
+                            Layout.preferredWidth: 250
+                            Layout.alignment: Qt.AlignVCenter
+                            spacing: 16
+
+                            property bool isAlreadyActive: translationModuleRoot.currentEngineLanguage === translationModuleRoot.selectedLanguageCode
+
                             Text {
-                                text: qsTr("ACTIVE")
-                                color: modernTheme.stateActive
+                                text: parent.isAlreadyActive ? qsTr("LANGUAGE ACTIVE") : qsTr("READY TO APPLY")
+                                color: parent.isAlreadyActive ? modernTheme.stateSuccess : modernTheme.textSecondary
                                 font.pixelSize: 12
                                 font.bold: true
                                 font.family: modernTheme.fontMono
+                                Layout.alignment: Qt.AlignHCenter
+                            }
+
+                            // The Real Action Button
+                            Rectangle {
+                                id: applyBtn
+                                Layout.fillWidth: true
+                                Layout.preferredHeight: 50
+                                radius: 8
+                                color: {
+                                    if (parent.isAlreadyActive) return modernTheme.bgSidebar;
+                                    if (translationModuleRoot.isApplying) return modernTheme.borderSubtle;
+                                    if (applyMouse.containsPress) return modernTheme.textMuted;
+                                    if (applyMouse.containsMouse) return modernTheme.borderFocus;
+                                    return modernTheme.accent;
+                                }
+                                
+                                Behavior on color { ColorAnimation { duration: 150 } }
+
+                                RowLayout {
+                                    anchors.centerIn: parent
+                                    spacing: 12
+                                    
+                                    Text {
+                                        text: translationModuleRoot.isApplying ? "⏳" : "🔄"
+                                        font.pixelSize: 14
+                                        visible: !parent.parent.parent.isAlreadyActive
+                                        color: modernTheme.bgApp
+                                    }
+
+                                    Text {
+                                        text: {
+                                            if (translationModuleRoot.isApplying) return qsTr("APPLYING...");
+                                            if (parent.parent.parent.isAlreadyActive) return qsTr("CURRENTLY ACTIVE");
+                                            return qsTr("APPLY TO ENGINE");
+                                        }
+                                        color: parent.parent.parent.isAlreadyActive ? modernTheme.textMuted : modernTheme.bgApp
+                                        font.pixelSize: 14
+                                        font.bold: true
+                                        font.family: modernTheme.fontMain
+                                    }
+                                }
+
+                                MouseArea {
+                                    id: applyMouse
+                                    anchors.fill: parent
+                                    hoverEnabled: !parent.parent.isAlreadyActive && !translationModuleRoot.isApplying
+                                    cursorShape: hoverEnabled ? Qt.PointingHandCursor : Qt.ForbiddenCursor
+                                    
+                                    onClicked: {
+                                        if (hoverEnabled) {
+                                            dataController.applyLanguageToEngine();
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
                 }
             }
+        }
+    }
 
-            // 2. METADATA & TIMELINE SPLIT
-            RowLayout {
-                Layout.fillWidth: true
-                spacing: 24
-                Layout.alignment: Qt.AlignTop
-
-                // Left Column: Metadata
-                Rectangle {
-                    Layout.preferredWidth: 350
-                    Layout.preferredHeight: 250
-                    radius: 12
-                    color: modernTheme.bgCard
-                    border.color: modernTheme.borderSubtle
-                    border.width: 1
-                    Layout.alignment: Qt.AlignTop
-
-                    ColumnLayout {
-                        anchors.fill: parent
-                        anchors.margins: 20
-                        spacing: 16
-                        
-                        Text {
-                            text: qsTr("PAYLOAD METADATA")
-                            color: modernTheme.textPrimary
-                            font.pixelSize: 14
-                            font.bold: true
-                            font.family: modernTheme.fontMain
-                        }
-                        
-                        Rectangle {
-                            Layout.fillWidth: true
-                            Layout.preferredHeight: 1
-                            color: modernTheme.borderSubtle
-                        }
-                        
-                        GridLayout {
-                            Layout.fillWidth: true
-                            columns: 2
-                            rowSpacing: 16
-                            columnSpacing: 16
-                            
-                            // Static metadata awaiting C++ model
-                            MetadataItem { label: "Category"; value: "Technical Issue" }
-                            MetadataItem { label: "Priority"; value: "HIGH" }
-                            MetadataItem { label: "Environment"; value: "Win64 / DX12" }
-                            MetadataItem { label: "Session ID"; value: "MNJ-88A9B2" }
-                        }
-                    }
-                }
-
-                // Right Column: Timeline
-                Rectangle {
-                    Layout.fillWidth: true
-                    Layout.preferredHeight: 350
-                    radius: 12
-                    color: modernTheme.bgCard
-                    border.color: modernTheme.borderSubtle
-                    border.width: 1
-                    Layout.alignment: Qt.AlignTop
-
-                    ColumnLayout {
-                        anchors.fill: parent
-                        anchors.margins: 20
-                        spacing: 24
-
-                        Text {
-                            text: qsTr("RESOLUTION PROTOCOL SEQUENCE")
-                            color: modernTheme.textPrimary
-                            font.pixelSize: 14
-                            font.bold: true
-                            font.family: modernTheme.fontMain
-                        }
-
-                        // Static Timeline waiting for backend integration
-                        ColumnLayout {
-                            Layout.fillWidth: true
-                            spacing: 0
-                            
-                            TimelineItem { isCompleted: true; isCurrent: false; title: "Ticket Submitted"; desc: "Secure transmission complete"; time: "10:42 AM"; showLine: true }
-                            TimelineItem { isCompleted: true; isCurrent: false; title: "Heuristic Scan"; desc: "Payload sanitized & verified"; time: "10:43 AM"; showLine: true }
-                            TimelineItem { isCompleted: false; isCurrent: true; title: "Agent Assigned"; desc: "Routing to specialized operative"; time: "10:45 AM"; showLine: true }
-                            TimelineItem { isCompleted: false; isCurrent: false; title: "Resolution"; desc: "Awaiting final diagnostics"; time: "--:--"; showLine: false }
-                        }
-                        
-                        Item { Layout.fillHeight: true }
-                    }
+    // ==========================================
+    // LOGIC CONTROLLER (Real Data Binding)
+    // ==========================================
+    QtObject {
+        id: dataController
+        
+        function updateFilteredLanguages(regionId) {
+            filteredLanguageModel.clear();
+            for (var i = 0; i < masterLanguageModel.count; i++) {
+                var item = masterLanguageModel.get(i);
+                if (item.region === regionId) {
+                    filteredLanguageModel.append({
+                        "langCode": item.langCode,
+                        "engName": item.engName,
+                        "nativeName": item.nativeName,
+                        "isRtl": item.isRtl,
+                        "status": item.status,
+                        "desc": item.desc
+                    });
                 }
             }
+            // Auto-select first item in new region if exists
+            if (filteredLanguageModel.count > 0) {
+                translationModuleRoot.selectedLanguageCode = filteredLanguageModel.get(0).langCode;
+            }
+        }
+        
+        function getLanguageData(code) {
+            for (var i = 0; i < masterLanguageModel.count; i++) {
+                if (masterLanguageModel.get(i).langCode === code) {
+                    return masterLanguageModel.get(i);
+                }
+            }
+            return null;
+        }
+
+        function applyLanguageToEngine() {
+            translationModuleRoot.isApplying = true;
+            
+            // Getting properties to send to C++
+            var langData = getLanguageData(translationModuleRoot.selectedLanguageCode);
+            if (!langData) return;
+            
+            console.log("[C++ BINDING] Emitting requestLanguageChange signal.");
+            console.log("   -> Locale: " + langData.langCode);
+            console.log("   -> Requires RTL: " + langData.isRtl);
+            
+            // This is the actual real-world mechanism.
+            // Emit the signal to C++ engine:
+            translationModuleRoot.requestLanguageChange(langData.langCode, langData.isRtl);
+            
+            // Short delay strictly for UI feedback feeling responsive
+            applyTimer.start();
         }
     }
 
-    // ==========================================
-    // HELPER COMPONENTS
-    // ==========================================
-    component MetadataItem: ColumnLayout {
-        property string label: ""
-        property string value: ""
-        spacing: 4
-        
-        Text {
-            text: parent.label
-            color: modernTheme.textSecondary
-            font.pixelSize: 12
-            font.family: modernTheme.fontMain
-        }
-        Text {
-            text: parent.value
-            color: modernTheme.textPrimary
-            font.pixelSize: 14
-            font.bold: true
-            font.family: modernTheme.fontMono
+    Timer {
+        id: applyTimer
+        interval: 600
+        repeat: false
+        onTriggered: {
+            translationModuleRoot.isApplying = false;
+            // Optimistically update UI to reflect the new state requested from C++
+            translationModuleRoot.currentEngineLanguage = translationModuleRoot.selectedLanguageCode;
+            console.log("[UI STATE] Language update successful in UI layer.");
         }
     }
 
-    component TimelineItem: Item {
-        property bool isCompleted: false
-        property bool isCurrent: false
-        property string title: ""
-        property string desc: ""
-        property string time: ""
-        property bool showLine: true
+    // Initialize list on startup
+    Component.onCompleted: {
+        dataController.updateFilteredLanguages(translationModuleRoot.activeRegionFilter);
+    }
+
+    // ==========================================
+    // CUSTOM REUSABLE UI COMPONENTS
+    // ==========================================
+    
+    // Sidebar Region Item
+    component RegionDelegate: Rectangle {
+        property bool isCurrentRegion: false
+        signal regionClicked()
         
-        Layout.fillWidth: true
-        Layout.preferredHeight: 60
-        
+        color: isCurrentRegion ? modernTheme.bgCardHover : (regionDelegateMouse.containsMouse ? modernTheme.bgCard : "transparent")
+        Behavior on color { ColorAnimation { duration: 150 } }
+
+        // Active indicator line
         Rectangle {
-            width: 2
+            width: 3
             height: parent.height
-            color: isCompleted ? modernTheme.accent : modernTheme.borderSubtle
-            x: 11
-            y: 24
-            visible: showLine
+            color: modernTheme.accent
+            visible: isCurrentRegion
         }
-        
+
         RowLayout {
             anchors.fill: parent
-            spacing: 20
+            anchors.leftMargin: 24
+            anchors.rightMargin: 20
+            spacing: 16
             
-            Rectangle {
-                Layout.preferredWidth: 24
-                Layout.preferredHeight: 24
-                radius: 12
-                Layout.alignment: Qt.AlignTop
-                color: isCompleted || isCurrent ? modernTheme.accent : "transparent"
-                border.color: isCompleted || isCurrent ? modernTheme.accent : modernTheme.borderFocus
-                border.width: 2
-                
-                Text {
-                    anchors.centerIn: parent
-                    text: isCompleted ? "✓" : ""
-                    color: modernTheme.bgApp
-                    font.pixelSize: 12
-                    font.bold: true
-                    visible: isCompleted
-                }
-                
-                Rectangle {
-                    anchors.centerIn: parent
-                    width: 8
-                    height: 8
-                    radius: 4
-                    color: modernTheme.bgApp
-                    visible: isCurrent
-                }
-            }
-            
-            ColumnLayout {
-                Layout.fillWidth: true
-                spacing: 2
-                
-                Text {
-                    text: parent.parent.title
-                    color: parent.parent.isCurrent || parent.parent.isCompleted ? modernTheme.textPrimary : modernTheme.textSecondary
-                    font.pixelSize: 15
-                    font.bold: true
-                    font.family: modernTheme.fontMain
-                }
-                Text {
-                    text: parent.parent.desc
-                    color: modernTheme.textMuted
-                    font.pixelSize: 13
-                    font.family: modernTheme.fontMain
-                }
+            Text {
+                text: iconPath
+                font.pixelSize: 18
+                opacity: isCurrentRegion ? 1.0 : 0.6
             }
             
             Text {
-                text: parent.time
-                color: modernTheme.textMuted
-                font.pixelSize: 12
-                font.family: modernTheme.fontMono
-                Layout.alignment: Qt.AlignTop
-                Layout.topMargin: 4
+                text: title
+                color: isCurrentRegion ? modernTheme.textPrimary : modernTheme.textSecondary
+                font.pixelSize: 14
+                font.bold: isCurrentRegion
+                font.family: modernTheme.fontMain
+                Layout.fillWidth: true
             }
+        }
+
+        MouseArea {
+            id: regionDelegateMouse
+            anchors.fill: parent
+            hoverEnabled: true
+            cursorShape: Qt.PointingHandCursor
+            onClicked: regionClicked()
+        }
+    }
+
+    // Language Grid Card
+    component LanguageCard: Rectangle {
+        property bool isSelected: false
+        property bool isActiveEngine: false
+        signal cardClicked()
+        
+        radius: 8
+        color: isSelected ? modernTheme.activeSelection : (cardMouseArea.containsMouse ? modernTheme.bgCardHover : modernTheme.bgCard)
+        border.color: isSelected ? modernTheme.borderFocus : modernTheme.borderSubtle
+        border.width: isSelected ? 2 : 1
+        
+        Behavior on color { ColorAnimation { duration: 150 } }
+
+        ColumnLayout {
+            anchors.fill: parent
+            anchors.margins: 16
+            spacing: 6
+
+            RowLayout {
+                Layout.fillWidth: true
+                
+                Text {
+                    text: nativeName
+                    color: modernTheme.textPrimary
+                    font.pixelSize: 16
+                    font.bold: true
+                    font.family: modernTheme.fontMain
+                }
+                
+                Item { Layout.fillWidth: true }
+                
+                // Status Indicator
+                Rectangle {
+                    width: 8; height: 8; radius: 4
+                    color: isActiveEngine ? modernTheme.stateSuccess : (status === "READY" ? modernTheme.textMuted : modernTheme.stateWarning)
+                }
+            }
+
+            Text {
+                text: engName
+                color: modernTheme.textSecondary
+                font.pixelSize: 13
+                font.family: modernTheme.fontMain
+                Layout.fillWidth: true
+            }
+            
+            Item { Layout.fillHeight: true }
+            
+            Text {
+                text: isActiveEngine ? qsTr("System Active") : status
+                color: isActiveEngine ? modernTheme.stateSuccess : modernTheme.textMuted
+                font.pixelSize: 10
+                font.bold: true
+                font.family: modernTheme.fontMono
+            }
+        }
+
+        MouseArea {
+            id: cardMouseArea
+            anchors.fill: parent
+            hoverEnabled: true
+            cursorShape: Qt.PointingHandCursor
+            onClicked: cardClicked()
         }
     }
 }
