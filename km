@@ -3,51 +3,56 @@ import QtQuick.Controls
 import QtQuick.Layouts
 
 Item {
-    id: mnjnefTicketFormRoot
+    id: mnjnefTicketTrackerRoot
     anchors.fill: parent
     clip: true
 
     // ==========================================
     // SYSTEM SIGNALS & PROPERTIES
     // ==========================================
-    signal ticketSubmitted(var ticketData)
-    signal formCancelled()
+    signal returnToDashboard()
+    signal actionRequested(string actionType)
 
-    property string generatedTicketId: "TKT-" + Math.floor(100000 + Math.random() * 900000)
-    property bool isSubmitting: false
-    property int uploadProgress: 0
-
-    // Form Data State
-    property string selectedCategory: ""
-    property string selectedPriority: "MEDIUM"
-    property string subjectText: ""
-    property string descriptionText: ""
-    property bool includeTelemetry: true
+    property string ticketId: "TKT-849201"
+    property string ticketStatus: "IN_PROGRESS" // PENDING, IN_PROGRESS, RESOLVED, CLOSED
+    property string ticketPriority: "HIGH"
+    property int currentTimelineStep: 2 // 0: Submitted, 1: System Check, 2: Agent Assigned, 3: Resolved
+    
+    // Live Agent Properties
+    property string agentName: "Operative_Vanguard"
+    property string agentStatus: "ONLINE"
+    property bool isAgentTyping: false
+    
+    // Telemetry Properties
+    property string userPing: "12ms"
+    property string serverNode: "DXB-CORE-01"
+    property string activeUptime: "00:14:32"
 
     // ==========================================
     // THEME & STYLING CORE
     // ==========================================
     QtObject {
-        id: formTheme
-        property color bgPrimary: "#030712"
-        property color bgSurface: "#0f172a"
-        property color bgElevated: "#1e293b"
-        property color bgInput: "#020617"
+        id: trackTheme
+        property color bgPrimary: "#02040a"
+        property color bgPanel: "#0d1117"
+        property color bgElevated: "#161b22"
+        property color bgInput: "#010409"
         
-        property color accentCore: "#1f6feb"
-        property color accentHover: "#3b82f6"
-        property color accentActive: "#2563eb"
+        property color accentCore: "#2f81f7"
+        property color accentHover: "#58a6ff"
+        property color accentGlow: "#388bfd"
         
-        property color textHeader: "#f8fafc"
-        property color textBody: "#cbd5e1"
-        property color textMuted: "#64748b"
-        property color textError: "#ef4444"
-        property color textSuccess: "#10b981"
-        property color textWarning: "#f59e0b"
+        property color textHeader: "#f0f6fc"
+        property color textBody: "#c9d1d9"
+        property color textMuted: "#8b949e"
         
-        property color borderDefault: "#1e293b"
-        property color borderFocus: "#3b82f6"
-        property color borderError: "#7f1d1d"
+        property color borderDefault: "#30363d"
+        property color borderHighlight: "#8b949e"
+        
+        property color stateSuccess: "#238636"
+        property color stateWarning: "#d29922"
+        property color stateError: "#f85149"
+        property color stateInfo: "#1f6feb"
         
         property string fontMain: "Segoe UI"
         property string fontMono: "Consolas"
@@ -57,103 +62,99 @@ Item {
     // DATA MODELS
     // ==========================================
     ListModel {
-        id: categoriesModel
-        ListElement { catId: "CAT_ACCT"; title: "Account & Billing"; icon: "💳"; desc: "Subscription, Payments, Access" }
-        ListElement { catId: "CAT_TECH"; title: "Technical Issue"; icon: "⚙️"; desc: "Crashes, Performance, Errors" }
-        ListElement { catId: "CAT_BUG"; title: "Bug Report"; icon: "🐞"; desc: "Software glitches, Exploits" }
-        ListElement { catId: "CAT_OTHER"; title: "General Inquiry"; icon: "📩"; desc: "Questions, Feedback, Other" }
+        id: timelineModel
+        ListElement { stepIndex: 0; title: "Ticket Submitted"; desc: "Secure transmission complete"; timestamp: "10:42 AM" }
+        ListElement { stepIndex: 1; title: "Heuristic Scan"; desc: "Payload sanitized & verified"; timestamp: "10:43 AM" }
+        ListElement { stepIndex: 2; title: "Agent Assigned"; desc: "Routing to specialized operative"; timestamp: "10:45 AM" }
+        ListElement { stepIndex: 3; title: "Resolution"; desc: "Awaiting final diagnostics"; timestamp: "--:--" }
     }
 
     ListModel {
-        id: prioritiesModel
-        ListElement { level: "LOW"; colorCode: "#3b82f6" }
-        ListElement { level: "MEDIUM"; colorCode: "#f59e0b" }
-        ListElement { level: "HIGH"; colorCode: "#f97316" }
-        ListElement { level: "CRITICAL"; colorCode: "#ef4444" }
+        id: chatModel
+        ListElement { senderType: "SYSTEM"; senderName: "MNJNEF_CORE"; message: "Ticket established. Encrypted communication channel opened."; timestamp: "10:42 AM" }
+        ListElement { senderType: "SYSTEM"; senderName: "MNJNEF_CORE"; message: "Telemetry packet received. Analyzing dump logs..."; timestamp: "10:43 AM" }
+        ListElement { senderType: "USER"; senderName: "You"; message: "My platform instance crashes upon compiling the new renderer module."; timestamp: "10:44 AM" }
+        ListElement { senderType: "SYSTEM"; senderName: "ROUTING"; message: "Connecting to Tier 2 Engineering Support..."; timestamp: "10:45 AM" }
+        ListElement { senderType: "AGENT"; senderName: "Operative_Vanguard"; message: "Greetings. I'm reviewing your crash dump right now. It looks like a memory allocation fault in the GPU buffer."; timestamp: "10:46 AM" }
     }
 
     ListModel {
-        id: attachmentsModel
-        // Dynamically added files
+        id: detailsModel
+        ListElement { label: "Category"; value: "Technical Issue" }
+        ListElement { label: "Priority"; value: "HIGH" }
+        ListElement { label: "Environment"; value: "Win64 / DX12" }
+        ListElement { label: "Session ID"; value: "MNJ-88A9B2" }
+        ListElement { label: "Attachments"; value: "2 Files (4.2 MB)" }
     }
 
     // ==========================================
-    // BACKGROUND EFFECTS
+    // BACKGROUND AMBIENCE
     // ==========================================
     Rectangle {
         anchors.fill: parent
-        color: formTheme.bgPrimary
+        color: trackTheme.bgPrimary
         
-        // Subtle Hex Pattern Background
-        Grid {
+        // Dynamic Grid
+        Canvas {
+            id: gridCanvas
             anchors.fill: parent
-            anchors.margins: -20
-            rows: 15
-            columns: 15
-            spacing: 2
-            opacity: 0.03
+            opacity: 0.1
             
-            Repeater {
-                model: 225
-                Rectangle {
-                    width: mnjnefTicketFormRoot.width / 15
-                    height: mnjnefTicketFormRoot.height / 15
-                    color: "transparent"
-                    border.color: formTheme.textHeader
-                    border.width: 1
-                    radius: width / 2
+            onPaint: {
+                var ctx = getContext("2d");
+                ctx.clearRect(0, 0, width, height);
+                ctx.strokeStyle = trackTheme.accentCore;
+                ctx.lineWidth = 1;
+                
+                var gridSize = 40;
+                ctx.beginPath();
+                for (var x = 0; x < width; x += gridSize) {
+                    ctx.moveTo(x, 0);
+                    ctx.lineTo(x, height);
                 }
+                for (var y = 0; y < height; y += gridSize) {
+                    ctx.moveTo(0, y);
+                    ctx.lineTo(width, y);
+                }
+                ctx.stroke();
             }
+        }
+        
+        // Radial Gradient Center
+        Rectangle {
+            anchors.fill: parent
+            gradient: Gradient {
+                GradientStop { position: 0.0; color: "transparent" }
+                GradientStop { position: 1.0; color: "#aa02040a" }
+            }
+            z: 1
         }
     }
 
     // ==========================================
-    // MAIN SCROLLABLE FORM
+    // MAIN DASHBOARD LAYOUT (TWO COLUMNS)
     // ==========================================
-    Flickable {
-        id: formFlickable
+    RowLayout {
         anchors.fill: parent
-        contentWidth: width
-        contentHeight: mainFormLayout.implicitHeight + 100
-        clip: true
-        boundsBehavior: Flickable.StopAtBounds
+        anchors.margins: 24
+        spacing: 24
+        z: 10
 
-        // Custom Scrollbar
-        ScrollBar.vertical: ScrollBar {
-            policy: ScrollBar.AlwaysOn
-            width: 8
-            contentItem: Rectangle {
-                implicitWidth: 8
-                implicitHeight: 100
-                radius: 4
-                color: formTheme.borderDefault
-                
-                Rectangle {
-                    anchors.fill: parent
-                    radius: 4
-                    color: formTheme.accentCore
-                    opacity: 0.5
-                }
-            }
-        }
-
+        // ------------------------------------------
+        // LEFT COLUMN: TICKET INFO & TIMELINE
+        // ------------------------------------------
         ColumnLayout {
-            id: mainFormLayout
-            width: parent.width - 48
-            anchors.horizontalCenter: parent.horizontalCenter
-            anchors.top: parent.top
-            anchors.topMargin: 24
-            spacing: 32
+            Layout.preferredWidth: 400
+            Layout.fillHeight: true
+            spacing: 16
 
-            // ------------------------------------------
-            // HEADER: TICKET ID & INFO
-            // ------------------------------------------
+            // Header Card
             Rectangle {
                 Layout.fillWidth: true
-                Layout.preferredHeight: 80
-                color: formTheme.bgSurface
+                Layout.preferredHeight: 90
+                color: trackTheme.bgPanel
                 radius: 12
-                border.color: formTheme.borderDefault
+                border.color: trackTheme.borderDefault
                 border.width: 1
 
                 RowLayout {
@@ -162,977 +163,734 @@ Item {
                     spacing: 16
 
                     Rectangle {
-                        Layout.preferredWidth: 48
-                        Layout.preferredHeight: 48
-                        radius: 8
-                        color: formTheme.bgElevated
-                        border.color: formTheme.borderDefault
+                        Layout.preferredWidth: 50
+                        Layout.preferredHeight: 50
+                        radius: 10
+                        color: trackTheme.bgElevated
+                        border.color: trackTheme.accentCore
                         border.width: 1
                         
                         Text {
                             anchors.centerIn: parent
-                            text: "📝"
-                            font.pixelSize: 22
+                            text: "📡"
+                            font.pixelSize: 24
                         }
                     }
 
                     ColumnLayout {
                         Layout.fillWidth: true
-                        spacing: 4
-                        
-                        Text {
-                            text: qsTr("SECURE TICKET SUBMISSION")
-                            color: formTheme.textHeader
-                            font.pixelSize: 18
-                            font.bold: true
-                            font.family: formTheme.fontMain
-                            font.letterSpacing: 1.0
-                        }
-                        
-                        Text {
-                            text: qsTr("Provide comprehensive details for expedited resolution.")
-                            color: formTheme.textMuted
-                            font.pixelSize: 12
-                            font.family: formTheme.fontMain
-                        }
-                    }
-
-                    ColumnLayout {
-                        Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
                         spacing: 2
                         
                         Text {
-                            text: qsTr("TICKET REFERENCE")
-                            color: formTheme.textMuted
-                            font.pixelSize: 10
-                            font.family: formTheme.fontMono
-                            Layout.alignment: Qt.AlignRight
+                            text: qsTr("TRACKING TERMINAL")
+                            color: trackTheme.textMuted
+                            font.pixelSize: 11
+                            font.bold: true
+                            font.family: trackTheme.fontMono
                         }
                         
-                        Rectangle {
-                            Layout.preferredWidth: 120
-                            Layout.preferredHeight: 28
-                            radius: 4
-                            color: formTheme.bgInput
-                            border.color: formTheme.borderDefault
-                            border.width: 1
+                        Text {
+                            text: mnjnefTicketTrackerRoot.ticketId
+                            color: trackTheme.textHeader
+                            font.pixelSize: 22
+                            font.bold: true
+                            font.family: trackTheme.fontMain
+                        }
+                    }
+                    
+                    // Live Status Badge
+                    Rectangle {
+                        Layout.preferredWidth: 90
+                        Layout.preferredHeight: 28
+                        radius: 14
+                        color: "#1a" + trackTheme.stateWarning.substring(1)
+                        border.color: trackTheme.stateWarning
+                        border.width: 1
+                        Layout.alignment: Qt.AlignVCenter
+                        
+                        RowLayout {
+                            anchors.centerIn: parent
+                            spacing: 6
+                            
+                            Rectangle {
+                                width: 8
+                                height: 8
+                                radius: 4
+                                color: trackTheme.stateWarning
+                                
+                                SequentialAnimation on opacity {
+                                    loops: Animation.Infinite
+                                    running: true
+                                    NumberAnimation { from: 1.0; to: 0.2; duration: 800 }
+                                    NumberAnimation { from: 0.2; to: 1.0; duration: 800 }
+                                }
+                            }
                             
                             Text {
-                                anchors.centerIn: parent
-                                text: mnjnefTicketFormRoot.generatedTicketId
-                                color: formTheme.accentCore
-                                font.pixelSize: 14
+                                text: qsTr("ACTIVE")
+                                color: trackTheme.stateWarning
+                                font.pixelSize: 11
                                 font.bold: true
-                                font.family: formTheme.fontMono
+                                font.family: trackTheme.fontMono
                             }
                         }
                     }
                 }
             }
 
-            // ------------------------------------------
-            // SECTION 1: CATEGORY SELECTION
-            // ------------------------------------------
-            ColumnLayout {
+            // Ticket Details Grid
+            Rectangle {
                 Layout.fillWidth: true
-                spacing: 12
+                Layout.preferredHeight: 180
+                color: trackTheme.bgPanel
+                radius: 12
+                border.color: trackTheme.borderDefault
+                border.width: 1
 
-                Text {
-                    text: qsTr("1. SELECT ISSUE CATEGORY")
-                    color: formTheme.textHeader
-                    font.pixelSize: 14
-                    font.bold: true
-                    font.family: formTheme.fontMain
-                }
-                
-                Text {
-                    text: qsTr("Routing your ticket to the correct department significantly reduces response time.")
-                    color: formTheme.textMuted
-                    font.pixelSize: 12
-                    font.family: formTheme.fontMain
-                }
-
-                GridLayout {
-                    Layout.fillWidth: true
-                    columns: 2
-                    rowSpacing: 12
-                    columnSpacing: 12
-
-                    Repeater {
-                        model: categoriesModel
+                ColumnLayout {
+                    anchors.fill: parent
+                    anchors.margins: 16
+                    spacing: 12
+                    
+                    Text {
+                        text: qsTr("PAYLOAD METADATA")
+                        color: trackTheme.textHeader
+                        font.pixelSize: 13
+                        font.bold: true
+                        font.family: trackTheme.fontMain
+                    }
+                    
+                    Rectangle {
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 1
+                        color: trackTheme.borderDefault
+                    }
+                    
+                    GridView {
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+                        cellWidth: width / 2
+                        cellHeight: 40
+                        model: detailsModel
+                        interactive: false
                         
-                        Rectangle {
-                            Layout.fillWidth: true
-                            Layout.preferredHeight: 70
-                            radius: 8
-                            color: mnjnefTicketFormRoot.selectedCategory === catId ? formTheme.bgElevated : formTheme.bgSurface
-                            border.color: mnjnefTicketFormRoot.selectedCategory === catId ? formTheme.borderFocus : formTheme.borderDefault
-                            border.width: mnjnefTicketFormRoot.selectedCategory === catId ? 2 : 1
+                        delegate: Item {
+                            width: GridView.view.cellWidth
+                            height: GridView.view.cellHeight
                             
-                            Behavior on color { ColorAnimation { duration: 150 } }
-                            Behavior on border.color { ColorAnimation { duration: 150 } }
+                            ColumnLayout {
+                                anchors.fill: parent
+                                anchors.rightMargin: 8
+                                spacing: 2
+                                
+                                Text {
+                                    text: label
+                                    color: trackTheme.textMuted
+                                    font.pixelSize: 11
+                                    font.family: trackTheme.fontMain
+                                }
+                                
+                                Text {
+                                    text: value
+                                    color: trackTheme.textBody
+                                    font.pixelSize: 13
+                                    font.bold: true
+                                    font.family: trackTheme.fontMono
+                                }
+                            }
+                        }
+                    }
+                }
+            }
 
+            // Timeline Sequence
+            Rectangle {
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                color: trackTheme.bgPanel
+                radius: 12
+                border.color: trackTheme.borderDefault
+                border.width: 1
+                clip: true
+
+                ColumnLayout {
+                    anchors.fill: parent
+                    anchors.margins: 20
+                    spacing: 16
+
+                    Text {
+                        text: qsTr("RESOLUTION PROTOCOL SEQUENCE")
+                        color: trackTheme.textHeader
+                        font.pixelSize: 13
+                        font.bold: true
+                        font.family: trackTheme.fontMain
+                    }
+
+                    ListView {
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+                        model: timelineModel
+                        interactive: false
+                        spacing: 0
+                        
+                        delegate: Item {
+                            width: ListView.view.width
+                            height: 60
+                            
+                            // Connecting Line
+                            Rectangle {
+                                width: 2
+                                height: parent.height
+                                color: stepIndex < mnjnefTicketTrackerRoot.currentTimelineStep ? trackTheme.accentCore : trackTheme.borderDefault
+                                x: 15
+                                y: 30
+                                visible: index < timelineModel.count - 1
+                            }
+                            
                             RowLayout {
                                 anchors.fill: parent
-                                anchors.margins: 12
-                                spacing: 12
-
-                                Text {
-                                    text: icon
-                                    font.pixelSize: 24
-                                    Layout.alignment: Qt.AlignVCenter
-                                    opacity: mnjnefTicketFormRoot.selectedCategory === catId ? 1.0 : 0.6
+                                spacing: 16
+                                
+                                // Node Indicator
+                                Item {
+                                    Layout.preferredWidth: 32
+                                    Layout.preferredHeight: 32
+                                    Layout.alignment: Qt.AlignTop
+                                    
+                                    Rectangle {
+                                        anchors.centerIn: parent
+                                        width: 24
+                                        height: 24
+                                        radius: 12
+                                        color: trackTheme.bgElevated
+                                        border.color: {
+                                            if (stepIndex < mnjnefTicketTrackerRoot.currentTimelineStep) return trackTheme.stateSuccess;
+                                            if (stepIndex === mnjnefTicketTrackerRoot.currentTimelineStep) return trackTheme.accentCore;
+                                            return trackTheme.borderDefault;
+                                        }
+                                        border.width: stepIndex === mnjnefTicketTrackerRoot.currentTimelineStep ? 2 : 1
+                                        
+                                        Text {
+                                            anchors.centerIn: parent
+                                            text: stepIndex < mnjnefTicketTrackerRoot.currentTimelineStep ? "✓" : (stepIndex === mnjnefTicketTrackerRoot.currentTimelineStep ? "●" : "")
+                                            color: stepIndex < mnjnefTicketTrackerRoot.currentTimelineStep ? trackTheme.stateSuccess : trackTheme.accentCore
+                                            font.pixelSize: 12
+                                            font.bold: true
+                                        }
+                                        
+                                        // Pulse for active step
+                                        Rectangle {
+                                            anchors.fill: parent
+                                            radius: 12
+                                            color: "transparent"
+                                            border.color: trackTheme.accentCore
+                                            border.width: 2
+                                            visible: stepIndex === mnjnefTicketTrackerRoot.currentTimelineStep
+                                            
+                                            SequentialAnimation on scale {
+                                                loops: Animation.Infinite
+                                                running: stepIndex === mnjnefTicketTrackerRoot.currentTimelineStep
+                                                NumberAnimation { from: 1.0; to: 1.5; duration: 1000 }
+                                            }
+                                            SequentialAnimation on opacity {
+                                                loops: Animation.Infinite
+                                                running: stepIndex === mnjnefTicketTrackerRoot.currentTimelineStep
+                                                NumberAnimation { from: 0.8; to: 0.0; duration: 1000 }
+                                            }
+                                        }
+                                    }
                                 }
-
+                                
+                                // Step Details
                                 ColumnLayout {
                                     Layout.fillWidth: true
                                     spacing: 2
                                     
                                     Text {
                                         text: title
-                                        color: mnjnefTicketFormRoot.selectedCategory === catId ? formTheme.accentCore : formTheme.textBody
+                                        color: stepIndex <= mnjnefTicketTrackerRoot.currentTimelineStep ? trackTheme.textHeader : trackTheme.textMuted
                                         font.pixelSize: 14
                                         font.bold: true
-                                        font.family: formTheme.fontMain
+                                        font.family: trackTheme.fontMain
                                     }
                                     
                                     Text {
                                         text: desc
-                                        color: formTheme.textMuted
-                                        font.pixelSize: 11
-                                        font.family: formTheme.fontMain
-                                        Layout.fillWidth: true
-                                        wrapMode: Text.WordWrap
+                                        color: trackTheme.textMuted
+                                        font.pixelSize: 12
+                                        font.family: trackTheme.fontMain
                                     }
                                 }
                                 
-                                // Selection Indicator
-                                Rectangle {
-                                    Layout.preferredWidth: 20
-                                    Layout.preferredHeight: 20
-                                    radius: 10
-                                    color: "transparent"
-                                    border.color: mnjnefTicketFormRoot.selectedCategory === catId ? formTheme.accentCore : formTheme.borderDefault
-                                    border.width: 2
-                                    
-                                    Rectangle {
-                                        anchors.centerIn: parent
-                                        width: 10
-                                        height: 10
-                                        radius: 5
-                                        color: formTheme.accentCore
-                                        visible: mnjnefTicketFormRoot.selectedCategory === catId
-                                    }
-                                }
-                            }
-
-                            MouseArea {
-                                anchors.fill: parent
-                                hoverEnabled: true
-                                cursorShape: Qt.PointingHandCursor
-                                onClicked: {
-                                    mnjnefTicketFormRoot.selectedCategory = catId;
-                                    formController.validateForm();
-                                }
-                            }
-                        }
-                    }
-                }
-                
-                Text {
-                    id: categoryErrorText
-                    text: qsTr("* Please select a category.")
-                    color: formTheme.textError
-                    font.pixelSize: 12
-                    font.family: formTheme.fontMain
-                    visible: false
-                }
-            }
-
-            // ------------------------------------------
-            // SECTION 2: PRIORITY LEVEL
-            // ------------------------------------------
-            ColumnLayout {
-                Layout.fillWidth: true
-                spacing: 12
-
-                Text {
-                    text: qsTr("2. ASSIGN PRIORITY LEVEL")
-                    color: formTheme.textHeader
-                    font.pixelSize: 14
-                    font.bold: true
-                    font.family: formTheme.fontMain
-                }
-
-                Rectangle {
-                    Layout.fillWidth: true
-                    Layout.preferredHeight: 50
-                    radius: 8
-                    color: formTheme.bgInput
-                    border.color: formTheme.borderDefault
-                    border.width: 1
-
-                    RowLayout {
-                        anchors.fill: parent
-                        anchors.margins: 4
-                        spacing: 4
-
-                        Repeater {
-                            model: prioritiesModel
-                            
-                            Rectangle {
-                                Layout.fillWidth: true
-                                Layout.fillHeight: true
-                                radius: 6
-                                color: mnjnefTicketFormRoot.selectedPriority === level ? colorCode : "transparent"
-                                opacity: mnjnefTicketFormRoot.selectedPriority === level ? 0.2 : 1.0
-                                
-                                Rectangle {
-                                    anchors.fill: parent
-                                    radius: 6
-                                    color: "transparent"
-                                    border.color: colorCode
-                                    border.width: 1
-                                    visible: mnjnefTicketFormRoot.selectedPriority === level
-                                }
-
+                                // Timestamp
                                 Text {
-                                    anchors.centerIn: parent
-                                    text: level
-                                    color: mnjnefTicketFormRoot.selectedPriority === level ? colorCode : formTheme.textMuted
-                                    font.pixelSize: 12
-                                    font.bold: true
-                                    font.family: formTheme.fontMono
-                                }
-
-                                MouseArea {
-                                    anchors.fill: parent
-                                    cursorShape: Qt.PointingHandCursor
-                                    onClicked: mnjnefTicketFormRoot.selectedPriority = level
+                                    text: timestamp
+                                    color: trackTheme.textMuted
+                                    font.pixelSize: 11
+                                    font.family: trackTheme.fontMono
+                                    Layout.alignment: Qt.AlignTop
+                                    Layout.topMargin: 4
                                 }
                             }
                         }
                     }
                 }
             }
+        }
 
-            // ------------------------------------------
-            // SECTION 3: TICKET SUBJECT
-            // ------------------------------------------
-            ColumnLayout {
+        // ------------------------------------------
+        // RIGHT COLUMN: LIVE COMM LINK (CHAT)
+        // ------------------------------------------
+        ColumnLayout {
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+            spacing: 16
+
+            // Agent Profile Card
+            Rectangle {
                 Layout.fillWidth: true
-                spacing: 12
+                Layout.preferredHeight: 80
+                color: trackTheme.bgPanel
+                radius: 12
+                border.color: trackTheme.borderDefault
+                border.width: 1
 
                 RowLayout {
-                    Layout.fillWidth: true
-                    
-                    Text {
-                        text: qsTr("3. ISSUE SUBJECT")
-                        color: formTheme.textHeader
-                        font.pixelSize: 14
-                        font.bold: true
-                        font.family: formTheme.fontMain
-                    }
-                    
-                    Item { Layout.fillWidth: true }
-                    
-                    Text {
-                        text: subjectInput.text.length + " / 80"
-                        color: subjectInput.text.length > 70 ? formTheme.textWarning : formTheme.textMuted
-                        font.pixelSize: 12
-                        font.family: formTheme.fontMono
-                    }
-                }
+                    anchors.fill: parent
+                    anchors.margins: 16
+                    spacing: 16
 
-                Rectangle {
-                    Layout.fillWidth: true
-                    Layout.preferredHeight: 50
-                    color: formTheme.bgInput
-                    radius: 8
-                    border.color: subjectInput.activeFocus ? formTheme.borderFocus : formTheme.borderDefault
-                    border.width: subjectInput.activeFocus ? 2 : 1
-                    
-                    Behavior on border.color { ColorAnimation { duration: 150 } }
-
-                    TextInput {
-                        id: subjectInput
-                        anchors.fill: parent
-                        anchors.margins: 16
-                        color: formTheme.textHeader
-                        font.pixelSize: 14
-                        font.family: formTheme.fontMain
-                        verticalAlignment: TextInput.AlignVCenter
-                        maximumLength: 80
-                        selectByMouse: true
+                    // Agent Avatar
+                    Rectangle {
+                        Layout.preferredWidth: 48
+                        Layout.preferredHeight: 48
+                        radius: 24
+                        color: trackTheme.bgElevated
+                        border.color: trackTheme.borderDefault
+                        border.width: 1
                         
-                        onTextChanged: {
-                            mnjnefTicketFormRoot.subjectText = text;
-                            formController.validateForm();
-                            subjectErrorText.visible = false;
-                        }
-
                         Text {
-                            text: qsTr("Briefly summarize the problem...")
-                            color: formTheme.textMuted
-                            font.pixelSize: 14
-                            font.family: formTheme.fontMain
-                            visible: !subjectInput.text && !subjectInput.activeFocus
-                            anchors.verticalCenter: parent.verticalCenter
+                            anchors.centerIn: parent
+                            text: "👨‍💻"
+                            font.pixelSize: 24
                         }
-                    }
-                }
-                
-                Text {
-                    id: subjectErrorText
-                    text: qsTr("* Subject must be at least 10 characters long.")
-                    color: formTheme.textError
-                    font.pixelSize: 12
-                    font.family: formTheme.fontMain
-                    visible: false
-                }
-            }
-
-            // ------------------------------------------
-            // SECTION 4: DETAILED DESCRIPTION
-            // ------------------------------------------
-            ColumnLayout {
-                Layout.fillWidth: true
-                spacing: 12
-
-                RowLayout {
-                    Layout.fillWidth: true
-                    
-                    Text {
-                        text: qsTr("4. COMPREHENSIVE DESCRIPTION")
-                        color: formTheme.textHeader
-                        font.pixelSize: 14
-                        font.bold: true
-                        font.family: formTheme.fontMain
-                    }
-                    
-                    Item { Layout.fillWidth: true }
-                    
-                    Text {
-                        text: descriptionInput.text.length + " / 2000"
-                        color: descriptionInput.text.length > 1900 ? formTheme.textWarning : formTheme.textMuted
-                        font.pixelSize: 12
-                        font.family: formTheme.fontMono
-                    }
-                }
-
-                Rectangle {
-                    Layout.fillWidth: true
-                    Layout.preferredHeight: 180
-                    color: formTheme.bgInput
-                    radius: 8
-                    border.color: descriptionInput.activeFocus ? formTheme.borderFocus : formTheme.borderDefault
-                    border.width: descriptionInput.activeFocus ? 2 : 1
-                    
-                    Behavior on border.color { ColorAnimation { duration: 150 } }
-
-                    Flickable {
-                        id: descFlick
-                        anchors.fill: parent
-                        anchors.margins: 16
-                        contentWidth: width
-                        contentHeight: descriptionInput.implicitHeight
-                        clip: true
-
-                        TextEdit {
-                            id: descriptionInput
-                            width: descFlick.width
-                            color: formTheme.textHeader
-                            font.pixelSize: 14
-                            font.family: formTheme.fontMain
-                            wrapMode: TextEdit.WordWrap
-                            selectByMouse: true
-                            
-                            onTextChanged: {
-                                if (text.length > 2000) {
-                                    text = text.substring(0, 2000);
-                                }
-                                mnjnefTicketFormRoot.descriptionText = text;
-                                formController.validateForm();
-                                descErrorText.visible = false;
-                            }
-
-                            Text {
-                                text: qsTr("Provide steps to reproduce, error codes, and context. Be as detailed as possible to avoid delays...")
-                                color: formTheme.textMuted
-                                font.pixelSize: 14
-                                font.family: formTheme.fontMain
-                                width: parent.width
-                                wrapMode: Text.WordWrap
-                                visible: !descriptionInput.text && !descriptionInput.activeFocus
-                            }
-                        }
-                    }
-                }
-                
-                Text {
-                    id: descErrorText
-                    text: qsTr("* Description must be at least 30 characters long.")
-                    color: formTheme.textError
-                    font.pixelSize: 12
-                    font.family: formTheme.fontMain
-                    visible: false
-                }
-            }
-
-            // ------------------------------------------
-            // SECTION 5: SYSTEM TELEMETRY & ATTACHMENTS
-            // ------------------------------------------
-            ColumnLayout {
-                Layout.fillWidth: true
-                spacing: 16
-
-                Text {
-                    text: qsTr("5. DIAGNOSTICS & ATTACHMENTS")
-                    color: formTheme.textHeader
-                    font.pixelSize: 14
-                    font.bold: true
-                    font.family: formTheme.fontMain
-                }
-
-                // Telemetry Toggle
-                Rectangle {
-                    Layout.fillWidth: true
-                    Layout.preferredHeight: 64
-                    color: formTheme.bgSurface
-                    radius: 8
-                    border.color: formTheme.borderDefault
-                    border.width: 1
-
-                    RowLayout {
-                        anchors.fill: parent
-                        anchors.margins: 16
-                        spacing: 16
-
+                        
+                        // Online indicator
                         Rectangle {
-                            Layout.preferredWidth: 32
-                            Layout.preferredHeight: 32
-                            radius: 16
-                            color: formTheme.bgElevated
-                            
-                            Text {
-                                anchors.centerIn: parent
-                                text: "🖥️"
-                                font.pixelSize: 16
-                            }
-                        }
-
-                        ColumnLayout {
-                            Layout.fillWidth: true
-                            spacing: 2
-                            
-                            Text {
-                                text: qsTr("Attach System Telemetry Log (Recommended)")
-                                color: formTheme.textHeader
-                                font.pixelSize: 13
-                                font.bold: true
-                                font.family: formTheme.fontMain
-                            }
-                            
-                            Text {
-                                text: qsTr("Includes hardware specs, OS version, and recent crash dumps.")
-                                color: formTheme.textMuted
-                                font.pixelSize: 11
-                                font.family: formTheme.fontMain
-                            }
-                        }
-
-                        // Custom Toggle Switch
-                        Rectangle {
-                            Layout.preferredWidth: 44
-                            Layout.preferredHeight: 24
-                            radius: 12
-                            color: mnjnefTicketFormRoot.includeTelemetry ? formTheme.accentCore : formTheme.bgInput
-                            border.color: mnjnefTicketFormRoot.includeTelemetry ? formTheme.accentCore : formTheme.borderDefault
-                            border.width: 1
-                            
-                            Behavior on color { ColorAnimation { duration: 150 } }
-
-                            Rectangle {
-                                width: 18
-                                height: 18
-                                radius: 9
-                                color: "#ffffff"
-                                y: 3
-                                x: mnjnefTicketFormRoot.includeTelemetry ? 23 : 3
-                                
-                                Behavior on x { NumberAnimation { duration: 150; easing.type: Easing.OutQuad } }
-                            }
-
-                            MouseArea {
-                                anchors.fill: parent
-                                cursorShape: Qt.PointingHandCursor
-                                onClicked: mnjnefTicketFormRoot.includeTelemetry = !mnjnefTicketFormRoot.includeTelemetry
-                            }
-                        }
-                    }
-                }
-
-                // Drag & Drop File Zone (Simulated Visuals)
-                Rectangle {
-                    Layout.fillWidth: true
-                    Layout.preferredHeight: 120
-                    color: dropAreaMouse.containsMouse ? formTheme.bgElevated : formTheme.bgInput
-                    radius: 8
-                    border.color: dropAreaMouse.containsMouse ? formTheme.accentCore : formTheme.borderDefault
-                    border.width: 2
-                    
-                    // Dashed border effect using Canvas
-                    Canvas {
-                        anchors.fill: parent
-                        anchors.margins: 2
-                        onPaint: {
-                            var ctx = getContext("2d");
-                            ctx.clearRect(0, 0, width, height);
-                            ctx.strokeStyle = formTheme.textMuted;
-                            ctx.lineWidth = 1;
-                            ctx.setLineDash([8, 8]);
-                            ctx.beginPath();
-                            ctx.moveTo(8, 8);
-                            ctx.lineTo(width-8, 8);
-                            ctx.lineTo(width-8, height-8);
-                            ctx.lineTo(8, height-8);
-                            ctx.closePath();
-                            ctx.stroke();
+                            width: 12
+                            height: 12
+                            radius: 6
+                            color: trackTheme.stateSuccess
+                            border.color: trackTheme.bgPanel
+                            border.width: 2
+                            anchors.bottom: parent.bottom
+                            anchors.right: parent.right
                         }
                     }
 
                     ColumnLayout {
-                        anchors.centerIn: parent
-                        spacing: 8
+                        Layout.fillWidth: true
+                        spacing: 2
                         
                         Text {
-                            text: "📁"
-                            font.pixelSize: 28
-                            Layout.alignment: Qt.AlignHCenter
-                        }
-                        
-                        Text {
-                            text: qsTr("Drag & Drop screenshots/logs here")
-                            color: formTheme.textHeader
-                            font.pixelSize: 13
+                            text: mnjnefTicketTrackerRoot.agentName
+                            color: trackTheme.textHeader
+                            font.pixelSize: 16
                             font.bold: true
-                            font.family: formTheme.fontMain
-                            Layout.alignment: Qt.AlignHCenter
+                            font.family: trackTheme.fontMain
                         }
                         
                         Text {
-                            text: qsTr("Max size: 15MB. Supported: .jpg, .png, .log, .zip")
-                            color: formTheme.textMuted
-                            font.pixelSize: 11
-                            font.family: formTheme.fontMain
-                            Layout.alignment: Qt.AlignHCenter
+                            text: qsTr("Tier 2 Architecture Specialist")
+                            color: trackTheme.textMuted
+                            font.pixelSize: 12
+                            font.family: trackTheme.fontMain
                         }
                     }
-
-                    MouseArea {
-                        id: dropAreaMouse
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: {
-                            // Simulate adding a file
-                            if (attachmentsModel.count < 3) {
-                                attachmentsModel.append({
-                                    "fileName": "Error_Log_0x" + Math.floor(Math.random()*1000) + ".log",
-                                    "fileSize": (Math.random() * 5 + 0.1).toFixed(2) + " MB"
-                                });
-                            }
+                    
+                    // Quick Actions
+                    RowLayout {
+                        Layout.alignment: Qt.AlignRight
+                        spacing: 12
+                        
+                        Rectangle {
+                            Layout.preferredWidth: 36
+                            Layout.preferredHeight: 36
+                            radius: 8
+                            color: trackTheme.bgElevated
+                            border.color: trackTheme.borderDefault
+                            
+                            Text { anchors.centerIn: parent; text: "📞"; font.pixelSize: 14 }
+                            MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor }
+                        }
+                        
+                        Rectangle {
+                            Layout.preferredWidth: 36
+                            Layout.preferredHeight: 36
+                            radius: 8
+                            color: trackTheme.bgElevated
+                            border.color: trackTheme.borderDefault
+                            
+                            Text { anchors.centerIn: parent; text: "📎"; font.pixelSize: 14 }
+                            MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor }
                         }
                     }
                 }
+            }
 
-                // List of Attachments
-                ListView {
-                    Layout.fillWidth: true
-                    Layout.preferredHeight: attachmentsModel.count * 48
-                    model: attachmentsModel
-                    interactive: false
-                    spacing: 8
-                    
-                    delegate: Rectangle {
-                        width: ListView.view.width
-                        height: 40
-                        color: formTheme.bgSurface
-                        radius: 6
-                        border.color: formTheme.borderDefault
-                        border.width: 1
+            // Live Chat Area
+            Rectangle {
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                color: trackTheme.bgPanel
+                radius: 12
+                border.color: trackTheme.borderDefault
+                border.width: 1
+                clip: true
+
+                ColumnLayout {
+                    anchors.fill: parent
+                    spacing: 0
+
+                    // Chat Header
+                    Rectangle {
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 40
+                        color: trackTheme.bgElevated
+                        
+                        RowLayout {
+                            anchors.fill: parent
+                            anchors.leftMargin: 16
+                            anchors.rightMargin: 16
+                            
+                            Text {
+                                text: qsTr("ENCRYPTED COMM LINK")
+                                color: trackTheme.textMuted
+                                font.pixelSize: 11
+                                font.bold: true
+                                font.family: trackTheme.fontMono
+                            }
+                            
+                            Item { Layout.fillWidth: true }
+                            
+                            Text {
+                                text: "PING: " + mnjnefTicketTrackerRoot.userPing
+                                color: trackTheme.stateSuccess
+                                font.pixelSize: 11
+                                font.family: trackTheme.fontMono
+                            }
+                        }
+                    }
+
+                    // Messages List
+                    ListView {
+                        id: chatListView
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+                        Layout.margins: 16
+                        model: chatModel
+                        spacing: 16
+                        clip: true
+                        
+                        onCountChanged: {
+                            Qt.callLater(function() {
+                                chatListView.positionViewAtEnd()
+                            })
+                        }
+                        
+                        // Custom Scrollbar
+                        ScrollBar.vertical: ScrollBar {
+                            active: true
+                            width: 6
+                            contentItem: Rectangle {
+                                implicitWidth: 6
+                                radius: 3
+                                color: trackTheme.borderHighlight
+                                opacity: 0.5
+                            }
+                        }
+
+                        delegate: Item {
+                            width: ListView.view.width
+                            height: messageCol.implicitHeight
+                            
+                            ColumnLayout {
+                                id: messageCol
+                                anchors.left: senderType === "USER" ? undefined : parent.left
+                                anchors.right: senderType === "USER" ? parent.right : undefined
+                                width: Math.min(parent.width * 0.8, implicitWidth)
+                                spacing: 4
+
+                                // Sender Name & Time
+                                RowLayout {
+                                    Layout.alignment: senderType === "USER" ? Qt.AlignRight : Qt.AlignLeft
+                                    spacing: 8
+                                    
+                                    Text {
+                                        text: senderName
+                                        color: {
+                                            if (senderType === "SYSTEM") return trackTheme.textMuted;
+                                            if (senderType === "AGENT") return trackTheme.accentCore;
+                                            return trackTheme.textHeader;
+                                        }
+                                        font.pixelSize: 11
+                                        font.bold: true
+                                        font.family: trackTheme.fontMain
+                                    }
+                                    
+                                    Text {
+                                        text: timestamp
+                                        color: trackTheme.textMuted
+                                        font.pixelSize: 10
+                                        font.family: trackTheme.fontMono
+                                    }
+                                }
+
+                                // Message Bubble
+                                Rectangle {
+                                    Layout.fillWidth: true
+                                    Layout.preferredHeight: messageText.implicitHeight + 20
+                                    radius: 12
+                                    color: {
+                                        if (senderType === "SYSTEM") return "transparent";
+                                        if (senderType === "AGENT") return trackTheme.bgElevated;
+                                        return trackTheme.accentCore;
+                                    }
+                                    border.color: senderType === "SYSTEM" ? trackTheme.borderDefault : "transparent"
+                                    border.width: senderType === "SYSTEM" ? 1 : 0
+                                    
+                                    // Make bottom corners square based on sender
+                                    Rectangle {
+                                        width: 12; height: 12
+                                        color: parent.color
+                                        anchors.bottom: parent.bottom
+                                        anchors.left: senderType === "AGENT" ? parent.left : undefined
+                                        anchors.right: senderType === "USER" ? parent.right : undefined
+                                        visible: senderType !== "SYSTEM"
+                                    }
+
+                                    Text {
+                                        id: messageText
+                                        anchors.fill: parent
+                                        anchors.margins: 10
+                                        text: message
+                                        color: {
+                                            if (senderType === "SYSTEM") return trackTheme.textMuted;
+                                            if (senderType === "USER") return "#ffffff";
+                                            return trackTheme.textBody;
+                                        }
+                                        font.pixelSize: 13
+                                        font.family: senderType === "SYSTEM" ? trackTheme.fontMono : trackTheme.fontMain
+                                        wrapMode: Text.WordWrap
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // Typing Indicator
+                    Item {
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 30
+                        Layout.leftMargin: 16
+                        visible: mnjnefTicketTrackerRoot.isAgentTyping
+                        
+                        RowLayout {
+                            anchors.verticalCenter: parent.verticalCenter
+                            spacing: 8
+                            
+                            Text {
+                                text: mnjnefTicketTrackerRoot.agentName + " is typing"
+                                color: trackTheme.textMuted
+                                font.pixelSize: 11
+                                font.family: trackTheme.fontMain
+                            }
+                            
+                            Row {
+                                spacing: 4
+                                Repeater {
+                                    model: 3
+                                    Rectangle {
+                                        width: 4
+                                        height: 4
+                                        radius: 2
+                                        color: trackTheme.accentCore
+                                        
+                                        SequentialAnimation on y {
+                                            loops: Animation.Infinite
+                                            running: mnjnefTicketTrackerRoot.isAgentTyping
+                                            NumberAnimation { from: 0; to: -4; duration: 300; easing.type: Easing.OutQuad; target: parent }
+                                            NumberAnimation { from: -4; to: 0; duration: 300; easing.type: Easing.InQuad; target: parent }
+                                        }
+                                        
+                                        Component.onCompleted: {
+                                            yAnimations[index].start()
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // Input Area
+                    Rectangle {
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 80
+                        color: trackTheme.bgElevated
+                        
+                        Rectangle {
+                            width: parent.width
+                            height: 1
+                            anchors.top: parent.top
+                            color: trackTheme.borderDefault
+                        }
 
                         RowLayout {
                             anchors.fill: parent
-                            anchors.margins: 10
+                            anchors.margins: 16
                             spacing: 12
-                            
-                            Text { text: "📄"; font.pixelSize: 14 }
-                            
-                            Text {
-                                text: fileName
-                                color: formTheme.textBody
-                                font.pixelSize: 12
-                                font.family: formTheme.fontMono
+
+                            Rectangle {
                                 Layout.fillWidth: true
-                            }
-                            
-                            Text {
-                                text: fileSize
-                                color: formTheme.textMuted
-                                font.pixelSize: 11
-                                font.family: formTheme.fontMono
-                            }
-                            
-                            Text {
-                                text: "✕"
-                                color: formTheme.textError
-                                font.pixelSize: 12
-                                font.bold: true
+                                Layout.fillHeight: true
+                                color: trackTheme.bgInput
+                                radius: 8
+                                border.color: chatInput.activeFocus ? trackTheme.accentCore : trackTheme.borderDefault
+                                border.width: 1
                                 
+                                Behavior on border.color { ColorAnimation { duration: 150 } }
+
+                                TextInput {
+                                    id: chatInput
+                                    anchors.fill: parent
+                                    anchors.margins: 12
+                                    color: trackTheme.textHeader
+                                    font.pixelSize: 14
+                                    font.family: trackTheme.fontMain
+                                    verticalAlignment: TextInput.AlignVCenter
+                                    selectByMouse: true
+                                    clip: true
+                                    
+                                    Keys.onReturnPressed: chatController.sendMessage()
+                                    Keys.onEnterPressed: chatController.sendMessage()
+
+                                    Text {
+                                        text: qsTr("Transmit secure message...")
+                                        color: trackTheme.textMuted
+                                        font.pixelSize: 14
+                                        font.family: trackTheme.fontMain
+                                        visible: !chatInput.text && !chatInput.activeFocus
+                                        anchors.verticalCenter: parent.verticalCenter
+                                    }
+                                }
+                            }
+
+                            Rectangle {
+                                Layout.preferredWidth: 48
+                                Layout.fillHeight: true
+                                radius: 8
+                                color: chatInput.text.length > 0 ? trackTheme.accentCore : trackTheme.bgPanel
+                                border.color: trackTheme.borderDefault
+                                border.width: chatInput.text.length > 0 ? 0 : 1
+                                
+                                Behavior on color { ColorAnimation { duration: 150 } }
+
+                                Text {
+                                    anchors.centerIn: parent
+                                    text: "➤"
+                                    color: chatInput.text.length > 0 ? "#ffffff" : trackTheme.textMuted
+                                    font.pixelSize: 18
+                                }
+
                                 MouseArea {
                                     anchors.fill: parent
-                                    anchors.margins: -5
-                                    cursorShape: Qt.PointingHandCursor
-                                    onClicked: attachmentsModel.remove(index)
+                                    cursorShape: chatInput.text.length > 0 ? Qt.PointingHandCursor : Qt.ForbiddenCursor
+                                    onClicked: {
+                                        if (chatInput.text.length > 0) {
+                                            chatController.sendMessage()
+                                        }
+                                    }
                                 }
                             }
                         }
                     }
                 }
             }
-
-            // ------------------------------------------
-            // FOOTER: SUBMISSION CONTROLS
-            // ------------------------------------------
-            Rectangle {
-                Layout.fillWidth: true
-                Layout.preferredHeight: 1
-                color: formTheme.borderDefault
-                Layout.topMargin: 16
-            }
-
-            RowLayout {
-                Layout.fillWidth: true
-                Layout.preferredHeight: 60
-                spacing: 16
-
-                // Cancel Button
-                Rectangle {
-                    Layout.preferredWidth: 120
-                    Layout.fillHeight: true
-                    radius: 8
-                    color: cancelMouse.containsMouse ? formTheme.bgElevated : "transparent"
-                    border.color: cancelMouse.containsMouse ? formTheme.textMuted : formTheme.borderDefault
-                    border.width: 1
-                    
-                    Behavior on color { ColorAnimation { duration: 150 } }
-
-                    Text {
-                        anchors.centerIn: parent
-                        text: qsTr("CANCEL")
-                        color: formTheme.textMuted
-                        font.pixelSize: 13
-                        font.bold: true
-                        font.family: formTheme.fontMain
-                    }
-
-                    MouseArea {
-                        id: cancelMouse
-                        anchors.fill: parent
-                        hoverEnabled: !mnjnefTicketFormRoot.isSubmitting
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: {
-                            if (!mnjnefTicketFormRoot.isSubmitting) mnjnefTicketFormRoot.formCancelled()
-                        }
-                    }
-                }
-
-                Item { Layout.fillWidth: true } // Spacer
-
-                // Global Error Indicator
-                Text {
-                    text: qsTr("Please correct errors above.")
-                    color: formTheme.textError
-                    font.pixelSize: 12
-                    font.family: formTheme.fontMain
-                    visible: formController.hasValidationErrors
-                    Layout.alignment: Qt.AlignVCenter
-                }
-
-                // Submit Button
-                Rectangle {
-                    id: submitBtn
-                    Layout.preferredWidth: 240
-                    Layout.fillHeight: true
-                    radius: 8
-                    color: mnjnefTicketFormRoot.isSubmitting ? formTheme.bgElevated : formTheme.accentCore
-                    border.color: mnjnefTicketFormRoot.isSubmitting ? formTheme.borderFocus : "transparent"
-                    border.width: mnjnefTicketFormRoot.isSubmitting ? 1 : 0
-
-                    // Progress fill background during submission
-                    Rectangle {
-                        anchors.left: parent.left
-                        anchors.top: parent.top
-                        anchors.bottom: parent.bottom
-                        width: (mnjnefTicketFormRoot.uploadProgress / 100.0) * parent.width
-                        color: formTheme.accentCore
-                        radius: 8
-                        opacity: 0.3
-                        visible: mnjnefTicketFormRoot.isSubmitting
-                        
-                        Behavior on width { NumberAnimation { duration: 200; easing.type: Easing.OutQuad } }
-                    }
-
-                    RowLayout {
-                        anchors.centerIn: parent
-                        spacing: 10
-                        
-                        // Sending Spinner
-                        Item {
-                            Layout.preferredWidth: 20
-                            Layout.preferredHeight: 20
-                            visible: mnjnefTicketFormRoot.isSubmitting
-                            
-                            Rectangle {
-                                anchors.fill: parent
-                                radius: 10
-                                color: "transparent"
-                                border.color: formTheme.textHeader
-                                border.width: 2
-                                opacity: 0.3
-                            }
-                            
-                            Rectangle {
-                                anchors.fill: parent
-                                radius: 10
-                                color: "transparent"
-                                border.color: formTheme.textHeader
-                                border.width: 2
-                                clip: true
-                                
-                                RotationAnimation on rotation {
-                                    loops: Animation.Infinite
-                                    from: 0; to: 360; duration: 1000
-                                    running: mnjnefTicketFormRoot.isSubmitting
-                                }
-                            }
-                        }
-
-                        Text {
-                            text: mnjnefTicketFormRoot.isSubmitting ? qsTr("TRANSMITTING ENCRYPTED DATA...") : qsTr("SUBMIT SECURE TICKET")
-                            color: formTheme.textHeader
-                            font.pixelSize: 14
-                            font.bold: true
-                            font.family: formTheme.fontMain
-                            font.letterSpacing: 1.0
-                        }
-                    }
-
-                    MouseArea {
-                        anchors.fill: parent
-                        hoverEnabled: !mnjnefTicketFormRoot.isSubmitting
-                        cursorShape: mnjnefTicketFormRoot.isSubmitting ? Qt.ForbiddenCursor : Qt.PointingHandCursor
-                        
-                        onEntered: { if(!mnjnefTicketFormRoot.isSubmitting) parent.color = formTheme.accentHover }
-                        onExited: { if(!mnjnefTicketFormRoot.isSubmitting) parent.color = formTheme.accentCore }
-                        onClicked: {
-                            if (!mnjnefTicketFormRoot.isSubmitting) {
-                                formController.processSubmission()
-                            }
-                        }
-                    }
-                }
-            }
-            
-            // Bottom Padding Space
-            Item { Layout.preferredHeight: 40; Layout.fillWidth: true }
         }
     }
 
     // ==========================================
-    // SUBMISSION OVERLAY (SUCCESS)
-    // ==========================================
-    Rectangle {
-        id: successOverlay
-        anchors.fill: parent
-        color: "#ee030712"
-        visible: false
-        opacity: 0.0
-        z: 100
-
-        Behavior on opacity { NumberAnimation { duration: 400 } }
-
-        ColumnLayout {
-            anchors.centerIn: parent
-            spacing: 24
-            
-            Rectangle {
-                Layout.preferredWidth: 100
-                Layout.preferredHeight: 100
-                radius: 50
-                color: formTheme.bgSurface
-                border.color: formTheme.textSuccess
-                border.width: 4
-                Layout.alignment: Qt.AlignHCenter
-                
-                Text {
-                    anchors.centerIn: parent
-                    text: "✓"
-                    color: formTheme.textSuccess
-                    font.pixelSize: 50
-                    font.bold: true
-                }
-                
-                // Success pulse
-                Rectangle {
-                    anchors.fill: parent
-                    radius: 50
-                    color: "transparent"
-                    border.color: formTheme.textSuccess
-                    border.width: 2
-                    
-                    SequentialAnimation on scale {
-                        loops: Animation.Infinite
-                        running: successOverlay.visible
-                        NumberAnimation { from: 1.0; to: 1.5; duration: 1500; easing.type: Easing.OutQuad }
-                    }
-                    SequentialAnimation on opacity {
-                        loops: Animation.Infinite
-                        running: successOverlay.visible
-                        NumberAnimation { from: 0.8; to: 0.0; duration: 1500; easing.type: Easing.OutQuad }
-                    }
-                }
-            }
-            
-            Text {
-                text: qsTr("TICKET TRANSMITTED SECURELY")
-                color: formTheme.textHeader
-                font.pixelSize: 22
-                font.bold: true
-                font.family: formTheme.fontMain
-                font.letterSpacing: 2.0
-                Layout.alignment: Qt.AlignHCenter
-            }
-            
-            Text {
-                text: qsTr("Reference ID: ") + mnjnefTicketFormRoot.generatedTicketId
-                color: formTheme.accentCore
-                font.pixelSize: 16
-                font.family: formTheme.fontMono
-                Layout.alignment: Qt.AlignHCenter
-            }
-            
-            Text {
-                text: qsTr("A confirmation email has been sent. Returning to dashboard...")
-                color: formTheme.textMuted
-                font.pixelSize: 13
-                font.family: formTheme.fontMain
-                Layout.alignment: Qt.AlignHCenter
-            }
-        }
-    }
-
-    // ==========================================
-    // JAVASCRIPT CONTROLLER LOGIC
+    // CONTROLLER LOGIC & SIMULATION
     // ==========================================
     QtObject {
-        id: formController
+        id: chatController
         
-        property bool hasValidationErrors: false
-        
-        function validateForm() {
-            let isValid = true;
+        function sendMessage() {
+            let msg = chatInput.text.trim();
+            if (msg === "") return;
             
-            // Reset Error States
-            categoryErrorText.visible = false;
-            subjectErrorText.visible = false;
-            descErrorText.visible = false;
-            hasValidationErrors = false;
+            let d = new Date();
+            let timeStr = d.getHours().toString().padStart(2, '0') + ":" + d.getMinutes().toString().padStart(2, '0');
             
-            if (mnjnefTicketFormRoot.selectedCategory === "") {
-                categoryErrorText.visible = true;
-                isValid = false;
-            }
+            chatModel.append({
+                "senderType": "USER",
+                "senderName": "You",
+                "message": msg,
+                "timestamp": timeStr
+            });
             
-            if (mnjnefTicketFormRoot.subjectText.trim().length < 10) {
-                subjectErrorText.visible = true;
-                isValid = false;
-            }
+            chatInput.text = "";
+            chatInput.forceActiveFocus();
             
-            if (mnjnefTicketFormRoot.descriptionText.trim().length < 30) {
-                descErrorText.visible = true;
-                isValid = false;
-            }
-            
-            return isValid;
+            // Simulate Agent Reply Process
+            mnjnefTicketTrackerRoot.isAgentTyping = false;
+            agentResponseTimer.start();
         }
         
-        function processSubmission() {
-            if (!validateForm()) {
-                hasValidationErrors = true;
-                // Scroll to top to show errors
-                formFlickable.contentY = 0;
-                return;
-            }
-            
-            mnjnefTicketFormRoot.isSubmitting = true;
-            mnjnefTicketFormRoot.uploadProgress = 0;
-            
-            // Start simulated upload process
-            uploadTimer.start();
+        function formatTime() {
+            let d = new Date();
+            let h = d.getHours() > 12 ? d.getHours() - 12 : d.getHours();
+            let ampm = d.getHours() >= 12 ? "PM" : "AM";
+            return h.toString() + ":" + d.getMinutes().toString().padStart(2, '0') + " " + ampm;
         }
     }
 
-    // ==========================================
-    // TIMERS
-    // ==========================================
-    
+    // Simulates agent beginning to type
     Timer {
-        id: uploadTimer
-        interval: 50
-        repeat: true
-        
+        id: agentResponseTimer
+        interval: 1500
+        repeat: false
         onRunningChanged: { if(running){} }
         onTriggered: {
-            mnjnefTicketFormRoot.uploadProgress += Math.floor(Math.random() * 5) + 1;
-            
-            if (mnjnefTicketFormRoot.uploadProgress >= 100) {
-                stop();
-                mnjnefTicketFormRoot.uploadProgress = 100;
-                
-                // Show Success Overlay
-                successOverlay.visible = true;
-                successOverlay.opacity = 1.0;
-                
-                // Final delay before closing module
-                finalCloseTimer.start();
-            }
+            mnjnefTicketTrackerRoot.isAgentTyping = true;
+            agentReplyTimer.start();
         }
     }
     
+    // Simulates agent sending the message
     Timer {
-        id: finalCloseTimer
-        interval: 3500
+        id: agentReplyTimer
+        interval: 3000
         repeat: false
-        
         onRunningChanged: { if(running){} }
         onTriggered: {
-            let compiledData = {
-                "ticketId": mnjnefTicketFormRoot.generatedTicketId,
-                "category": mnjnefTicketFormRoot.selectedCategory,
-                "priority": mnjnefTicketFormRoot.selectedPriority,
-                "subject": mnjnefTicketFormRoot.subjectText,
-                "description": mnjnefTicketFormRoot.descriptionText,
-                "telemetry": mnjnefTicketFormRoot.includeTelemetry,
-                "attachmentCount": attachmentsModel.count
-            };
+            mnjnefTicketTrackerRoot.isAgentTyping = false;
             
-            mnjnefTicketFormRoot.isSubmitting = false;
-            successOverlay.opacity = 0.0;
-            successOverlay.visible = false;
+            let replies = [
+                "I've updated the kernel flags on your node. Please restart your client and let me know if the crash persists.",
+                "Understood. I'm pulling the logs from DXB-CORE-01 now to cross-reference.",
+                "Could you provide the specific error code displayed right before the termination?",
+                "That behavior is expected when running in Dev Mode. I will patch your permissions to bypass it."
+            ];
             
-            mnjnefTicketFormRoot.ticketSubmitted(compiledData);
+            let randomReply = replies[Math.floor(Math.random() * replies.length)];
+            
+            chatModel.append({
+                "senderType": "AGENT",
+                "senderName": mnjnefTicketTrackerRoot.agentName,
+                "message": randomReply,
+                "timestamp": chatController.formatTime()
+            });
         }
     }
 }
