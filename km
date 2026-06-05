@@ -3,211 +3,151 @@ import QtQuick.Controls
 import QtQuick.Layouts
 
 Item {
-    id: mnjnefAntiBotRoot
+    id: mnjnefGuidelinesRoot
     anchors.fill: parent
     clip: true
 
     // ==========================================
-    // SYSTEM SIGNALS & PROPERTIES
+    // SIGNALS & SYSTEM PROPERTIES
     // ==========================================
-    signal captchaResolved(string secureToken, real humanConfidence)
-    signal captchaFailed(string reason, string errorCode)
+    signal guidelinesAccepted()
+    signal guidelinesDeclined()
     
-    property int currentChallengeIndex: 0 // 0: Awaiting, 1: Spatial, 2: Pattern, 3: Verifying
-    property real humanConfidenceScore: 0.0
-    property bool isSystemLocked: false
-    property string activeSessionId: "REQ-AUTH-PENDING"
-    property int remainingAttempts: 3
-    
-    // Heuristics Tracking
-    property real lastMouseX: 0
-    property real lastMouseY: 0
-    property real mouseSpeed: 0
-    property int totalClicks: 0
-    property var clickTimestamps: []
+    property bool isFullyScrolled: false
+    property int totalClauses: guidelinesModel.count
+    property int acceptedClauses: 0
+    property int readingCountdown: 10
+    property bool isTimerActive: true
 
     // ==========================================
     // THEME & STYLING CORE
     // ==========================================
     QtObject {
-        id: botTheme
-        property color bgBase: "#030712"
-        property color bgPanel: "#0f172a"
-        property color bgDarker: "#020617"
+        id: glTheme
+        property color bgPrimary: "#030712"
+        property color bgSurface: "#0f172a"
+        property color bgElevated: "#1e293b"
+        property color bgHighlight: "#334155"
         
-        property color accentPrimary: "#3b82f6"
-        property color accentGlow: "#60a5fa"
-        property color accentSecondary: "#8b5cf6"
+        property color accentPrimary: "#1f6feb"
+        property color accentHover: "#3b82f6"
+        property color accentDisabled: "#0f2744"
         
-        property color textWhite: "#f8fafc"
-        property color textMuted: "#64748b"
-        property color textLog: "#38bdf8"
+        property color textHeader: "#ffffff"
+        property color textBody: "#f8fafc"
+        property color textMuted: "#94a3b8"
+        property color textDisabled: "#475569"
         
-        property color stateSuccess: "#10b981"
-        property color stateWarning: "#f59e0b"
-        property color stateError: "#ef4444"
-        property color stateErrorBg: "#450a0a"
+        property color borderDefault: "#1e293b"
+        property color borderActive: "#3b82f6"
         
-        property color borderLight: "#1e293b"
-        property color borderHighlight: "#334155"
+        property color statusWarning: "#f59e0b"
+        property color statusWarningBg: "#452500"
+        property color statusSuccess: "#10b981"
+        property color statusDanger: "#ef4444"
         
         property string fontMain: "Segoe UI"
-        property string fontCode: "Consolas"
+        property string fontMono: "Consolas"
     }
 
     // ==========================================
-    // DATA MODELS
+    // GUIDELINES DATA MODEL
     // ==========================================
-    ListModel { id: telemetryLogModel }
-    ListModel { id: mousePathModel }
-    ListModel { id: patternSequenceModel }
-    ListModel { id: userPatternInputModel }
-
-    // ==========================================
-    // GLOBAL MOUSE HEURISTICS TRACKER
-    // ==========================================
-    MouseArea {
-        id: globalHeuristicsTracker
-        anchors.fill: parent
-        hoverEnabled: true
-        acceptedButtons: Qt.NoButton // Only track, don't consume clicks
-        z: 999 // Put on top but pass through clicks
-        propagateComposedEvents: true
-
-        onPositionChanged: (mouse) => {
-            if (isSystemLocked) return;
-            
-            // Calculate Euclidean distance / Speed
-            let dx = mouse.x - mnjnefAntiBotRoot.lastMouseX;
-            let dy = mouse.y - mnjnefAntiBotRoot.lastMouseY;
-            let dist = Math.sqrt(dx*dx + dy*dy);
-            
-            mnjnefAntiBotRoot.mouseSpeed = dist;
-            mnjnefAntiBotRoot.lastMouseX = mouse.x;
-            mnjnefAntiBotRoot.lastMouseY = mouse.y;
-            
-            // Inject organic confidence (humans don't move in perfectly straight lines at constant speed)
-            if (dist > 0.5 && dist < 50) {
-                mnjnefAntiBotRoot.humanConfidenceScore = Math.min(100.0, mnjnefAntiBotRoot.humanConfidenceScore + 0.15);
-            }
-            
-            // Add point to visual path (limit to 50 points)
-            if (mousePathModel.count > 50) mousePathModel.remove(0, 1);
-            mousePathModel.append({ "px": mouse.x, "py": mouse.y });
-            
-            // Log randomly to terminal
-            if (Math.random() > 0.95) {
-                botController.logTelemetry("MOVE", "Vector[x:" + Math.round(mouse.x) + ", y:" + Math.round(mouse.y) + "] v:" + dist.toFixed(2));
-            }
-            
-            mouse.accepted = false; // Let underlying items handle it
-        }
+    ListModel {
+        id: guidelinesModel
         
-        onClicked: (mouse) => {
-            mnjnefAntiBotRoot.totalClicks++;
-            mnjnefAntiBotRoot.clickTimestamps.push(new Date().getTime());
-            
-            // Click cadence analysis
-            if (mnjnefAntiBotRoot.clickTimestamps.length > 3) {
-                mnjnefAntiBotRoot.clickTimestamps.shift();
-                let intervals = [];
-                for(let i=1; i<mnjnefAntiBotRoot.clickTimestamps.length; i++) {
-                    intervals.push(mnjnefAntiBotRoot.clickTimestamps[i] - mnjnefAntiBotRoot.clickTimestamps[i-1]);
-                }
-                // Bots often click with exactly 0 variance
-                if (intervals[0] === intervals[1]) {
-                    mnjnefAntiBotRoot.humanConfidenceScore = Math.max(0.0, mnjnefAntiBotRoot.humanConfidenceScore - 15.0);
-                    botController.logTelemetry("WARN", "Robotic click cadence detected.");
-                } else {
-                    mnjnefAntiBotRoot.humanConfidenceScore = Math.min(100.0, mnjnefAntiBotRoot.humanConfidenceScore + 2.0);
-                }
-            }
-            
-            // Visual click ripple effect
-            let ripple = rippleComponent.createObject(globalHeuristicsTracker, {"x": mouse.x - 15, "y": mouse.y - 15});
-            
-            mouse.accepted = false;
+        ListElement {
+            clauseId: "GL-001"
+            title: "Accuracy of Information"
+            description: "You must provide accurate, current, and complete information regarding your technical issue. Falsified network logs, modified screenshots, or deceptive bug reports will result in an immediate hardware ban."
+            isRequired: true
+            isAccepted: false
         }
-    }
-
-    Component {
-        id: rippleComponent
-        Rectangle {
-            width: 30; height: 30; radius: 15
-            color: "transparent"
-            border.color: botTheme.accentPrimary
-            border.width: 2
-            
-            SequentialAnimation on opacity {
-                NumberAnimation { from: 1.0; to: 0.0; duration: 600; easing.type: Easing.OutQuad }
-            }
-            SequentialAnimation on scale {
-                NumberAnimation { from: 0.5; to: 2.5; duration: 600; easing.type: Easing.OutQuad }
-            }
-            Component.onCompleted: {
-                destroyTimer.start()
-            }
-            Timer { id: destroyTimer; interval: 650; onTriggered: parent.destroy() }
+        ListElement {
+            clauseId: "GL-002"
+            title: "Response Time Service Level Agreement (SLA)"
+            description: "Mnjnef Premium Support operates on a queue system. Standard response time is between 12 to 24 hours. Submitting duplicate tickets for the same issue will push your priority to the bottom of the queue."
+            isRequired: true
+            isAccepted: false
+        }
+        ListElement {
+            clauseId: "GL-003"
+            title: "Zero Tolerance for Abuse"
+            description: "Any use of profanity, threats, or harassment towards Mnjnef support staff will lead to immediate ticket closure and permanent suspension of your Mnjnef account without right to appeal."
+            isRequired: true
+            isAccepted: false
+        }
+        ListElement {
+            clauseId: "GL-004"
+            title: "Remote Telemetry & Diagnostic Data"
+            description: "By submitting a technical ticket, you authorize Mnjnef Support tools to temporarily gather hardware telemetry, crash dumps, and system logs directly related to Mnjnef software."
+            isRequired: true
+            isAccepted: false
+        }
+        ListElement {
+            clauseId: "GL-005"
+            title: "Account Ownership Verification"
+            description: "Support staff will never ask for your password. However, you must verify ownership via your registered email or two-factor authentication (2FA) device before sensitive account changes are made."
+            isRequired: true
+            isAccepted: false
+        }
+        ListElement {
+            clauseId: "GL-006"
+            title: "Third-Party Modifications"
+            description: "We do not provide support for issues arising from unauthorized third-party modifications, custom scripts, or injected DLLs. Ensure your client is vanilla before submitting."
+            isRequired: true
+            isAccepted: false
         }
     }
 
     // ==========================================
-    // BACKGROUND & CRT EFFECTS
+    // BACKGROUND & AMBIENT EFFECTS
     // ==========================================
     Rectangle {
         anchors.fill: parent
-        color: botTheme.bgBase
+        color: glTheme.bgPrimary
         
-        // Hexagon Grid Pattern
-        Canvas {
+        // Ambient Grid
+        Grid {
             anchors.fill: parent
-            opacity: 0.05
-            onPaint: {
-                var ctx = getContext("2d");
-                var hexRadius = 20;
-                var hexWidth = Math.sqrt(3) * hexRadius;
-                var hexHeight = 2 * hexRadius;
-                
-                ctx.strokeStyle = botTheme.accentPrimary;
-                ctx.lineWidth = 1;
-                
-                for (var y = 0; y < height + hexHeight; y += hexHeight * 0.75) {
-                    for (var x = 0; x < width + hexWidth; x += hexWidth) {
-                        var xPos = x + ((y / (hexHeight * 0.75)) % 2 === 0 ? 0 : hexWidth / 2);
-                        
-                        ctx.beginPath();
-                        for (var i = 0; i < 6; i++) {
-                            var angle = 2 * Math.PI / 6 * i + Math.PI / 6;
-                            var px = xPos + hexRadius * Math.cos(angle);
-                            var py = y + hexRadius * Math.sin(angle);
-                            if (i === 0) ctx.moveTo(px, py);
-                            else ctx.lineTo(px, py);
-                        }
-                        ctx.closePath();
-                        ctx.stroke();
-                    }
+            anchors.margins: 2
+            rows: 20
+            columns: 20
+            spacing: 1
+            
+            Repeater {
+                model: 400
+                Rectangle {
+                    width: (mnjnefGuidelinesRoot.width / 20) - 1
+                    height: (mnjnefGuidelinesRoot.height / 20) - 1
+                    color: "transparent"
+                    border.color: glTheme.borderDefault
+                    border.width: 1
+                    opacity: 0.15
                 }
             }
         }
         
-        // Scanline overlay
+        // Gradient Fade at Top and Bottom
         Rectangle {
-            anchors.fill: parent
-            color: "transparent"
-            clip: true
-            
-            Rectangle {
-                width: parent.width
-                height: 4
-                color: botTheme.accentPrimary
-                opacity: 0.15
-                
-                SequentialAnimation on y {
-                    loops: Animation.Infinite
-                    running: true
-                    NumberAnimation { from: -10; to: mnjnefAntiBotRoot.height + 10; duration: 4000 }
-                }
+            anchors.top: parent.top
+            width: parent.width
+            height: 40
+            gradient: Gradient {
+                GradientStop { position: 0.0; color: glTheme.bgPrimary }
+                GradientStop { position: 1.0; color: "transparent" }
             }
+            z: 10
+        }
+        Rectangle {
+            anchors.bottom: footerPanel.top
+            width: parent.width
+            height: 40
+            gradient: Gradient {
+                GradientStop { position: 0.0; color: "transparent" }
+                GradientStop { position: 1.0; color: glTheme.bgPrimary }
+            }
+            z: 10
         }
     }
 
@@ -216,666 +156,436 @@ Item {
     // ==========================================
     ColumnLayout {
         anchors.fill: parent
-        anchors.margins: 24
-        spacing: 20
+        spacing: 0
 
         // ------------------------------------------
-        // HEADER: ANTI-BOT STATUS
+        // HEADER: TITLE & WARNING
         // ------------------------------------------
         Rectangle {
             Layout.fillWidth: true
-            Layout.preferredHeight: 70
-            color: botTheme.bgPanel
-            radius: 12
-            border.color: botTheme.borderHighlight
+            Layout.preferredHeight: 80
+            color: glTheme.bgSurface
+            border.color: glTheme.borderDefault
             border.width: 1
+            z: 20
 
             RowLayout {
                 anchors.fill: parent
-                anchors.margins: 16
+                anchors.leftMargin: 24
+                anchors.rightMargin: 24
                 spacing: 16
 
+                // Warning Icon Container
                 Rectangle {
-                    Layout.preferredWidth: 40
-                    Layout.preferredHeight: 40
-                    radius: 20
-                    color: botTheme.bgDarker
-                    border.color: botTheme.accentPrimary
-                    border.width: 1.5
-                    
+                    Layout.preferredWidth: 48
+                    Layout.preferredHeight: 48
+                    radius: 12
+                    color: glTheme.statusWarningBg
+                    border.color: glTheme.statusWarning
+                    border.width: 1
+
                     Text {
                         anchors.centerIn: parent
-                        text: "👁️"
-                        font.pixelSize: 18
+                        text: "⚠️"
+                        font.pixelSize: 24
                     }
                     
+                    // Pulse Effect
                     Rectangle {
                         anchors.fill: parent
-                        radius: 20
+                        radius: 12
                         color: "transparent"
-                        border.color: botTheme.accentGlow
+                        border.color: glTheme.statusWarning
                         border.width: 2
-                        opacity: 0.5
-                        clip: true
-                        RotationAnimation on rotation { loops: Animation.Infinite; from: 0; to: 360; duration: 3000 }
+                        opacity: 0.0
+                        
+                        SequentialAnimation on opacity {
+                            loops: Animation.Infinite
+                            running: true
+                            NumberAnimation { from: 0.0; to: 0.5; duration: 1000 }
+                            NumberAnimation { from: 0.5; to: 0.0; duration: 1000 }
+                        }
                     }
                 }
 
+                // Titles
                 ColumnLayout {
                     Layout.fillWidth: true
                     spacing: 4
-                    
+
                     Text {
-                        text: qsTr("MNJNEF TURING PROTOCOL")
-                        color: botTheme.textWhite
-                        font.pixelSize: 16
+                        text: qsTr("MANDATORY SUPPORT GUIDELINES")
+                        color: glTheme.textHeader
+                        font.pixelSize: 18
                         font.bold: true
-                        font.family: botTheme.fontMain
-                        font.letterSpacing: 1.0
+                        font.family: glTheme.fontMain
+                        font.letterSpacing: 1.5
                     }
-                    
+
                     Text {
-                        text: qsTr("Verify biological interactivity to proceed.")
-                        color: botTheme.textMuted
-                        font.pixelSize: 12
-                        font.family: botTheme.fontCode
+                        text: qsTr("Carefully read and accept all clauses before proceeding to the ticket portal.")
+                        color: glTheme.textMuted
+                        font.pixelSize: 13
+                        font.family: glTheme.fontMain
                     }
                 }
                 
-                // Human Confidence Gauge
+                // Read Progress
                 ColumnLayout {
-                    Layout.alignment: Qt.AlignRight
+                    Layout.alignment: Qt.AlignVCenter | Qt.AlignRight
                     spacing: 4
                     
                     Text {
-                        text: qsTr("BIOMETRIC SCORE")
-                        color: botTheme.textMuted
+                        text: qsTr("AGREEMENT PROGRESS")
+                        color: glTheme.textDisabled
                         font.pixelSize: 10
-                        font.family: botTheme.fontCode
+                        font.family: glTheme.fontMono
                         Layout.alignment: Qt.AlignRight
                     }
                     
                     RowLayout {
                         spacing: 8
-                        
-                        Rectangle {
-                            Layout.preferredWidth: 100
-                            Layout.preferredHeight: 6
-                            color: botTheme.bgDarker
-                            radius: 3
-                            clip: true
-                            
-                            Rectangle {
-                                width: (mnjnefAntiBotRoot.humanConfidenceScore / 100.0) * parent.width
-                                height: parent.height
-                                radius: 3
-                                color: {
-                                    if (mnjnefAntiBotRoot.humanConfidenceScore > 80) return botTheme.stateSuccess;
-                                    if (mnjnefAntiBotRoot.humanConfidenceScore > 40) return botTheme.stateWarning;
-                                    return botTheme.stateError;
-                                }
-                                Behavior on width { NumberAnimation { duration: 300; easing.type: Easing.OutCubic } }
-                                Behavior on color { ColorAnimation { duration: 300 } }
-                            }
-                        }
+                        Layout.alignment: Qt.AlignRight
                         
                         Text {
-                            text: Math.round(mnjnefAntiBotRoot.humanConfidenceScore) + "%"
-                            color: botTheme.textWhite
-                            font.pixelSize: 14
+                            text: mnjnefGuidelinesRoot.acceptedClauses + " / " + mnjnefGuidelinesRoot.totalClauses
+                            color: mnjnefGuidelinesRoot.acceptedClauses === mnjnefGuidelinesRoot.totalClauses ? glTheme.statusSuccess : glTheme.statusWarning
+                            font.pixelSize: 18
                             font.bold: true
-                            font.family: botTheme.fontCode
+                            font.family: glTheme.fontMono
                         }
                     }
                 }
             }
+            
+            // Bottom glowing border line
+            Rectangle {
+                anchors.bottom: parent.bottom
+                width: parent.width
+                height: 2
+                color: glTheme.accentPrimary
+                opacity: 0.4
+            }
         }
 
         // ------------------------------------------
-        // MIDDLE SECTION: CHALLENGE & TELEMETRY
+        // MIDDLE: SCROLLABLE CLAUSES
         // ------------------------------------------
-        RowLayout {
+        Item {
             Layout.fillWidth: true
             Layout.fillHeight: true
-            spacing: 20
 
-            // LEFT: CHALLENGE ARENA
-            Rectangle {
-                Layout.fillHeight: true
-                Layout.preferredWidth: 450
-                color: botTheme.bgPanel
-                radius: 12
-                border.color: {
-                    if (mnjnefAntiBotRoot.isSystemLocked) return botTheme.stateError;
-                    if (mnjnefAntiBotRoot.currentChallengeIndex === 3) return botTheme.stateSuccess;
-                    return botTheme.borderHighlight;
-                }
-                border.width: mnjnefAntiBotRoot.isSystemLocked ? 2 : 1
+            Flickable {
+                id: guidelinesFlickable
+                anchors.fill: parent
+                anchors.margins: 24
+                contentWidth: width
+                contentHeight: clauseColumn.implicitHeight + 40
                 clip: true
-                
-                Behavior on border.color { ColorAnimation { duration: 250 } }
+                boundsBehavior: Flickable.StopAtBounds
 
-                // Dynamic Challenge Container
-                Item {
-                    anchors.fill: parent
-                    anchors.margins: 20
+                onContentYChanged: {
+                    if (contentY >= contentHeight - height - 10) {
+                        mnjnefGuidelinesRoot.isFullyScrolled = true;
+                    }
+                }
 
-                    // CHALLENGE 0: INIT STATE
-                    ColumnLayout {
-                        anchors.centerIn: parent
-                        spacing: 24
-                        visible: mnjnefAntiBotRoot.currentChallengeIndex === 0
+                ColumnLayout {
+                    id: clauseColumn
+                    width: parent.width
+                    spacing: 16
+
+                    Text {
+                        text: qsTr("Terms of Support Engagement")
+                        color: glTheme.textHeader
+                        font.pixelSize: 16
+                        font.bold: true
+                        font.family: glTheme.fontMain
+                        Layout.bottomMargin: 8
+                    }
+
+                    Repeater {
+                        model: guidelinesModel
                         
-                        Text {
-                            text: qsTr("AWAITING INITIALIZATION")
-                            color: botTheme.textMuted
-                            font.pixelSize: 18
-                            font.family: botTheme.fontCode
-                            Layout.alignment: Qt.AlignHCenter
-                        }
-                        
+                        // Custom Interactive Clause Component
                         Rectangle {
-                            Layout.preferredWidth: 200
-                            Layout.preferredHeight: 48
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: clauseTextCol.implicitHeight + 32
+                            color: isAccepted ? glTheme.bgElevated : glTheme.bgSurface
                             radius: 8
-                            color: initMouseArea.containsMouse ? botTheme.accentSecondary : botTheme.accentPrimary
-                            Layout.alignment: Qt.AlignHCenter
+                            border.color: isAccepted ? glTheme.borderActive : glTheme.borderDefault
+                            border.width: isAccepted ? 2 : 1
                             
-                            Behavior on color { ColorAnimation { duration: 150 } }
-                            
-                            Text {
-                                anchors.centerIn: parent
-                                text: qsTr("INITIATE PROTOCOL")
-                                color: botTheme.textWhite
-                                font.pixelSize: 14
-                                font.bold: true
-                                font.family: botTheme.fontMain
-                            }
-                            
-                            MouseArea {
-                                id: initMouseArea
+                            Behavior on color { ColorAnimation { duration: 200 } }
+                            Behavior on border.color { ColorAnimation { duration: 200 } }
+
+                            RowLayout {
                                 anchors.fill: parent
-                                hoverEnabled: true
-                                cursorShape: Qt.PointingHandCursor
-                                onClicked: botController.startChallengeOne()
-                            }
-                        }
-                    }
+                                anchors.margins: 16
+                                spacing: 16
 
-                    // CHALLENGE 1: SPATIAL ALIGNMENT (Rotational Slider)
-                    Item {
-                        id: spatialChallengeArea
-                        anchors.fill: parent
-                        visible: mnjnefAntiBotRoot.currentChallengeIndex === 1
-                        
-                        Text {
-                            anchors.top: parent.top
-                            anchors.horizontalCenter: parent.horizontalCenter
-                            text: qsTr("CHALLENGE I: SPATIAL DECRYPTION")
-                            color: botTheme.accentPrimary
-                            font.pixelSize: 14
-                            font.bold: true
-                            font.family: botTheme.fontMain
-                            font.letterSpacing: 2.0
-                        }
-                        
-                        Text {
-                            anchors.top: parent.top
-                            anchors.topMargin: 24
-                            anchors.horizontalCenter: parent.horizontalCenter
-                            text: qsTr("Align the inner security ring to the exact target angle.")
-                            color: botTheme.textMuted
-                            font.pixelSize: 12
-                            font.family: botTheme.fontCode
-                        }
-
-                        // Rendering the Ring Puzzle
-                        Item {
-                            anchors.centerIn: parent
-                            width: 220
-                            height: 220
-                            
-                            // Outer Fixed Ring
-                            Canvas {
-                                anchors.fill: parent
-                                onPaint: {
-                                    var ctx = getContext("2d");
-                                    ctx.clearRect(0, 0, width, height);
-                                    var cx = width/2; var cy = height/2; var r = 100;
+                                // Status Indicator / Code
+                                ColumnLayout {
+                                    Layout.alignment: Qt.AlignTop
+                                    Layout.preferredWidth: 60
+                                    spacing: 4
                                     
-                                    ctx.strokeStyle = botTheme.borderHighlight;
-                                    ctx.lineWidth = 12;
-                                    ctx.beginPath();
-                                    ctx.arc(cx, cy, r, 0, 2*Math.PI);
-                                    ctx.stroke();
-                                    
-                                    // Target alignment mark
-                                    ctx.strokeStyle = botTheme.stateWarning;
-                                    ctx.lineWidth = 4;
-                                    ctx.beginPath();
-                                    ctx.arc(cx, cy, r+10, botController.targetAngle - 0.1, botController.targetAngle + 0.1);
-                                    ctx.stroke();
-                                }
-                                Connections {
-                                    target: botController
-                                    function onTargetAngleChanged() { parent.requestPaint() }
-                                }
-                            }
-                            
-                            // Inner Rotatable Ring
-                            Canvas {
-                                id: innerRingCanvas
-                                anchors.fill: parent
-                                rotation: botController.currentAngle * (180/Math.PI)
-                                
-                                onPaint: {
-                                    var ctx = getContext("2d");
-                                    ctx.clearRect(0, 0, width, height);
-                                    var cx = width/2; var cy = height/2; var r = 70;
-                                    
-                                    ctx.strokeStyle = botTheme.accentPrimary;
-                                    ctx.lineWidth = 20;
-                                    ctx.beginPath();
-                                    // Broken ring to show alignment
-                                    ctx.arc(cx, cy, r, 0.2, 2*Math.PI - 0.2);
-                                    ctx.stroke();
-                                    
-                                    // Alignment node
-                                    ctx.fillStyle = botTheme.textWhite;
-                                    ctx.beginPath();
-                                    ctx.arc(cx + r, cy, 6, 0, 2*Math.PI);
-                                    ctx.fill();
-                                }
-                            }
-                            
-                            // Core Hub
-                            Rectangle {
-                                anchors.centerIn: parent
-                                width: 40
-                                height: 40
-                                radius: 20
-                                color: botTheme.bgDarker
-                                border.color: botTheme.accentPrimary
-                                border.width: 2
-                                
-                                Text {
-                                    anchors.centerIn: parent
-                                    text: Math.abs(botController.targetAngle - botController.currentAngle) < 0.15 ? "🔓" : "🔒"
-                                    font.pixelSize: 14
-                                }
-                            }
-                        }
-
-                        // Slider Control
-                        Slider {
-                            id: spatialSlider
-                            anchors.bottom: parent.bottom
-                            anchors.bottomMargin: 20
-                            anchors.horizontalCenter: parent.horizontalCenter
-                            width: 300
-                            from: 0
-                            to: Math.PI * 2
-                            value: 0
-                            
-                            onValueChanged: {
-                                if(mnjnefAntiBotRoot.currentChallengeIndex === 1) {
-                                    botController.currentAngle = value;
-                                    mnjnefAntiBotRoot.humanConfidenceScore = Math.min(100.0, mnjnefAntiBotRoot.humanConfidenceScore + 0.5);
-                                }
-                            }
-                            onPressedChanged: {
-                                if (!pressed && mnjnefAntiBotRoot.currentChallengeIndex === 1) {
-                                    botController.validateSpatialChallenge();
-                                }
-                            }
-                            
-                            background: Rectangle {
-                                x: spatialSlider.leftPadding
-                                y: spatialSlider.topPadding + spatialSlider.availableHeight / 2 - height / 2
-                                implicitWidth: 200
-                                implicitHeight: 6
-                                width: spatialSlider.availableWidth
-                                height: implicitHeight
-                                radius: 3
-                                color: botTheme.bgDarker
-                                border.color: botTheme.borderHighlight
-                                border.width: 1
-
-                                Rectangle {
-                                    width: spatialSlider.visualPosition * parent.width
-                                    height: parent.height
-                                    color: botTheme.accentPrimary
-                                    radius: 3
-                                }
-                            }
-                            handle: Rectangle {
-                                x: spatialSlider.leftPadding + spatialSlider.visualPosition * (spatialSlider.availableWidth - width)
-                                y: spatialSlider.topPadding + spatialSlider.availableHeight / 2 - height / 2
-                                implicitWidth: 24
-                                implicitHeight: 24
-                                radius: 12
-                                color: spatialSlider.pressed ? botTheme.textWhite : botTheme.accentPrimary
-                                border.color: botTheme.textWhite
-                                border.width: 2
-                                
-                                Behavior on color { ColorAnimation { duration: 150 } }
-                            }
-                        }
-                    }
-
-                    // CHALLENGE 2: PATTERN MEMORY NODE
-                    Item {
-                        id: patternChallengeArea
-                        anchors.fill: parent
-                        visible: mnjnefAntiBotRoot.currentChallengeIndex === 2
-                        
-                        Text {
-                            anchors.top: parent.top
-                            anchors.horizontalCenter: parent.horizontalCenter
-                            text: qsTr("CHALLENGE II: NEURAL SEQUENCE")
-                            color: botTheme.accentSecondary
-                            font.pixelSize: 14
-                            font.bold: true
-                            font.family: botTheme.fontMain
-                            font.letterSpacing: 2.0
-                        }
-                        
-                        Text {
-                            anchors.top: parent.top
-                            anchors.topMargin: 24
-                            anchors.horizontalCenter: parent.horizontalCenter
-                            text: qsTr("Repeat the exact cryptographic sequence.")
-                            color: botTheme.textMuted
-                            font.pixelSize: 12
-                            font.family: botTheme.fontCode
-                        }
-
-                        Grid {
-                            anchors.centerIn: parent
-                            columns: 3
-                            spacing: 16
-                            
-                            Repeater {
-                                model: 9
-                                Rectangle {
-                                    width: 80
-                                    height: 80
-                                    radius: 12
-                                    color: {
-                                        if (botController.activeFlashNode === index) return botTheme.accentSecondary;
-                                        if (botController.isNodeClicked(index)) return botTheme.accentPrimary;
-                                        return botTheme.bgDarker;
+                                    Text {
+                                        text: clauseId
+                                        color: isAccepted ? glTheme.accentPrimary : glTheme.textDisabled
+                                        font.pixelSize: 12
+                                        font.bold: true
+                                        font.family: glTheme.fontMono
                                     }
-                                    border.color: botTheme.borderHighlight
+                                    
+                                    Rectangle {
+                                        Layout.preferredWidth: 24
+                                        Layout.preferredHeight: 4
+                                        radius: 2
+                                        color: isAccepted ? glTheme.statusSuccess : glTheme.statusWarning
+                                    }
+                                }
+
+                                // Clause Content
+                                ColumnLayout {
+                                    id: clauseTextCol
+                                    Layout.fillWidth: true
+                                    spacing: 6
+                                    
+                                    Text {
+                                        text: title
+                                        color: isAccepted ? glTheme.textHeader : glTheme.textBody
+                                        font.pixelSize: 15
+                                        font.bold: true
+                                        font.family: glTheme.fontMain
+                                        Layout.fillWidth: true
+                                        wrapMode: Text.WordWrap
+                                    }
+                                    
+                                    Text {
+                                        text: description
+                                        color: isAccepted ? glTheme.textBody : glTheme.textMuted
+                                        font.pixelSize: 13
+                                        font.family: glTheme.fontMain
+                                        Layout.fillWidth: true
+                                        wrapMode: Text.WordWrap
+                                        lineHeight: 1.4
+                                    }
+                                }
+
+                                // Custom Checkbox Toggle
+                                Rectangle {
+                                    Layout.alignment: Qt.AlignVCenter | Qt.AlignRight
+                                    Layout.preferredWidth: 32
+                                    Layout.preferredHeight: 32
+                                    radius: 16
+                                    color: isAccepted ? glTheme.accentPrimary : "transparent"
+                                    border.color: isAccepted ? glTheme.accentPrimary : glTheme.textDisabled
                                     border.width: 2
                                     
                                     Behavior on color { ColorAnimation { duration: 150 } }
                                     
                                     Text {
                                         anchors.centerIn: parent
-                                        text: "0x" + index
-                                        color: botTheme.textMuted
-                                        font.pixelSize: 10
-                                        font.family: botTheme.fontCode
-                                        opacity: 0.5
+                                        text: "✓"
+                                        color: glTheme.textHeader
+                                        font.pixelSize: 16
+                                        font.bold: true
+                                        opacity: isAccepted ? 1.0 : 0.0
+                                        Behavior on opacity { NumberAnimation { duration: 150 } }
+                                        y: isAccepted ? 0 : 10
+                                        Behavior on y { NumberAnimation { duration: 200; easing.type: Easing.OutBack } }
                                     }
                                     
                                     MouseArea {
                                         anchors.fill: parent
+                                        anchors.margins: -10 // Expand hit area
                                         hoverEnabled: true
-                                        cursorShape: botController.isPatternInputActive ? Qt.PointingHandCursor : Qt.ForbiddenCursor
-                                        onClicked: {
-                                            if (botController.isPatternInputActive) {
-                                                botController.handleNodeClick(index);
-                                            }
-                                        }
+                                        cursorShape: Qt.PointingHandCursor
+                                        
                                         onEntered: {
-                                            if(botController.isPatternInputActive) parent.border.color = botTheme.accentPrimary
+                                            if (!isAccepted) parent.border.color = glTheme.textMuted
                                         }
                                         onExited: {
-                                            parent.border.color = botTheme.borderHighlight
+                                            if (!isAccepted) parent.border.color = glTheme.textDisabled
+                                        }
+                                        onClicked: {
+                                            guidelinesModel.setProperty(index, "isAccepted", !isAccepted);
+                                            recalculateAcceptance();
                                         }
                                     }
                                 }
                             }
                         }
-                        
-                        Text {
-                            anchors.bottom: parent.bottom
-                            anchors.horizontalCenter: parent.horizontalCenter
-                            text: botController.isPatternInputActive ? qsTr("YOUR TURN") : qsTr("OBSERVE SEQUENCE")
-                            color: botController.isPatternInputActive ? botTheme.textWhite : botTheme.stateWarning
-                            font.pixelSize: 14
-                            font.bold: true
-                            font.family: botTheme.fontCode
-                            
-                            SequentialAnimation on opacity {
-                                loops: Animation.Infinite
-                                running: botController.isPatternInputActive
-                                NumberAnimation { from: 1.0; to: 0.3; duration: 800 }
-                                NumberAnimation { from: 0.3; to: 1.0; duration: 800 }
-                            }
-                        }
-                    }
-
-                    // SUCCESS OVERLAY
-                    Item {
-                        anchors.fill: parent
-                        visible: mnjnefAntiBotRoot.currentChallengeIndex === 3
-                        
-                        ColumnLayout {
-                            anchors.centerIn: parent
-                            spacing: 16
-                            
-                            Rectangle {
-                                Layout.preferredWidth: 80
-                                Layout.preferredHeight: 80
-                                radius: 40
-                                color: "transparent"
-                                border.color: botTheme.stateSuccess
-                                border.width: 4
-                                Layout.alignment: Qt.AlignHCenter
-                                
-                                Text {
-                                    anchors.centerIn: parent
-                                    text: "✓"
-                                    color: botTheme.stateSuccess
-                                    font.pixelSize: 40
-                                    font.bold: true
-                                }
-                            }
-                            
-                            Text {
-                                text: qsTr("HUMAN VERIFIED")
-                                color: botTheme.stateSuccess
-                                font.pixelSize: 22
-                                font.bold: true
-                                font.family: botTheme.fontMain
-                                font.letterSpacing: 2.0
-                                Layout.alignment: Qt.AlignHCenter
-                            }
-                            
-                            Text {
-                                text: qsTr("Cryptographic seal generated. Proceeding...")
-                                color: botTheme.textWhite
-                                font.pixelSize: 12
-                                font.family: botTheme.fontCode
-                                Layout.alignment: Qt.AlignHCenter
-                            }
-                        }
-                    }
-
-                    // LOCKED / ERROR OVERLAY
-                    Rectangle {
-                        anchors.fill: parent
-                        anchors.margins: -20
-                        color: botTheme.stateErrorBg
-                        visible: mnjnefAntiBotRoot.isSystemLocked
-                        opacity: 0.95
-                        z: 100
-                        
-                        ColumnLayout {
-                            anchors.centerIn: parent
-                            spacing: 16
-                            
-                            Text {
-                                text: "⚠️"
-                                font.pixelSize: 60
-                                Layout.alignment: Qt.AlignHCenter
-                            }
-                            
-                            Text {
-                                text: qsTr("SECURITY LOCKOUT")
-                                color: botTheme.stateError
-                                font.pixelSize: 24
-                                font.bold: true
-                                font.family: botTheme.fontMain
-                                font.letterSpacing: 3.0
-                                Layout.alignment: Qt.AlignHCenter
-                            }
-                            
-                            Text {
-                                text: qsTr("Anomalous automated behavior detected.")
-                                color: botTheme.textWhite
-                                font.pixelSize: 14
-                                font.family: botTheme.fontCode
-                                Layout.alignment: Qt.AlignHCenter
-                            }
-                        }
                     }
                 }
             }
 
-            // RIGHT: TELEMETRY & HEURISTICS LOG
+            // Custom Advanced Scrollbar
             Rectangle {
-                Layout.fillHeight: true
-                Layout.fillWidth: true
-                color: botTheme.bgPanel
-                radius: 12
-                border.color: botTheme.borderHighlight
-                border.width: 1
-                clip: true
+                anchors.right: parent.right
+                anchors.top: parent.top
+                anchors.bottom: parent.bottom
+                anchors.margins: 4
+                width: 6
+                radius: 3
+                color: glTheme.bgSurface
+                
+                Rectangle {
+                    width: parent.width
+                    radius: 3
+                    color: guidelinesFlickable.moving ? glTheme.accentPrimary : glTheme.textDisabled
+                    height: Math.max(30, (guidelinesFlickable.height / guidelinesFlickable.contentHeight) * parent.height)
+                    y: (guidelinesFlickable.contentY / (guidelinesFlickable.contentHeight - guidelinesFlickable.height)) * (parent.height - height)
+                    
+                    Behavior on color { ColorAnimation { duration: 150 } }
+                }
+            }
+        }
 
-                ColumnLayout {
-                    anchors.fill: parent
-                    anchors.margins: 12
-                    spacing: 12
+        // ------------------------------------------
+        // FOOTER: ACTION CONTROLS & TIMER
+        // ------------------------------------------
+        Rectangle {
+            id: footerPanel
+            Layout.fillWidth: true
+            Layout.preferredHeight: 80
+            color: glTheme.bgSurface
+            border.color: glTheme.borderDefault
+            border.width: 1
+            z: 20
+
+            RowLayout {
+                anchors.fill: parent
+                anchors.margins: 16
+                spacing: 16
+
+                // Decline Button
+                Rectangle {
+                    Layout.preferredWidth: 140
+                    Layout.fillHeight: true
+                    radius: 8
+                    color: declineMouse.containsMouse ? glTheme.bgHighlight : "transparent"
+                    border.color: declineMouse.containsMouse ? glTheme.textMuted : glTheme.borderDefault
+                    border.width: 1
+                    
+                    Behavior on color { ColorAnimation { duration: 150 } }
 
                     Text {
-                        text: qsTr("LIVE HEURISTICS TELEMETRY")
-                        color: botTheme.textMuted
-                        font.pixelSize: 11
+                        anchors.centerIn: parent
+                        text: qsTr("DECLINE")
+                        color: glTheme.textMuted
+                        font.pixelSize: 14
                         font.bold: true
-                        font.family: botTheme.fontCode
-                        Layout.fillWidth: true
+                        font.family: glTheme.fontMain
                     }
 
-                    Rectangle {
-                        Layout.fillWidth: true
-                        Layout.preferredHeight: 1
-                        color: botTheme.borderHighlight
+                    MouseArea {
+                        id: declineMouse
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: mnjnefGuidelinesRoot.guidelinesDeclined()
                     }
+                }
 
-                    // Real-time Mouse Path Visualizer
+                Item { Layout.fillWidth: true } // Spacer
+
+                // Timer Visualizer
+                RowLayout {
+                    Layout.alignment: Qt.AlignVCenter
+                    spacing: 8
+                    visible: mnjnefGuidelinesRoot.isTimerActive
+                    
+                    Text {
+                        text: qsTr("Reading Time Enforcement:")
+                        color: glTheme.textDisabled
+                        font.pixelSize: 12
+                        font.family: glTheme.fontMain
+                    }
+                    
+                    Text {
+                        text: mnjnefGuidelinesRoot.readingCountdown + "s"
+                        color: glTheme.statusWarning
+                        font.pixelSize: 14
+                        font.bold: true
+                        font.family: glTheme.fontMono
+                    }
+                }
+
+                // Accept Button
+                Rectangle {
+                    id: acceptBtn
+                    Layout.preferredWidth: 220
+                    Layout.fillHeight: true
+                    radius: 8
+                    
+                    property bool canAccept: mnjnefGuidelinesRoot.acceptedClauses === mnjnefGuidelinesRoot.totalClauses && !mnjnefGuidelinesRoot.isTimerActive
+                    
+                    color: {
+                        if (!canAccept) return glTheme.accentDisabled;
+                        if (acceptMouse.containsPress) return glTheme.accentPrimary;
+                        if (acceptMouse.containsMouse) return glTheme.accentHover;
+                        return glTheme.accentPrimary;
+                    }
+                    
+                    border.color: canAccept ? glTheme.borderActive : "transparent"
+                    border.width: canAccept ? 1 : 0
+                    
+                    Behavior on color { ColorAnimation { duration: 200 } }
+
+                    // Glow Effect when active
                     Rectangle {
-                        Layout.fillWidth: true
-                        Layout.preferredHeight: 120
-                        color: botTheme.bgDarker
-                        border.color: botTheme.borderHighlight
-                        border.width: 1
-                        clip: true
+                        anchors.fill: parent
+                        radius: 8
+                        color: "transparent"
+                        border.color: glTheme.accentHover
+                        border.width: 2
+                        opacity: acceptBtn.canAccept ? 0.6 : 0.0
                         
+                        SequentialAnimation on opacity {
+                            loops: Animation.Infinite
+                            running: acceptBtn.canAccept && !acceptMouse.containsMouse
+                            NumberAnimation { from: 0.2; to: 0.8; duration: 1500 }
+                            NumberAnimation { from: 0.8; to: 0.2; duration: 1500 }
+                        }
+                    }
+
+                    RowLayout {
+                        anchors.centerIn: parent
+                        spacing: 8
+
                         Text {
-                            anchors.top: parent.top
-                            anchors.left: parent.left
-                            anchors.margins: 6
-                            text: qsTr("VECTOR PATH")
-                            color: botTheme.textMuted
-                            font.pixelSize: 9
-                            font.family: botTheme.fontCode
+                            text: "✓"
+                            color: glTheme.textHeader
+                            font.pixelSize: 16
+                            font.bold: true
+                            visible: acceptBtn.canAccept
                         }
 
-                        Canvas {
-                            id: vectorCanvas
-                            anchors.fill: parent
-                            
-                            onPaint: {
-                                var ctx = getContext("2d");
-                                ctx.clearRect(0, 0, width, height);
-                                
-                                if (mousePathModel.count < 2) return;
-                                
-                                ctx.strokeStyle = botTheme.accentSecondary;
-                                ctx.lineWidth = 1.5;
-                                ctx.beginPath();
-                                
-                                // Scale factor to fit the mini-map
-                                var scaleX = width / mnjnefAntiBotRoot.width;
-                                var scaleY = height / mnjnefAntiBotRoot.height;
-                                
-                                for (var i = 0; i < mousePathModel.count; i++) {
-                                    var pt = mousePathModel.get(i);
-                                    if (i === 0) ctx.moveTo(pt.px * scaleX, pt.py * scaleY);
-                                    else ctx.lineTo(pt.px * scaleX, pt.py * scaleY);
-                                }
-                                ctx.stroke();
+                        Text {
+                            text: {
+                                if (mnjnefGuidelinesRoot.isTimerActive) return qsTr("PLEASE READ...");
+                                if (mnjnefGuidelinesRoot.acceptedClauses < mnjnefGuidelinesRoot.totalClauses) return qsTr("ACCEPT ALL CLAUSES");
+                                return qsTr("I AGREE & PROCEED");
                             }
-                            
-                            Timer {
-                                interval: 50
-                                running: true
-                                repeat: true
-                                onRunningChanged: { if (running) { } } // Fix applied
-                                onTriggered: vectorCanvas.requestPaint()
-                            }
+                            color: acceptBtn.canAccept ? glTheme.textHeader : glTheme.textDisabled
+                            font.pixelSize: 14
+                            font.bold: true
+                            font.family: glTheme.fontMain
+                            font.letterSpacing: 1.0
                         }
                     }
 
-                    // Terminal Log output
-                    ListView {
-                        id: heuristicsLogView
-                        Layout.fillWidth: true
-                        Layout.fillHeight: true
-                        model: telemetryLogModel
-                        spacing: 4
-                        clip: true
+                    MouseArea {
+                        id: acceptMouse
+                        anchors.fill: parent
+                        hoverEnabled: acceptBtn.canAccept
+                        cursorShape: acceptBtn.canAccept ? Qt.PointingHandCursor : Qt.ForbiddenCursor
                         
-                        onCountChanged: {
-                            Qt.callLater(function() { heuristicsLogView.positionViewAtEnd() })
-                        }
-                        
-                        delegate: RowLayout {
-                            width: ListView.view.width
-                            spacing: 6
-                            
-                            Text {
-                                text: "[" + timestamp + "]"
-                                color: botTheme.textMuted
-                                font.pixelSize: 10
-                                font.family: botTheme.fontCode
-                                Layout.alignment: Qt.AlignTop
-                            }
-                            Text {
-                                text: logType
-                                color: {
-                                    if (logType === "WARN") return botTheme.stateWarning;
-                                    if (logType === "SYS") return botTheme.accentPrimary;
-                                    if (logType === "PASS") return botTheme.stateSuccess;
-                                    return botTheme.accentSecondary;
-                                }
-                                font.pixelSize: 10
-                                font.bold: true
-                                font.family: botTheme.fontCode
-                                Layout.alignment: Qt.AlignTop
-                                Layout.preferredWidth: 35
-                            }
-                            Text {
-                                text: logText
-                                color: botTheme.textWhite
-                                font.pixelSize: 10
-                                font.family: botTheme.fontCode
-                                Layout.fillWidth: true
-                                wrapMode: Text.WrapAnywhere
+                        onClicked: {
+                            if (acceptBtn.canAccept) {
+                                mnjnefGuidelinesRoot.guidelinesAccepted()
                             }
                         }
                     }
@@ -885,206 +595,61 @@ Item {
     }
 
     // ==========================================
-    // CAPTCHA LOGIC CONTROLLER
-    // ==========================================
-    QtObject {
-        id: botController
-        
-        // Spatial Challenge Data
-        property real targetAngle: 0.0
-        property real currentAngle: 0.0
-        
-        // Pattern Challenge Data
-        property var sequence: []
-        property var userInputs: []
-        property int activeFlashNode: -1
-        property bool isPatternInputActive: false
-        
-        function logTelemetry(type, msg) {
-            let d = new Date()
-            let timeStr = d.getSeconds().toString().padStart(2, '0') + "." + d.getMilliseconds().toString().padStart(3, '0')
-            telemetryLogModel.append({"timestamp": timeStr, "logType": type, "logText": msg})
-            
-            // Limit log size to prevent memory leak
-            if (telemetryLogModel.count > 100) telemetryLogModel.remove(0, 1)
-        }
-        
-        function startChallengeOne() {
-            logTelemetry("SYS", "Initializing Spatial Decryption Engine...");
-            mnjnefAntiBotRoot.humanConfidenceScore = 15.0;
-            
-            // Generate random target angle
-            targetAngle = (Math.random() * Math.PI * 1.5) + 0.5;
-            currentAngle = 0.0;
-            spatialSlider.value = 0.0;
-            
-            mnjnefAntiBotRoot.currentChallengeIndex = 1;
-            logTelemetry("SYS", "Target entropy generated. Awaiting input.");
-        }
-        
-        function validateSpatialChallenge() {
-            let diff = Math.abs(targetAngle - currentAngle);
-            if (diff < 0.15) {
-                logTelemetry("PASS", "Spatial vector aligned. Variance: " + diff.toFixed(3));
-                mnjnefAntiBotRoot.humanConfidenceScore += 35.0;
-                
-                // Proceed to next challenge
-                Qt.callLater(startChallengeTwo);
-            } else {
-                handleFailure("Spatial misalignment. Variance: " + diff.toFixed(3));
-            }
-        }
-        
-        function startChallengeTwo() {
-            mnjnefAntiBotRoot.currentChallengeIndex = 2;
-            logTelemetry("SYS", "Loading Neural Sequence grid...");
-            
-            sequence = [];
-            userInputs = [];
-            isPatternInputActive = false;
-            
-            // Generate sequence of 4 nodes
-            for(let i=0; i<4; i++) {
-                sequence.push(Math.floor(Math.random() * 9));
-            }
-            
-            logTelemetry("SYS", "Sequence injected. Initiating playback...");
-            patternPlaybackTimer.start();
-        }
-        
-        function isNodeClicked(idx) {
-            return userInputs.indexOf(idx) !== -1;
-        }
-        
-        function handleNodeClick(idx) {
-            if (!isPatternInputActive) return;
-            
-            userInputs.push(idx);
-            logTelemetry("MOVE", "Node 0x" + idx + " intercepted.");
-            
-            // Re-bind to force UI update
-            let temp = userInputs;
-            userInputs = [];
-            userInputs = temp;
-            
-            // Check against sequence
-            let currentIndex = userInputs.length - 1;
-            if (userInputs[currentIndex] !== sequence[currentIndex]) {
-                handleFailure("Neural sequence mismatch at index " + currentIndex);
-                return;
-            }
-            
-            if (userInputs.length === sequence.length) {
-                logTelemetry("PASS", "Neural sequence perfectly matched.");
-                mnjnefAntiBotRoot.humanConfidenceScore += 40.0;
-                finalizeAuthentication();
-            }
-        }
-        
-        function handleFailure(reason) {
-            logTelemetry("WARN", "Validation Error: " + reason);
-            mnjnefAntiBotRoot.remainingAttempts--;
-            
-            if (mnjnefAntiBotRoot.remainingAttempts <= 0 || mnjnefAntiBotRoot.humanConfidenceScore < 10.0) {
-                logTelemetry("WARN", "CRITICAL: Multiple failures or zero human signature.");
-                triggerLockout();
-            } else {
-                logTelemetry("SYS", "Retrying... Attempts left: " + mnjnefAntiBotRoot.remainingAttempts);
-                // Reset to challenge 1
-                startChallengeOne();
-            }
-        }
-        
-        function triggerLockout() {
-            mnjnefAntiBotRoot.isSystemLocked = true;
-            logTelemetry("WARN", "SYSTEM LOCKED. Disconnecting socket.");
-            
-            lockoutTimer.start();
-        }
-        
-        function finalizeAuthentication() {
-            mnjnefAntiBotRoot.currentChallengeIndex = 3; // Success state
-            logTelemetry("SYS", "Finalizing biometric signature...");
-            
-            let finalScore = mnjnefAntiBotRoot.humanConfidenceScore.toFixed(1);
-            logTelemetry("PASS", "Human confidence confirmed at " + finalScore + "%");
-            
-            authDelayTimer.start();
-        }
-    }
-
-    // ==========================================
-    // STATE TIMERS
+    // LOGIC & CONTROLLERS
     // ==========================================
     
-    // Timer to play back the pattern sequence
+    function recalculateAcceptance() {
+        let count = 0;
+        for (let i = 0; i < guidelinesModel.count; i++) {
+            if (guidelinesModel.get(i).isAccepted) count++;
+        }
+        mnjnefGuidelinesRoot.acceptedClauses = count;
+    }
+
     Timer {
-        id: patternPlaybackTimer
-        interval: 600
+        id: mandatoryReadTimer
+        interval: 1000
         repeat: true
-        property int step: -1
+        running: true
         
         onRunningChanged: {
             if (running) {
-                step = -1;
+                // initialization if needed
             }
         }
-        onTriggered: {
-            step++;
-            if (step >= botController.sequence.length) {
-                botController.activeFlashNode = -1;
-                botController.isPatternInputActive = true;
-                botController.logTelemetry("SYS", "Awaiting user neural input.");
-                stop();
-                return;
-            }
-            
-            botController.activeFlashNode = botController.sequence[step];
-            botController.logTelemetry("SYS", "Flashing node index: " + step);
-            
-            // Turn off flash after a short duration
-            nodeOffTimer.start();
-        }
-    }
-    
-    Timer {
-        id: nodeOffTimer
-        interval: 300
-        repeat: false
-        onRunningChanged: { if(running){} }
-        onTriggered: {
-            botController.activeFlashNode = -1;
-        }
-    }
-    
-    Timer {
-        id: authDelayTimer
-        interval: 2000
-        repeat: false
-        onRunningChanged: { if(running){} }
-        onTriggered: {
-            // Generate secure mock token
-            let chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-            let tkn = "MNJ-TURING-";
-            for(let i=0; i<12; i++) tkn += chars.charAt(Math.floor(Math.random() * chars.length));
-            
-            mnjnefAntiBotRoot.captchaResolved(tkn, mnjnefAntiBotRoot.humanConfidenceScore);
-        }
-    }
-    
-    Timer {
-        id: lockoutTimer
-        interval: 3000
-        repeat: false
-        onRunningChanged: { if(running){} }
-        onTriggered: {
-            mnjnefAntiBotRoot.captchaFailed("Bot-like behavior detected. Score: " + mnjnefAntiBotRoot.humanConfidenceScore, "ERR_TURING_FAIL");
-        }
-    }
 
-    // Initialize Telemetry on start
+        onTriggered: {
+            if (mnjnefGuidelinesRoot.readingCountdown > 0) {
+                mnjnefGuidelinesRoot.readingCountdown--;
+            } else {
+                mnjnefGuidelinesRoot.isTimerActive = false;
+                stop();
+            }
+        }
+    }
+    
+    // Auto-scroll simulation on load to hint there is content below
     Component.onCompleted: {
-        botController.logTelemetry("SYS", "Bot-Mitigation protocol loaded.");
-        botController.logTelemetry("SYS", "Awaiting user initialization.");
+        startupAnimationTimer.start()
+    }
+    
+    Timer {
+        id: startupAnimationTimer
+        interval: 500
+        repeat: false
+        onRunningChanged: { if(running){} }
+        onTriggered: {
+            guidelinesFlickable.contentY = 20;
+            returnToTopAnim.start();
+        }
+    }
+    
+    NumberAnimation {
+        id: returnToTopAnim
+        target: guidelinesFlickable
+        property: "contentY"
+        to: 0
+        duration: 400
+        easing.type: Easing.OutQuad
     }
 }
