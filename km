@@ -1,8 +1,8 @@
         onRunningChanged: {
             if (running) {
                 ticks = 0
-                securityPhasesModel.setProperty(3, "status", 1)
-                secEngine.appendLog("INFO", "Scanning local memory space for hook injections...")
-                mnjnefSecurityCoreRoot.activeTerminalNode = "MEM_SCANNER_RING0"
+                securityPhasesModel.setProperty(4, "status", 1)
+                secEngine.appendLog("INFO", "Requesting final cryptographic seal from Mainframe...")
+                mnjnefSecurityCoreRoot.activeTerminalNode = "CRYPTO_MINT_NODE"
             }
         }
