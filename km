@@ -8,283 +8,521 @@ Item {
     clip: true
 
     // ==========================================
-    // THEME: PROFESSIONAL CLEAN GRAY
+    // SYSTEM SIGNALS & ROUTING PROPERTIES
+    // ==========================================
+    property string activeUser: "Mnjnef_Admin"
+    property int activeTicketsCount: 0
+    property string lastLogin: "Just now"
+
+    // ==========================================
+    // THEME & STYLING (ULTRA-CLEAN GRAYSCALE)
     // ==========================================
     QtObject {
-        id: theme
-        property color bgPrimary: "#121212"    // Deep gray background
-        property color bgCard: "#1E1E1E"       // Card background
-        property color bgHover: "#2A2A2A"      // Card hover state
-        property color bgIcon: "#252525"       // Icon container background
+        id: modernTheme
+        // Base backgrounds
+        property color bgApp: "#09090B"         // Very dark, almost black
+        property color bgSidebar: "#121214"     // Slightly lighter for depth
+        property color bgCard: "#18181B"        // Card background
+        property color bgCardHover: "#27272A"   // Card hover state
         
-        property color accent: "#3B82F6"       // Subtle blue accent for interactions
-        property color textHeader: "#FFFFFF"   // Pure white for headers
-        property color textBody: "#B3B3B3"     // Light gray for readable descriptions
-        property color borderLine: "#333333"   // Clean separator lines
+        // Borders & Dividers
+        property color borderSubtle: "#27272A"  // Soft border
+        property color borderFocus: "#3F3F46"   // Distinct border
+        
+        // Text Colors
+        property color textPrimary: "#FAFAFA"   // Pure white text
+        property color textSecondary: "#A1A1AA" // Gray text for descriptions
+        property color textMuted: "#52525B"     // Dark gray for tertiary info
+        
+        // Accents (Strictly Grayscale/Neutral)
+        property color accent: "#FFFFFF"
+        property color iconBg: "#27272A"
+        
+        property string fontMain: "Segoe UI"
+        property string fontMono: "Consolas"
     }
 
+    // ==========================================
+    // DATA MODELS
+    // ==========================================
+    ListModel {
+        id: supportModulesModel
+        
+        ListElement { 
+            moduleId: "TICKET_SUBMIT"
+            title: "Submit a New Ticket"
+            subtitle: "Report platform bugs, crashes, or account routing issues."
+            iconBadge: "📝"
+            targetFile: "Support_8_TicketForm.qml"
+            isUrgent: false
+        }
+        ListElement { 
+            moduleId: "TICKET_TRACK"
+            title: "Track Active Tickets"
+            subtitle: "Monitor ongoing resolutions and agent communications."
+            iconBadge: "📡"
+            targetFile: "Support_9_TicketTracker.qml"
+            isUrgent: true
+        }
+        ListElement { 
+            moduleId: "TRANSLATION"
+            title: "Localization & Translation"
+            subtitle: "Install and configure regional language packs for the Mnjnef ecosystem."
+            iconBadge: "🌐"
+            targetFile: "Support_11_TranslationModule.qml"
+            isUrgent: false
+        }
+        ListElement { 
+            moduleId: "GUIDELINES"
+            title: "Support Guidelines"
+            subtitle: "Review Terms of Service, SLA, and platform reporting protocols."
+            iconBadge: "⚖️"
+            targetFile: "Support_6_Guidelines.qml"
+            isUrgent: false
+        }
+    }
+
+    ListModel {
+        id: recentActivityModel
+        ListElement { activityTitle: "Login detected"; activityTime: "2 mins ago"; activityStatus: "Success" }
+        ListElement { activityTitle: "Language pack updated"; activityTime: "Yesterday"; activityStatus: "System" }
+        ListElement { activityTitle: "Ticket #8492 closed"; activityTime: "3 days ago"; activityStatus: "Resolved" }
+    }
+
+    // ==========================================
+    // SOLID BACKGROUND
+    // ==========================================
     Rectangle {
         anchors.fill: parent
-        color: theme.bgPrimary
+        color: modernTheme.bgApp
     }
 
     // ==========================================
-    // TOP NAVIGATION BAR
+    // MAIN LAYOUT (SIDEBAR + CONTENT)
     // ==========================================
-    Rectangle {
-        id: topNavBar
-        width: parent.width
-        height: 70
-        color: theme.bgPrimary
-        border.color: theme.borderLine
-        border.width: 1
-        z: 10 // Keeps bar above scrolling content
+    RowLayout {
+        anchors.fill: parent
+        spacing: 0
 
-        RowLayout {
-            anchors.fill: parent
-            anchors.leftMargin: 30
-            anchors.rightMargin: 30
-            spacing: 20
+        // ------------------------------------------
+        // LEFT SIDEBAR (FIXED NAVIGATION & INFO)
+        // ------------------------------------------
+        Rectangle {
+            Layout.preferredWidth: 280
+            Layout.fillHeight: true
+            color: modernTheme.bgSidebar
+            border.color: modernTheme.borderSubtle
+            border.width: 1
 
-            // Back Button
-            Rectangle {
-                Layout.preferredWidth: 40
-                Layout.preferredHeight: 40
-                radius: 8
-                color: backMouse.containsMouse ? theme.bgHover : theme.bgCard
-                border.color: theme.borderLine
-                border.width: 1
-                
-                Behavior on color { ColorAnimation { duration: 150 } }
+            ColumnLayout {
+                anchors.fill: parent
+                spacing: 0
 
-                Text {
-                    anchors.centerIn: parent
-                    text: "◀"
-                    color: theme.textHeader
-                    font.pixelSize: 14
+                // 1. Sidebar Header / Back Button
+                Rectangle {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 80
+                    color: "transparent"
+                    border.color: modernTheme.borderSubtle
+                    border.width: 1
+
+                    RowLayout {
+                        anchors.fill: parent
+                        anchors.margins: 20
+                        spacing: 16
+
+                        Rectangle {
+                            Layout.preferredWidth: 36
+                            Layout.preferredHeight: 36
+                            radius: 8
+                            color: backMouse.containsMouse ? modernTheme.borderFocus : modernTheme.iconBg
+                            border.color: modernTheme.borderSubtle
+                            border.width: 1
+                            
+                            Behavior on color { ColorAnimation { duration: 150 } }
+
+                            Text {
+                                anchors.centerIn: parent
+                                text: "◀"
+                                color: modernTheme.textPrimary
+                                font.pixelSize: 12
+                            }
+
+                            MouseArea {
+                                id: backMouse
+                                anchors.fill: parent
+                                hoverEnabled: true
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: {
+                                    if (supportMainRoot.StackView.view) {
+                                        supportMainRoot.StackView.view.pop();
+                                    } else {
+                                        console.log("[ERROR] StackView not found.");
+                                    }
+                                }
+                            }
+                        }
+
+                        Text {
+                            text: qsTr("Return")
+                            color: modernTheme.textSecondary
+                            font.pixelSize: 14
+                            font.family: modernTheme.fontMain
+                            font.bold: true
+                        }
+                    }
                 }
 
-                MouseArea {
-                    id: backMouse
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: {
-                        if (StackView.view) {
-                            StackView.view.pop();
+                // 2. User Profile Area
+                Item {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 120
+                    
+                    ColumnLayout {
+                        anchors.centerIn: parent
+                        spacing: 12
+                        
+                        Rectangle {
+                            Layout.preferredWidth: 48
+                            Layout.preferredHeight: 48
+                            radius: 24
+                            color: modernTheme.iconBg
+                            border.color: modernTheme.borderFocus
+                            border.width: 2
+                            Layout.alignment: Qt.AlignHCenter
+                            
+                            Text {
+                                anchors.centerIn: parent
+                                text: "MNJ"
+                                color: modernTheme.textPrimary
+                                font.pixelSize: 14
+                                font.bold: true
+                                font.family: modernTheme.fontMono
+                            }
+                        }
+
+                        ColumnLayout {
+                            spacing: 4
+                            Layout.alignment: Qt.AlignHCenter
+                            
+                            Text {
+                                text: supportMainRoot.activeUser
+                                color: modernTheme.textPrimary
+                                font.pixelSize: 16
+                                font.bold: true
+                                font.family: modernTheme.fontMain
+                                Layout.alignment: Qt.AlignHCenter
+                            }
+                            
+                            Text {
+                                text: qsTr("Session Secured")
+                                color: modernTheme.textSecondary
+                                font.pixelSize: 12
+                                font.family: modernTheme.fontMain
+                                Layout.alignment: Qt.AlignHCenter
+                            }
+                        }
+                    }
+                }
+
+                Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: modernTheme.borderSubtle }
+
+                // 3. System Status / Activity List
+                ColumnLayout {
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    Layout.margins: 24
+                    spacing: 16
+                    Layout.alignment: Qt.AlignTop
+
+                    Text {
+                        text: qsTr("RECENT ACTIVITY")
+                        color: modernTheme.textMuted
+                        font.pixelSize: 11
+                        font.bold: true
+                        font.family: modernTheme.fontMono
+                    }
+
+                    ListView {
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+                        model: recentActivityModel
+                        interactive: false
+                        spacing: 16
+
+                        delegate: RowLayout {
+                            width: ListView.view.width
+                            spacing: 12
+                            
+                            Rectangle {
+                                Layout.preferredWidth: 8
+                                Layout.preferredHeight: 8
+                                radius: 4
+                                color: modernTheme.textMuted
+                                Layout.alignment: Qt.AlignTop
+                                Layout.topMargin: 4
+                            }
+                            
+                            ColumnLayout {
+                                Layout.fillWidth: true
+                                spacing: 4
+                                
+                                Text {
+                                    text: activityTitle
+                                    color: modernTheme.textPrimary
+                                    font.pixelSize: 13
+                                    font.family: modernTheme.fontMain
+                                }
+                                
+                                RowLayout {
+                                    spacing: 8
+                                    Text {
+                                        text: activityTime
+                                        color: modernTheme.textSecondary
+                                        font.pixelSize: 11
+                                        font.family: modernTheme.fontMain
+                                    }
+                                    Text {
+                                        text: "• " + activityStatus
+                                        color: modernTheme.textMuted
+                                        font.pixelSize: 11
+                                        font.family: modernTheme.fontMain
+                                    }
+                                }
+                            }
                         }
                     }
                 }
             }
-
-            // Title
-            Text {
-                text: "Mnjnef Support"
-                color: theme.textHeader
-                font.pixelSize: 18
-                font.bold: true
-                font.family: "Segoe UI"
-            }
-            
-            Item { Layout.fillWidth: true } // Spacer
-        }
-    }
-
-    // ==========================================
-    // MAIN SCROLLABLE CONTENT (CENTERED)
-    // ==========================================
-    Flickable {
-        anchors.top: topNavBar.bottom
-        anchors.bottom: parent.bottom
-        anchors.left: parent.left
-        anchors.right: parent.right
-        contentWidth: width
-        contentHeight: mainContainer.implicitHeight + 100 // Extra padding at bottom
-        clip: true
-        boundsBehavior: Flickable.StopAtBounds
-
-        ScrollBar.vertical: ScrollBar {
-            width: 8
-            policy: ScrollBar.AsNeeded
-            contentItem: Rectangle {
-                implicitWidth: 8
-                radius: 4
-                color: theme.borderLine
-            }
         }
 
-        // Central constraints to prevent overlapping forever
-        ColumnLayout {
-            id: mainContainer
-            width: Math.min(parent.width - 60, 900) // Caps maximum width to 900px
-            anchors.horizontalCenter: parent.horizontalCenter
-            anchors.top: parent.top
-            anchors.topMargin: 50
-            spacing: 40
+        // ------------------------------------------
+        // RIGHT MAIN AREA (CONTENT & CARDS)
+        // ------------------------------------------
+        Rectangle {
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+            color: "transparent"
 
-            // ------------------------------------------
-            // HEADER TEXT
-            // ------------------------------------------
             ColumnLayout {
-                Layout.fillWidth: true
-                spacing: 12
-                Layout.alignment: Qt.AlignHCenter
+                anchors.fill: parent
+                spacing: 0
 
-                Text {
-                    text: qsTr("How can we help you today?")
-                    color: theme.textHeader
-                    font.pixelSize: 32
-                    font.bold: true
-                    font.family: "Segoe UI"
-                    Layout.alignment: Qt.AlignHCenter
-                }
-
-                Text {
-                    text: qsTr("Select an option below to manage your Mnjnef account, report platform issues, or configure local settings.")
-                    color: theme.textBody
-                    font.pixelSize: 15
-                    font.family: "Segoe UI"
-                    Layout.alignment: Qt.AlignHCenter
-                    horizontalAlignment: Text.AlignHCenter
-                    wrapMode: Text.WordWrap
-                    Layout.maximumWidth: 600
-                }
-            }
-
-            // ------------------------------------------
-            // SUPPORT OPTIONS GRID
-            // ------------------------------------------
-            GridLayout {
-                Layout.fillWidth: true
-                columns: parent.width < 700 ? 1 : 2 // Responsive: 1 column on small screens, 2 on large
-                rowSpacing: 20
-                columnSpacing: 20
-
-                // 1. Submit Ticket Card
-                SupportCard {
+                // 1. Top Header
+                Rectangle {
                     Layout.fillWidth: true
-                    Layout.preferredHeight: 130
-                    cardIcon: "📝"
-                    cardTitle: qsTr("Submit a Ticket")
-                    cardDesc: qsTr("Report bugs, crashes, or account routing issues directly to our technical team.")
-                    targetQml: "Support_8_TicketForm.qml"
+                    Layout.preferredHeight: 80
+                    color: "transparent"
+                    border.color: modernTheme.borderSubtle
+                    border.width: 1
+
+                    RowLayout {
+                        anchors.fill: parent
+                        anchors.leftMargin: 40
+                        anchors.rightMargin: 40
+
+                        Text {
+                            text: qsTr("Mnjnef Support Operations")
+                            color: modernTheme.textPrimary
+                            font.pixelSize: 20
+                            font.bold: true
+                            font.family: modernTheme.fontMain
+                        }
+
+                        Item { Layout.fillWidth: true }
+
+                        Rectangle {
+                            Layout.preferredWidth: 200
+                            Layout.preferredHeight: 36
+                            radius: 18
+                            color: modernTheme.bgSidebar
+                            border.color: modernTheme.borderSubtle
+                            border.width: 1
+
+                            RowLayout {
+                                anchors.fill: parent
+                                anchors.margins: 12
+                                spacing: 8
+
+                                Text { text: "🔍"; color: modernTheme.textMuted; font.pixelSize: 12 }
+                                Text { 
+                                    text: qsTr("Search resources...")
+                                    color: modernTheme.textMuted
+                                    font.pixelSize: 13
+                                    font.family: modernTheme.fontMain 
+                                }
+                            }
+                        }
+                    }
                 }
 
-                // 2. Track Tickets & Chat Card
-                SupportCard {
+                // 2. Scrollable Module List (Bulletproof Routing)
+                Flickable {
                     Layout.fillWidth: true
-                    Layout.preferredHeight: 130
-                    cardIcon: "📡"
-                    cardTitle: qsTr("Track Active Tickets")
-                    cardDesc: qsTr("Monitor ongoing resolutions and communicate directly with assigned support agents.")
-                    targetQml: "Support_9_TicketTracker.qml"
-                }
+                    Layout.fillHeight: true
+                    contentWidth: width
+                    contentHeight: contentColumn.implicitHeight + 80
+                    clip: true
+                    boundsBehavior: Flickable.StopAtBounds
 
-                // 3. Support Guidelines Card
-                SupportCard {
-                    Layout.fillWidth: true
-                    Layout.preferredHeight: 130
-                    cardIcon: "⚖️"
-                    cardTitle: qsTr("Support Guidelines")
-                    cardDesc: qsTr("Review our Terms of Service, SLA, and official platform reporting protocols.")
-                    targetQml: "Support_6_Guidelines.qml"
-                }
+                    ScrollBar.vertical: ScrollBar {
+                        width: 8
+                        contentItem: Rectangle {
+                            implicitWidth: 8
+                            radius: 4
+                            color: modernTheme.borderFocus
+                        }
+                    }
 
-                // 4. Translation Module Card
-                SupportCard {
-                    Layout.fillWidth: true
-                    Layout.preferredHeight: 130
-                    cardIcon: "🌐"
-                    cardTitle: qsTr("Localization & Translation")
-                    cardDesc: qsTr("Install and configure regional language packs for the Mnjnef ecosystem.")
-                    targetQml: "Support_11_TranslationModule.qml"
-                }
-            }
-        }
-    }
+                    ColumnLayout {
+                        id: contentColumn
+                        width: Math.min(parent.width - 80, 800)
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        y: 40
+                        spacing: 24
 
-    // ==========================================
-    // REUSABLE CARD COMPONENT
-    // ==========================================
-    component SupportCard: Rectangle {
-        property string cardIcon: ""
-        property string cardTitle: ""
-        property string cardDesc: ""
-        property string targetQml: ""
+                        // Welcome Text
+                        ColumnLayout {
+                            Layout.fillWidth: true
+                            spacing: 8
+                            Layout.bottomMargin: 16
 
-        radius: 12
-        color: cardMouse.containsMouse ? theme.bgHover : theme.bgCard
-        border.color: cardMouse.containsMouse ? theme.accent : theme.borderLine
-        border.width: 1
-        
-        Behavior on color { ColorAnimation { duration: 150 } }
-        Behavior on border.color { ColorAnimation { duration: 150 } }
+                            Text {
+                                text: qsTr("How can we assist you?")
+                                color: modernTheme.textPrimary
+                                font.pixelSize: 28
+                                font.bold: true
+                                font.family: modernTheme.fontMain
+                            }
 
-        RowLayout {
-            anchors.fill: parent
-            anchors.margins: 20
-            spacing: 20
+                            Text {
+                                text: qsTr("Select a module below to manage your account, report issues, or configure local environment settings.")
+                                color: modernTheme.textSecondary
+                                font.pixelSize: 15
+                                font.family: modernTheme.fontMain
+                                wrapMode: Text.WordWrap
+                                Layout.fillWidth: true
+                                lineHeight: 1.4
+                            }
+                        }
 
-            // Icon Container
-            Rectangle {
-                Layout.preferredWidth: 56
-                Layout.preferredHeight: 56
-                radius: 12
-                color: theme.bgIcon
-                border.color: theme.borderLine
-                border.width: 1
-                
-                Text {
-                    anchors.centerIn: parent
-                    text: parent.parent.parent.cardIcon
-                    font.pixelSize: 26
-                }
-            }
+                        // Module List using Repeater (Safest approach for routing)
+                        Repeater {
+                            model: supportModulesModel
 
-            // Text Layout
-            ColumnLayout {
-                Layout.fillWidth: true
-                spacing: 6
-                
-                Text {
-                    text: parent.parent.parent.cardTitle
-                    color: theme.textHeader
-                    font.pixelSize: 18
-                    font.bold: true
-                    font.family: "Segoe UI"
-                }
-                
-                Text {
-                    text: parent.parent.parent.cardDesc
-                    color: theme.textBody
-                    font.pixelSize: 13
-                    font.family: "Segoe UI"
-                    wrapMode: Text.WordWrap
-                    Layout.fillWidth: true
-                    lineHeight: 1.3
-                }
-            }
-            
-            // Arrow indicator
-            Text {
-                text: "➔"
-                color: cardMouse.containsMouse ? theme.accent : theme.borderLine
-                font.pixelSize: 20
-                font.bold: true
-                x: cardMouse.containsMouse ? 5 : 0
-                Behavior on x { NumberAnimation { duration: 200; easing.type: Easing.OutBack } }
-            }
-        }
+                            Rectangle {
+                                Layout.fillWidth: true
+                                Layout.preferredHeight: 110
+                                radius: 12
+                                color: moduleMouse.containsMouse ? modernTheme.bgCardHover : modernTheme.bgCard
+                                border.color: moduleMouse.containsMouse ? modernTheme.borderFocus : modernTheme.borderSubtle
+                                border.width: 1
 
-        MouseArea {
-            id: cardMouse
-            anchors.fill: parent
-            hoverEnabled: true
-            cursorShape: Qt.PointingHandCursor
-            onClicked: {
-                console.log("[ROUTING] Navigating to: " + parent.targetQml);
-                if (StackView.view) {
-                    StackView.view.push(parent.targetQml);
+                                Behavior on color { ColorAnimation { duration: 150 } }
+                                Behavior on border.color { ColorAnimation { duration: 150 } }
+
+                                RowLayout {
+                                    anchors.fill: parent
+                                    anchors.margins: 20
+                                    spacing: 24
+
+                                    // Icon Container
+                                    Rectangle {
+                                        Layout.preferredWidth: 64
+                                        Layout.preferredHeight: 64
+                                        radius: 16
+                                        color: modernTheme.iconBg
+                                        border.color: modernTheme.borderSubtle
+                                        border.width: 1
+
+                                        Text {
+                                            anchors.centerIn: parent
+                                            text: iconBadge
+                                            font.pixelSize: 28
+                                        }
+                                        
+                                        // Notification Dot for urgent items
+                                        Rectangle {
+                                            width: 12
+                                            height: 12
+                                            radius: 6
+                                            color: modernTheme.textPrimary
+                                            anchors.top: parent.top
+                                            anchors.right: parent.right
+                                            anchors.margins: -4
+                                            border.color: modernTheme.bgCard
+                                            border.width: 2
+                                            visible: isUrgent
+                                        }
+                                    }
+
+                                    // Text Content
+                                    ColumnLayout {
+                                        Layout.fillWidth: true
+                                        spacing: 6
+
+                                        Text {
+                                            text: title
+                                            color: modernTheme.textPrimary
+                                            font.pixelSize: 18
+                                            font.bold: true
+                                            font.family: modernTheme.fontMain
+                                        }
+
+                                        Text {
+                                            text: subtitle
+                                            color: modernTheme.textSecondary
+                                            font.pixelSize: 14
+                                            font.family: modernTheme.fontMain
+                                            wrapMode: Text.WordWrap
+                                            Layout.fillWidth: true
+                                            lineHeight: 1.3
+                                        }
+                                    }
+
+                                    // Action Arrow
+                                    Rectangle {
+                                        Layout.preferredWidth: 40
+                                        Layout.preferredHeight: 40
+                                        radius: 20
+                                        color: moduleMouse.containsMouse ? modernTheme.borderFocus : "transparent"
+                                        
+                                        Behavior on color { ColorAnimation { duration: 150 } }
+
+                                        Text {
+                                            anchors.centerIn: parent
+                                            text: "➔"
+                                            color: moduleMouse.containsMouse ? modernTheme.textPrimary : modernTheme.textMuted
+                                            font.pixelSize: 18
+                                            font.bold: true
+                                        }
+                                    }
+                                }
+
+                                // Interactive Click Logic
+                                MouseArea {
+                                    id: moduleMouse
+                                    anchors.fill: parent
+                                    hoverEnabled: true
+                                    cursorShape: Qt.PointingHandCursor
+                                    onClicked: {
+                                        console.log("[ROUTING] Attempting to navigate to: " + targetFile);
+                                        
+                                        // Safe Routing Check
+                                        if (supportMainRoot.StackView.view) {
+                                            supportMainRoot.StackView.view.push(targetFile);
+                                            console.log("[ROUTING SUCCESS]");
+                                        } else {
+                                            console.log("[ROUTING ERROR] StackView context is missing!");
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        
+                        // Extra spacer at bottom
+                        Item { Layout.preferredHeight: 40; Layout.fillWidth: true }
+                    }
                 }
             }
         }
