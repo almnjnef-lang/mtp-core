@@ -3,27 +3,21 @@ import QtQuick.Controls
 import QtQuick.Layouts
 
 Item {
-    id: translationModuleRoot
+    id: ticketFormRoot
     anchors.fill: parent
     clip: true
 
     // ==========================================
     // C++ INTEGRATION SIGNALS
     // ==========================================
-    // This signal MUST be caught by your C++ backend (e.g., via QObject::connect)
-    // to load the corresponding .qm file and trigger an engine layout update.
-    signal requestLanguageChange(string localeCode, bool requiresRtl)
+    // This signal will be caught by your C++ TicketManager to send data to the backend
+    signal submitTicketRequest(string category, string subject, string description)
 
     // ==========================================
-    // SYSTEM STATE PROPERTIES
+    // SYSTEM STATE
     // ==========================================
-    // Defaulting to MENA based on your primary region
-    property string activeRegionFilter: "MENA"
-    property string selectedLanguageCode: "ar_SA"
-    
-    // This represents the currently active language in the C++ engine
-    property string currentEngineLanguage: "en_US"
-    property bool isApplying: false
+    property string selectedCategory: ""
+    property bool isSubmitting: false
 
     // ==========================================
     // THEME & STYLING (ENTERPRISE GRAYSCALE)
@@ -31,78 +25,25 @@ Item {
     QtObject {
         id: modernTheme
         property color bgApp: "#09090B"
-        property color bgSidebar: "#121214"
         property color bgCard: "#18181B"
-        property color bgCardHover: "#27272A"
+        property color bgInput: "#121214"
+        property color bgHover: "#27272A"
         
         property color borderSubtle: "#27272A"
         property color borderFocus: "#3F3F46"
+        property color borderActive: "#FFFFFF"
         
         property color textPrimary: "#FAFAFA"
         property color textSecondary: "#A1A1AA"
         property color textMuted: "#52525B"
         
         property color accent: "#FFFFFF"
-        property color activeSelection: "#3F3F46"
-        
-        property color stateSuccess: "#10B981"
-        property color stateWarning: "#F59E0B"
+        property color error: "#EF4444"
         
         property string fontMain: "Segoe UI"
         property string fontMono: "Consolas"
     }
 
-    // ==========================================
-    // DATA MODELS
-    // ==========================================
-    
-    // Geographic Regions
-    ListModel {
-        id: regionsModel
-        ListElement { regionId: "MENA"; title: "Middle East & N. Africa"; iconPath: "🌍" }
-        ListElement { regionId: "EU"; title: "Europe"; iconPath: "🇪🇺" }
-        ListElement { regionId: "APAC"; title: "Asia-Pacific"; iconPath: "🌏" }
-        ListElement { regionId: "AMER"; title: "Americas"; iconPath: "🌎" }
-    }
-
-    // Comprehensive Language Database (Real Metadata for C++)
-    ListModel {
-        id: masterLanguageModel
-        
-        // MENA
-        ListElement { langCode: "ar_SA"; region: "MENA"; engName: "Arabic (Saudi Arabia)"; nativeName: "العربية"; isRtl: true; status: "READY"; desc: "Standard Arabic localization. Fully supports RTL rendering engine." }
-        ListElement { langCode: "ar_AE"; region: "MENA"; engName: "Arabic (UAE)"; nativeName: "العربية (الإمارات)"; isRtl: true; status: "READY"; desc: "UAE specific localization and date formats." }
-        ListElement { langCode: "fa_IR"; region: "MENA"; engName: "Persian"; nativeName: "فارسی"; isRtl: true; status: "PENDING"; desc: "Persian localization. Requires font update." }
-        ListElement { langCode: "tr_TR"; region: "MENA"; engName: "Turkish"; nativeName: "Türkçe"; isRtl: false; status: "READY"; desc: "Standard Turkish localization." }
-        ListElement { langCode: "he_IL"; region: "MENA"; engName: "Hebrew"; nativeName: "עברית"; isRtl: true; status: "PENDING"; desc: "Hebrew RTL layout support." }
-        
-        // EU
-        ListElement { langCode: "en_GB"; region: "EU"; engName: "English (UK)"; nativeName: "English (UK)"; isRtl: false; status: "READY"; desc: "British English and EU date formats." }
-        ListElement { langCode: "fr_FR"; region: "EU"; engName: "French"; nativeName: "Français"; isRtl: false; status: "READY"; desc: "Standard French localization." }
-        ListElement { langCode: "de_DE"; region: "EU"; engName: "German"; nativeName: "Deutsch"; isRtl: false; status: "READY"; desc: "Standard German localization." }
-        ListElement { langCode: "es_ES"; region: "EU"; engName: "Spanish"; nativeName: "Español"; isRtl: false; status: "READY"; desc: "Castilian Spanish localization." }
-        ListElement { langCode: "it_IT"; region: "EU"; engName: "Italian"; nativeName: "Italiano"; isRtl: false; status: "READY"; desc: "Standard Italian localization." }
-        ListElement { langCode: "pl_PL"; region: "EU"; engName: "Polish"; nativeName: "Polski"; isRtl: false; status: "PENDING"; desc: "Polish localization." }
-        ListElement { langCode: "ru_RU"; region: "EU"; engName: "Russian"; nativeName: "Русский"; isRtl: false; status: "READY"; desc: "Cyrillic character set support." }
-        
-        // APAC
-        ListElement { langCode: "ja_JP"; region: "APAC"; engName: "Japanese"; nativeName: "日本語"; isRtl: false; status: "READY"; desc: "Full Kanji and Kana support." }
-        ListElement { langCode: "ko_KR"; region: "APAC"; engName: "Korean"; nativeName: "한국어"; isRtl: false; status: "READY"; desc: "Hangul text rendering support." }
-        ListElement { langCode: "zh_CN"; region: "APAC"; engName: "Chinese (Simplified)"; nativeName: "简体中文"; isRtl: false; status: "READY"; desc: "Mainland China character set." }
-        ListElement { langCode: "zh_TW"; region: "APAC"; engName: "Chinese (Traditional)"; nativeName: "繁體中文"; isRtl: false; status: "READY"; desc: "Taiwan/Hong Kong character set." }
-        
-        // AMER
-        ListElement { langCode: "en_US"; region: "AMER"; engName: "English (US)"; nativeName: "English (US)"; isRtl: false; status: "ACTIVE"; desc: "System default core language." }
-        ListElement { langCode: "es_419"; region: "AMER"; engName: "Spanish (LATAM)"; nativeName: "Español (Latinoamérica)"; isRtl: false; status: "READY"; desc: "Latin American Spanish." }
-        ListElement { langCode: "pt_BR"; region: "AMER"; engName: "Portuguese (BR)"; nativeName: "Português (Brasil)"; isRtl: false; status: "READY"; desc: "Brazilian Portuguese." }
-    }
-
-    // Filtered model based on selected region
-    ListModel { id: filteredLanguageModel }
-
-    // ==========================================
-    // BACKGROUND
-    // ==========================================
     Rectangle {
         anchors.fill: parent
         color: modernTheme.bgApp
@@ -118,7 +59,7 @@ Item {
         color: modernTheme.bgApp
         border.color: modernTheme.borderSubtle
         border.width: 1
-        z: 10 // Keeps bar above scrolling content
+        z: 10
 
         RowLayout {
             anchors.fill: parent
@@ -131,7 +72,7 @@ Item {
                 Layout.preferredWidth: 40
                 Layout.preferredHeight: 40
                 radius: 8
-                color: backMouse.containsMouse ? modernTheme.bgCardHover : modernTheme.bgCard
+                color: backMouse.containsMouse ? modernTheme.bgHover : modernTheme.bgCard
                 border.color: modernTheme.borderSubtle
                 border.width: 1
                 
@@ -152,528 +93,328 @@ Item {
                     onClicked: {
                         if (StackView.view) {
                             StackView.view.pop();
-                        } else {
-                            console.log("[ROUTING ERROR] No StackView context found to pop.");
                         }
                     }
                 }
             }
 
-            // Title
             ColumnLayout {
                 spacing: 2
                 Text {
-                    text: qsTr("Localization & Translation")
+                    text: qsTr("Submit a New Ticket")
                     color: modernTheme.textPrimary
                     font.pixelSize: 18
                     font.bold: true
                     font.family: modernTheme.fontMain
                 }
                 Text {
-                    text: qsTr("Configure Engine Language")
+                    text: qsTr("Diagnostic Routing Form")
                     color: modernTheme.textSecondary
                     font.pixelSize: 11
                     font.family: modernTheme.fontMono
                 }
             }
             
-            Item { Layout.fillWidth: true } // Spacer
-            
-            // Current Active Indicator
-            Rectangle {
-                Layout.preferredHeight: 36
-                Layout.preferredWidth: 160
-                radius: 18
-                color: modernTheme.bgSidebar
-                border.color: modernTheme.borderSubtle
-                border.width: 1
-                
-                RowLayout {
-                    anchors.fill: parent
-                    anchors.margins: 12
-                    spacing: 8
-                    
-                    Rectangle {
-                        width: 8; height: 8; radius: 4
-                        color: modernTheme.stateSuccess
-                    }
-                    
-                    Text {
-                        text: qsTr("ACTIVE: ") + translationModuleRoot.currentEngineLanguage
-                        color: modernTheme.textPrimary
-                        font.pixelSize: 11
-                        font.bold: true
-                        font.family: modernTheme.fontMono
-                    }
-                }
-            }
+            Item { Layout.fillWidth: true }
         }
     }
 
     // ==========================================
-    // MAIN SPLIT LAYOUT
+    // MAIN FORM CONTENT
     // ==========================================
-    RowLayout {
+    Flickable {
         anchors.top: topNavBar.bottom
         anchors.bottom: parent.bottom
         anchors.left: parent.left
         anchors.right: parent.right
-        spacing: 0
+        contentWidth: width
+        contentHeight: formLayout.implicitHeight + 80
+        clip: true
+        boundsBehavior: Flickable.StopAtBounds
 
-        // ------------------------------------------
-        // LEFT SIDEBAR: REGION SELECTOR
-        // ------------------------------------------
-        Rectangle {
-            Layout.preferredWidth: 260
-            Layout.fillHeight: true
-            color: modernTheme.bgSidebar
-            border.color: modernTheme.borderSubtle
-            border.width: 1
-
-            ColumnLayout {
-                anchors.fill: parent
-                spacing: 0
-
-                Rectangle {
-                    Layout.fillWidth: true
-                    Layout.preferredHeight: 60
-                    color: "transparent"
-                    border.color: modernTheme.borderSubtle
-                    border.width: 1
-
-                    Text {
-                        anchors.verticalCenter: parent.verticalCenter
-                        anchors.left: parent.left
-                        anchors.leftMargin: 20
-                        text: qsTr("GLOBAL REGIONS")
-                        color: modernTheme.textMuted
-                        font.pixelSize: 12
-                        font.bold: true
-                        font.family: modernTheme.fontMono
-                    }
-                }
-
-                ListView {
-                    id: regionListView
-                    Layout.fillWidth: true
-                    Layout.fillHeight: true
-                    model: regionsModel
-                    clip: true
-                    
-                    delegate: RegionDelegate {
-                        width: ListView.view.width
-                        height: 64
-                        isCurrentRegion: translationModuleRoot.activeRegionFilter === regionId
-                        
-                        onRegionClicked: {
-                            translationModuleRoot.activeRegionFilter = regionId;
-                            dataController.updateFilteredLanguages(regionId);
-                        }
-                    }
-                }
+        ScrollBar.vertical: ScrollBar {
+            width: 8
+            contentItem: Rectangle {
+                implicitWidth: 8; radius: 4; color: modernTheme.borderFocus
             }
         }
 
-        // ------------------------------------------
-        // RIGHT AREA: LANGUAGES & DETAILS
-        // ------------------------------------------
-        Rectangle {
-            Layout.fillWidth: true
-            Layout.fillHeight: true
-            color: "transparent"
+        ColumnLayout {
+            id: formLayout
+            width: Math.min(parent.width - 60, 800)
+            anchors.horizontalCenter: parent.horizontalCenter
+            anchors.top: parent.top
+            anchors.topMargin: 40
+            spacing: 30
 
+            // 1. INSTRUCTIONS
             ColumnLayout {
-                anchors.fill: parent
-                anchors.margins: 40
-                spacing: 24
-
-                // Header
+                Layout.fillWidth: true
+                spacing: 8
+                
                 Text {
-                    text: qsTr("Available Language Packages")
+                    text: qsTr("Provide Issue Details")
                     color: modernTheme.textPrimary
                     font.pixelSize: 22
                     font.bold: true
                     font.family: modernTheme.fontMain
                 }
-
-                // Grid View for Languages
-                GridView {
-                    id: langGridView
+                Text {
+                    text: qsTr("Please select a category and provide as much detail as possible. This information is securely transmitted to the Mnjnef technical team for immediate review.")
+                    color: modernTheme.textSecondary
+                    font.pixelSize: 14
+                    font.family: modernTheme.fontMain
+                    wrapMode: Text.WordWrap
                     Layout.fillWidth: true
-                    Layout.fillHeight: true
-                    cellWidth: 320
-                    cellHeight: 100
-                    model: filteredLanguageModel
-                    clip: true
-                    
-                    ScrollBar.vertical: ScrollBar {
-                        width: 8
-                        contentItem: Rectangle {
-                            implicitWidth: 8; radius: 4; color: modernTheme.borderFocus
-                        }
-                    }
+                    lineHeight: 1.4
+                }
+            }
 
-                    delegate: LanguageCard {
-                        width: langGridView.cellWidth - 20
-                        height: langGridView.cellHeight - 20
-                        isSelected: translationModuleRoot.selectedLanguageCode === langCode
-                        isActiveEngine: translationModuleRoot.currentEngineLanguage === langCode
-                        
-                        onCardClicked: {
-                            translationModuleRoot.selectedLanguageCode = langCode;
-                        }
-                    }
+            // 2. CATEGORY SELECTION
+            ColumnLayout {
+                Layout.fillWidth: true
+                spacing: 12
+
+                Text {
+                    text: qsTr("ISSUE CATEGORY")
+                    color: modernTheme.textMuted
+                    font.pixelSize: 12
+                    font.bold: true
+                    font.family: modernTheme.fontMono
                 }
 
-                // ------------------------------------------
-                // BOTTOM DETAIL & ACTION PANEL
-                // ------------------------------------------
+                RowLayout {
+                    Layout.fillWidth: true
+                    spacing: 16
+
+                    CategoryButton { label: "Account / Billing"; catId: "ACCOUNT"; Layout.fillWidth: true }
+                    CategoryButton { label: "Technical Bug"; catId: "BUG"; Layout.fillWidth: true }
+                    CategoryButton { label: "Network / Ping"; catId: "NETWORK"; Layout.fillWidth: true }
+                }
+            }
+
+            // 3. SUBJECT LINE
+            ColumnLayout {
+                Layout.fillWidth: true
+                spacing: 12
+
+                Text {
+                    text: qsTr("SUBJECT")
+                    color: modernTheme.textMuted
+                    font.pixelSize: 12
+                    font.bold: true
+                    font.family: modernTheme.fontMono
+                }
+
                 Rectangle {
                     Layout.fillWidth: true
-                    Layout.preferredHeight: 180
-                    radius: 12
-                    color: modernTheme.bgCard
-                    border.color: modernTheme.borderSubtle
-                    border.width: 1
+                    Layout.preferredHeight: 50
+                    radius: 8
+                    color: modernTheme.bgInput
+                    border.color: subjectInput.activeFocus ? modernTheme.borderActive : modernTheme.borderSubtle
+                    border.width: subjectInput.activeFocus ? 2 : 1
+                    
+                    Behavior on border.color { ColorAnimation { duration: 150 } }
 
-                    property var currentLangData: dataController.getLanguageData(translationModuleRoot.selectedLanguageCode)
-
-                    RowLayout {
+                    TextInput {
+                        id: subjectInput
                         anchors.fill: parent
-                        anchors.margins: 24
-                        spacing: 30
+                        anchors.margins: 16
+                        color: modernTheme.textPrimary
+                        font.pixelSize: 15
+                        font.family: modernTheme.fontMain
+                        verticalAlignment: TextInput.AlignVCenter
+                        selectByMouse: true
 
-                        // Metadata Column
-                        ColumnLayout {
-                            Layout.fillWidth: true
-                            Layout.fillHeight: true
-                            spacing: 12
+                        Text {
+                            text: qsTr("Brief summary of the issue...")
+                            color: modernTheme.textMuted
+                            font.pixelSize: 15
+                            font.family: modernTheme.fontMain
+                            visible: !subjectInput.text && !subjectInput.activeFocus
+                            anchors.verticalCenter: parent.verticalCenter
+                        }
+                    }
+                }
+            }
 
-                            RowLayout {
-                                spacing: 16
-                                Text {
-                                    text: parent.parent.parent.currentLangData ? parent.parent.parent.currentLangData.nativeName : ""
-                                    color: modernTheme.textPrimary
-                                    font.pixelSize: 24
-                                    font.bold: true
-                                    font.family: modernTheme.fontMain
-                                }
-                                Rectangle {
-                                    Layout.preferredHeight: 24
-                                    Layout.preferredWidth: 60
-                                    radius: 12
-                                    color: modernTheme.bgSidebar
-                                    border.color: modernTheme.borderFocus
-                                    border.width: 1
-                                    
-                                    Text {
-                                        anchors.centerIn: parent
-                                        text: parent.parent.parent.parent.currentLangData ? parent.parent.parent.parent.currentLangData.langCode : ""
-                                        color: modernTheme.textSecondary
-                                        font.pixelSize: 11
-                                        font.bold: true
-                                        font.family: modernTheme.fontMono
-                                    }
-                                }
-                            }
+            // 4. DESCRIPTION BOX
+            ColumnLayout {
+                Layout.fillWidth: true
+                spacing: 12
 
+                Text {
+                    text: qsTr("DETAILED DESCRIPTION")
+                    color: modernTheme.textMuted
+                    font.pixelSize: 12
+                    font.bold: true
+                    font.family: modernTheme.fontMono
+                }
+
+                Rectangle {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 200
+                    radius: 8
+                    color: modernTheme.bgInput
+                    border.color: descInput.activeFocus ? modernTheme.borderActive : modernTheme.borderSubtle
+                    border.width: descInput.activeFocus ? 2 : 1
+                    
+                    Behavior on border.color { ColorAnimation { duration: 150 } }
+
+                    Flickable {
+                        anchors.fill: parent
+                        anchors.margins: 16
+                        contentWidth: width
+                        contentHeight: descInput.implicitHeight
+                        clip: true
+                        
+                        TextEdit {
+                            id: descInput
+                            width: parent.width
+                            color: modernTheme.textPrimary
+                            font.pixelSize: 15
+                            font.family: modernTheme.fontMain
+                            wrapMode: TextEdit.Wrap
+                            selectByMouse: true
+                            
                             Text {
-                                text: parent.parent.parent.currentLangData ? parent.parent.parent.currentLangData.desc : ""
-                                color: modernTheme.textSecondary
-                                font.pixelSize: 14
+                                text: qsTr("Describe the steps to reproduce, error codes, or relevant details...")
+                                color: modernTheme.textMuted
+                                font.pixelSize: 15
                                 font.family: modernTheme.fontMain
-                                wrapMode: Text.WordWrap
-                                Layout.fillWidth: true
-                                lineHeight: 1.4
-                            }
-                            
-                            Item { Layout.fillHeight: true }
-                            
-                            // RTL Warning if applicable
-                            RowLayout {
-                                visible: parent.parent.parent.currentLangData ? parent.parent.parent.currentLangData.isRtl : false
-                                spacing: 8
-                                Text { text: "⚠️"; font.pixelSize: 12 }
-                                Text {
-                                    text: qsTr("Applying this language will mirror the entire user interface to Right-To-Left (RTL).")
-                                    color: modernTheme.stateWarning
-                                    font.pixelSize: 12
-                                    font.family: modernTheme.fontMain
-                                }
-                            }
-                        }
-
-                        // Divider
-                        Rectangle {
-                            Layout.preferredWidth: 1
-                            Layout.fillHeight: true
-                            color: modernTheme.borderSubtle
-                        }
-
-                        // Action Column
-                        ColumnLayout {
-                            Layout.preferredWidth: 250
-                            Layout.alignment: Qt.AlignVCenter
-                            spacing: 16
-
-                            property bool isAlreadyActive: translationModuleRoot.currentEngineLanguage === translationModuleRoot.selectedLanguageCode
-
-                            Text {
-                                text: parent.isAlreadyActive ? qsTr("LANGUAGE ACTIVE") : qsTr("READY TO APPLY")
-                                color: parent.isAlreadyActive ? modernTheme.stateSuccess : modernTheme.textSecondary
-                                font.pixelSize: 12
-                                font.bold: true
-                                font.family: modernTheme.fontMono
-                                Layout.alignment: Qt.AlignHCenter
-                            }
-
-                            // The Real Action Button
-                            Rectangle {
-                                id: applyBtn
-                                Layout.fillWidth: true
-                                Layout.preferredHeight: 50
-                                radius: 8
-                                color: {
-                                    if (parent.isAlreadyActive) return modernTheme.bgSidebar;
-                                    if (translationModuleRoot.isApplying) return modernTheme.borderSubtle;
-                                    if (applyMouse.containsPress) return modernTheme.textMuted;
-                                    if (applyMouse.containsMouse) return modernTheme.borderFocus;
-                                    return modernTheme.accent;
-                                }
-                                
-                                Behavior on color { ColorAnimation { duration: 150 } }
-
-                                RowLayout {
-                                    anchors.centerIn: parent
-                                    spacing: 12
-                                    
-                                    Text {
-                                        text: translationModuleRoot.isApplying ? "⏳" : "🔄"
-                                        font.pixelSize: 14
-                                        visible: !parent.parent.parent.isAlreadyActive
-                                        color: modernTheme.bgApp
-                                    }
-
-                                    Text {
-                                        text: {
-                                            if (translationModuleRoot.isApplying) return qsTr("APPLYING...");
-                                            if (parent.parent.parent.isAlreadyActive) return qsTr("CURRENTLY ACTIVE");
-                                            return qsTr("APPLY TO ENGINE");
-                                        }
-                                        color: parent.parent.parent.isAlreadyActive ? modernTheme.textMuted : modernTheme.bgApp
-                                        font.pixelSize: 14
-                                        font.bold: true
-                                        font.family: modernTheme.fontMain
-                                    }
-                                }
-
-                                MouseArea {
-                                    id: applyMouse
-                                    anchors.fill: parent
-                                    hoverEnabled: !parent.parent.isAlreadyActive && !translationModuleRoot.isApplying
-                                    cursorShape: hoverEnabled ? Qt.PointingHandCursor : Qt.ForbiddenCursor
-                                    
-                                    onClicked: {
-                                        if (hoverEnabled) {
-                                            dataController.applyLanguageToEngine();
-                                        }
-                                    }
-                                }
+                                visible: !descInput.text && !descInput.activeFocus
                             }
                         }
                     }
                 }
             }
-        }
-    }
-
-    // ==========================================
-    // LOGIC CONTROLLER (Real Data Binding)
-    // ==========================================
-    QtObject {
-        id: dataController
-        
-        function updateFilteredLanguages(regionId) {
-            filteredLanguageModel.clear();
-            for (var i = 0; i < masterLanguageModel.count; i++) {
-                var item = masterLanguageModel.get(i);
-                if (item.region === regionId) {
-                    filteredLanguageModel.append({
-                        "langCode": item.langCode,
-                        "engName": item.engName,
-                        "nativeName": item.nativeName,
-                        "isRtl": item.isRtl,
-                        "status": item.status,
-                        "desc": item.desc
-                    });
-                }
-            }
-            // Auto-select first item in new region if exists
-            if (filteredLanguageModel.count > 0) {
-                translationModuleRoot.selectedLanguageCode = filteredLanguageModel.get(0).langCode;
-            }
-        }
-        
-        function getLanguageData(code) {
-            for (var i = 0; i < masterLanguageModel.count; i++) {
-                if (masterLanguageModel.get(i).langCode === code) {
-                    return masterLanguageModel.get(i);
-                }
-            }
-            return null;
-        }
-
-        function applyLanguageToEngine() {
-            translationModuleRoot.isApplying = true;
             
-            // Getting properties to send to C++
-            var langData = getLanguageData(translationModuleRoot.selectedLanguageCode);
-            if (!langData) return;
-            
-            console.log("[C++ BINDING] Emitting requestLanguageChange signal.");
-            console.log("   -> Locale: " + langData.langCode);
-            console.log("   -> Requires RTL: " + langData.isRtl);
-            
-            // This is the actual real-world mechanism.
-            // Emit the signal to C++ engine:
-            translationModuleRoot.requestLanguageChange(langData.langCode, langData.isRtl);
-            
-            // Short delay strictly for UI feedback feeling responsive
-            applyTimer.start();
-        }
-    }
-
-    Timer {
-        id: applyTimer
-        interval: 600
-        repeat: false
-        onTriggered: {
-            translationModuleRoot.isApplying = false;
-            // Optimistically update UI to reflect the new state requested from C++
-            translationModuleRoot.currentEngineLanguage = translationModuleRoot.selectedLanguageCode;
-            console.log("[UI STATE] Language update successful in UI layer.");
-        }
-    }
-
-    // Initialize list on startup
-    Component.onCompleted: {
-        dataController.updateFilteredLanguages(translationModuleRoot.activeRegionFilter);
-    }
-
-    // ==========================================
-    // CUSTOM REUSABLE UI COMPONENTS
-    // ==========================================
-    
-    // Sidebar Region Item
-    component RegionDelegate: Rectangle {
-        property bool isCurrentRegion: false
-        signal regionClicked()
-        
-        color: isCurrentRegion ? modernTheme.bgCardHover : (regionDelegateMouse.containsMouse ? modernTheme.bgCard : "transparent")
-        Behavior on color { ColorAnimation { duration: 150 } }
-
-        // Active indicator line
-        Rectangle {
-            width: 3
-            height: parent.height
-            color: modernTheme.accent
-            visible: isCurrentRegion
-        }
-
-        RowLayout {
-            anchors.fill: parent
-            anchors.leftMargin: 24
-            anchors.rightMargin: 20
-            spacing: 16
-            
+            // Error Message Placeholder
             Text {
-                text: iconPath
-                font.pixelSize: 18
-                opacity: isCurrentRegion ? 1.0 : 0.6
-            }
-            
-            Text {
-                text: title
-                color: isCurrentRegion ? modernTheme.textPrimary : modernTheme.textSecondary
-                font.pixelSize: 14
-                font.bold: isCurrentRegion
+                id: errorText
+                text: ""
+                color: modernTheme.error
+                font.pixelSize: 13
                 font.family: modernTheme.fontMain
-                Layout.fillWidth: true
+                visible: text !== ""
+                Layout.alignment: Qt.AlignHCenter
             }
-        }
 
-        MouseArea {
-            id: regionDelegateMouse
-            anchors.fill: parent
-            hoverEnabled: true
-            cursorShape: Qt.PointingHandCursor
-            onClicked: regionClicked()
-        }
-    }
-
-    // Language Grid Card
-    component LanguageCard: Rectangle {
-        property bool isSelected: false
-        property bool isActiveEngine: false
-        signal cardClicked()
-        
-        radius: 8
-        color: isSelected ? modernTheme.activeSelection : (cardMouseArea.containsMouse ? modernTheme.bgCardHover : modernTheme.bgCard)
-        border.color: isSelected ? modernTheme.borderFocus : modernTheme.borderSubtle
-        border.width: isSelected ? 2 : 1
-        
-        Behavior on color { ColorAnimation { duration: 150 } }
-
-        ColumnLayout {
-            anchors.fill: parent
-            anchors.margins: 16
-            spacing: 6
-
-            RowLayout {
+            // 5. SUBMIT BUTTON
+            Rectangle {
                 Layout.fillWidth: true
+                Layout.preferredHeight: 54
+                Layout.topMargin: 20
+                radius: 8
                 
+                color: {
+                    if (ticketFormRoot.isSubmitting) return modernTheme.borderSubtle;
+                    if (submitMouse.containsPress) return modernTheme.textMuted;
+                    if (submitMouse.containsMouse) return modernTheme.borderFocus;
+                    return modernTheme.accent;
+                }
+                
+                Behavior on color { ColorAnimation { duration: 150 } }
+
                 Text {
-                    text: nativeName
-                    color: modernTheme.textPrimary
-                    font.pixelSize: 16
+                    anchors.centerIn: parent
+                    text: ticketFormRoot.isSubmitting ? qsTr("TRANSMITTING...") : qsTr("SUBMIT SECURE TICKET")
+                    color: ticketFormRoot.isSubmitting ? modernTheme.textPrimary : modernTheme.bgApp
+                    font.pixelSize: 14
                     font.bold: true
                     font.family: modernTheme.fontMain
                 }
-                
-                Item { Layout.fillWidth: true }
-                
-                // Status Indicator
-                Rectangle {
-                    width: 8; height: 8; radius: 4
-                    color: isActiveEngine ? modernTheme.stateSuccess : (status === "READY" ? modernTheme.textMuted : modernTheme.stateWarning)
+
+                MouseArea {
+                    id: submitMouse
+                    anchors.fill: parent
+                    hoverEnabled: !ticketFormRoot.isSubmitting
+                    cursorShape: hoverEnabled ? Qt.PointingHandCursor : Qt.ForbiddenCursor
+                    onClicked: {
+                        if (!ticketFormRoot.isSubmitting) {
+                            errorText.text = "";
+                            
+                            // Basic Form Validation
+                            if (ticketFormRoot.selectedCategory === "") {
+                                errorText.text = qsTr("Please select an issue category.");
+                                return;
+                            }
+                            if (subjectInput.text.trim() === "") {
+                                errorText.text = qsTr("Please enter a subject.");
+                                subjectInput.forceActiveFocus();
+                                return;
+                            }
+                            if (descInput.text.trim() === "") {
+                                errorText.text = qsTr("Please provide a description.");
+                                descInput.forceActiveFocus();
+                                return;
+                            }
+                            
+                            // Simulate processing & Fire Signal
+                            ticketFormRoot.isSubmitting = true;
+                            console.log("[C++ BINDING] Emitting submitTicketRequest...");
+                            ticketFormRoot.submitTicketRequest(ticketFormRoot.selectedCategory, subjectInput.text, descInput.text);
+                            
+                            resetTimer.start();
+                        }
+                    }
                 }
             }
+        }
+    }
 
-            Text {
-                text: engName
-                color: modernTheme.textSecondary
-                font.pixelSize: 13
-                font.family: modernTheme.fontMain
-                Layout.fillWidth: true
-            }
+    // Timer to reset form after "submission" (Temporary until C++ backend is linked)
+    Timer {
+        id: resetTimer
+        interval: 1500
+        repeat: false
+        onTriggered: {
+            ticketFormRoot.isSubmitting = false;
+            subjectInput.text = "";
+            descInput.text = "";
+            ticketFormRoot.selectedCategory = "";
+            console.log("[UI] Form reset. Ticket transmitted.");
             
-            Item { Layout.fillHeight: true }
-            
-            Text {
-                text: isActiveEngine ? qsTr("System Active") : status
-                color: isActiveEngine ? modernTheme.stateSuccess : modernTheme.textMuted
-                font.pixelSize: 10
-                font.bold: true
-                font.family: modernTheme.fontMono
+            // Optionally auto-pop back to main menu
+            if (StackView.view) {
+                StackView.view.pop();
             }
         }
+    }
 
+    // ==========================================
+    // REUSABLE COMPONENTS
+    // ==========================================
+    component CategoryButton: Rectangle {
+        property string label: ""
+        property string catId: ""
+        
+        property bool isSelected: ticketFormRoot.selectedCategory === catId
+        
+        height: 50
+        radius: 8
+        color: isSelected ? modernTheme.borderFocus : (catMouse.containsMouse ? modernTheme.bgHover : modernTheme.bgCard)
+        border.color: isSelected ? modernTheme.borderActive : modernTheme.borderSubtle
+        border.width: isSelected ? 2 : 1
+        
+        Behavior on color { ColorAnimation { duration: 150 } }
+        Behavior on border.color { ColorAnimation { duration: 150 } }
+        
+        Text {
+            anchors.centerIn: parent
+            text: parent.label
+            color: parent.isSelected ? modernTheme.textPrimary : modernTheme.textSecondary
+            font.pixelSize: 14
+            font.bold: parent.isSelected
+            font.family: modernTheme.fontMain
+        }
+        
         MouseArea {
-            id: cardMouseArea
+            id: catMouse
             anchors.fill: parent
             hoverEnabled: true
             cursorShape: Qt.PointingHandCursor
-            onClicked: cardClicked()
+            onClicked: ticketFormRoot.selectedCategory = parent.catId
         }
     }
 }
