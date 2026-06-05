@@ -1,8 +1,8 @@
         onRunningChanged: {
             if (running) {
                 ticks = 0
-                securityPhasesModel.setProperty(0, "status", 1)
-                secEngine.appendLog("INFO", "Initiating TLS 1.3 Handshake...")
-                mnjnefSecurityCoreRoot.activeTerminalNode = "NET_GATEWAY_AUTH"
+                securityPhasesModel.setProperty(1, "status", 1)
+                secEngine.appendLog("INFO", "Engaging Client Behavioral Engine v4...")
+                mnjnefSecurityCoreRoot.activeTerminalNode = "HEURISTIC_CORE_X1"
             }
         }
