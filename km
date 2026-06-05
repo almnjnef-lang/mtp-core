@@ -1,8 +1,8 @@
         onRunningChanged: {
             if (running) {
                 ticks = 0
-                securityPhasesModel.setProperty(1, "status", 1)
-                secEngine.appendLog("INFO", "Engaging Client Behavioral Engine v4...")
-                mnjnefSecurityCoreRoot.activeTerminalNode = "HEURISTIC_CORE_X1"
+                securityPhasesModel.setProperty(2, "status", 1)
+                secEngine.appendLog("WARNING", "Activating Deep Packet Inspection (DPI)...")
+                mnjnefSecurityCoreRoot.activeTerminalNode = "DPI_INSPECTOR_V9"
             }
         }
