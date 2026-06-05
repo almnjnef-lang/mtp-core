@@ -1,19 +1,133 @@
+import QtQuick
+import QtQuick.Controls
+import QtQuick.Layouts
+
+Item {
+    id: supportMainRoot
+    anchors.fill: parent
+    clip: true
+    opacity: 1.0
+    visible: true
+
     // ==========================================
-    // BACKGROUND & AMBIENT EFFECTS
+    // SYSTEM SIGNALS & STATE PROPERTIES
+    // ==========================================
+    property string activeUser: "Commander"
+    property string currentTimeString: "00:00:00"
+    property real networkPing: 12.5
+    property int activeTickets: 2
+    property bool isSystemOnline: true
+
+    // ==========================================
+    // HIGH-CONTRAST THEME CORE
+    // ==========================================
+    QtObject {
+        id: supTheme
+        // Brighter dark theme for maximum readability
+        property color bgPrimary: "#0B132B" // Brightened deep blue background
+        property color bgPanel: "#131C31"   // Distinct panel color
+        property color bgElevated: "#1A2642"// Hover state color
+        property color bgInput: "#0A0F1C"   // Dark inset color
+        
+        property color accentCore: "#3B82F6"
+        property color accentHover: "#60A5FA"
+        property color accentActive: "#2563EB"
+        property color accentAlt: "#8B5CF6"
+        
+        property color textHeader: "#FFFFFF"
+        property color textBody: "#E2E8F0"
+        property color textMuted: "#94A3B8"
+        
+        property color borderDefault: "#1E293B"
+        property color borderHighlight: "#334155"
+        property color borderActive: "#3B82F6"
+        
+        property color stateSuccess: "#10B981"
+        property color stateWarning: "#F59E0B"
+        property color stateDanger: "#EF4444"
+        
+        property string fontMain: "Segoe UI"
+        property string fontMono: "Consolas"
+    }
+
+    // ==========================================
+    // DATA MODELS
+    // ==========================================
+    ListModel {
+        id: quickActionsModel
+        ListElement { 
+            actionId: "NEW_TICKET"
+            title: "Submit Diagnostic Ticket"
+            icon: "📝"
+            desc: "Report platform bugs, crashes, or account routing issues directly to our system."
+            targetFile: "Support_8_TicketForm.qml"
+            isPrimary: true
+        }
+        ListElement { 
+            actionId: "TRACK_TICKET"
+            title: "Track Active Tickets"
+            icon: "📡"
+            desc: "Monitor ongoing resolutions and communicate with assigned support agents."
+            targetFile: "Support_9_TicketTracker.qml"
+            isPrimary: false
+        }
+        ListElement { 
+            actionId: "LIVE_CHAT"
+            title: "Live Operative Chat"
+            icon: "💬"
+            desc: "Connect directly with Tier 2 technical architects for real-time assistance."
+            targetFile: "Support_9_TicketTracker.qml"
+            isPrimary: false
+        }
+        ListElement { 
+            actionId: "GUIDELINES"
+            title: "Support Guidelines"
+            icon: "⚖️"
+            desc: "Review SLA, terms of service, and official platform reporting protocols."
+            targetFile: "Support_6_Guidelines.qml"
+            isPrimary: false
+        }
+    }
+
+    ListModel {
+        id: serverNodesModel
+        ListElement { node: "DXB-CORE-01"; region: "UAE"; status: "OPTIMAL"; load: 35; ping: 12 }
+        ListElement { node: "FRA-EDGE-04"; region: "EU"; status: "STABLE"; load: 68; ping: 115 }
+        ListElement { node: "SGP-RELAY-02"; region: "APAC"; status: "HIGH LOAD"; load: 92; ping: 85 }
+        ListElement { node: "NYC-MAIN-08"; region: "AMER"; status: "MAINTENANCE"; load: 0; ping: 999 }
+    }
+
+    ListModel {
+        id: announcementsModel
+        ListElement { date: "TODAY"; badge: "UPDATE"; text: "Mnjnef Core Engine updated to v5.7.1. Rendering stability improved across all regions." }
+        ListElement { date: "YESTERDAY"; badge: "MAINT"; text: "Scheduled downtime for DXB-CORE-01 completed successfully without data loss." }
+        ListElement { date: "12 MAY"; badge: "SECURITY"; text: "Anti-Tamper protocol definitions updated globally. Memory heuristics optimized." }
+        ListElement { date: "10 MAY"; badge: "INFO"; text: "New localization packages have been added to the Translation Module." }
+    }
+    
+    ListModel {
+        id: activeAgentsModel
+        ListElement { agentName: "Vanguard_77"; role: "Network Routing Specialist"; status: "ONLINE" }
+        ListElement { agentName: "Cipher_Delta"; role: "Security & Authentication"; status: "BUSY" }
+        ListElement { agentName: "Atlas_Core"; role: "Platform Architecture"; status: "ONLINE" }
+    }
+
+    // ==========================================
+    // SOLID BACKGROUND
     // ==========================================
     Rectangle {
         anchors.fill: parent
         color: supTheme.bgPrimary
 
-        // Subtle grid overlay for a clean, technical look without distractions
+        // Very faint grid to keep the tech vibe without distractions
         Canvas {
             anchors.fill: parent
-            opacity: 0.04
+            opacity: 0.05
             onPaint: {
                 var ctx = getContext("2d");
                 ctx.strokeStyle = supTheme.accentCore;
                 ctx.lineWidth = 1;
-                var step = 40;
+                var step = 50;
                 ctx.beginPath();
                 for (var x = 0; x < width; x += step) { ctx.moveTo(x, 0); ctx.lineTo(x, height); }
                 for (var y = 0; y < height; y += step) { ctx.moveTo(0, y); ctx.lineTo(width, y); }
@@ -23,5 +137,745 @@
     }
 
     // ==========================================
-    // MAIN LAYOUT
+    // BULLETPROOF LAYOUT: TOP NAVIGATION BAR
     // ==========================================
+    Rectangle {
+        id: topNavBar
+        anchors.top: parent.top
+        anchors.left: parent.left
+        anchors.right: parent.right
+        height: 75
+        color: supTheme.bgPanel
+        border.color: supTheme.borderDefault
+        border.width: 1
+        z: 100 // Always stays on top of everything
+
+        RowLayout {
+            anchors.fill: parent
+            anchors.leftMargin: 24
+            anchors.rightMargin: 24
+            spacing: 24
+
+            // Back Button
+            Rectangle {
+                Layout.preferredWidth: 46
+                Layout.preferredHeight: 46
+                radius: 10
+                color: backMouse.containsMouse ? supTheme.bgElevated : supTheme.bgInput
+                border.color: backMouse.containsMouse ? supTheme.borderHighlight : supTheme.borderDefault
+                border.width: 1
+                
+                Behavior on color { ColorAnimation { duration: 150 } }
+
+                Text {
+                    anchors.centerIn: parent
+                    text: "◀"
+                    color: supTheme.textHeader
+                    font.pixelSize: 16
+                }
+
+                MouseArea {
+                    id: backMouse
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: {
+                        // Safely return to Login/Main screen
+                        if (StackView.view) {
+                            StackView.view.pop();
+                        }
+                    }
+                }
+            }
+
+            // Logo & Title
+            RowLayout {
+                spacing: 16
+                
+                Rectangle {
+                    Layout.preferredWidth: 46
+                    Layout.preferredHeight: 46
+                    radius: 10
+                    color: supTheme.bgPrimary
+                    border.color: supTheme.accentCore
+                    border.width: 2
+                    
+                    Text {
+                        anchors.centerIn: parent
+                        text: "MNJ"
+                        color: supTheme.textHeader
+                        font.pixelSize: 14
+                        font.bold: true
+                        font.family: supTheme.fontMono
+                    }
+                }
+
+                ColumnLayout {
+                    spacing: 4
+                    Text {
+                        text: qsTr("MNJNEF SUPPORT PORTAL")
+                        color: supTheme.textHeader
+                        font.pixelSize: 18
+                        font.bold: true
+                        font.family: supTheme.fontMain
+                        font.letterSpacing: 1.5
+                    }
+                    Text {
+                        text: qsTr("Secure Diagnostic & Routing Facility")
+                        color: supTheme.accentCore
+                        font.pixelSize: 12
+                        font.family: supTheme.fontMono
+                    }
+                }
+            }
+
+            Item { Layout.fillWidth: true } // Pushes the next items to the right edge
+
+            // Live Clock & Status
+            RowLayout {
+                spacing: 24
+                
+                ColumnLayout {
+                    Layout.alignment: Qt.AlignVCenter
+                    spacing: 4
+                    
+                    Text {
+                        text: qsTr("SYSTEM TIME (UAE)")
+                        color: supTheme.textMuted
+                        font.pixelSize: 11
+                        font.bold: true
+                        font.family: supTheme.fontMono
+                        Layout.alignment: Qt.AlignRight
+                    }
+                    
+                    Text {
+                        text: supportMainRoot.currentTimeString
+                        color: supTheme.textHeader
+                        font.pixelSize: 18
+                        font.bold: true
+                        font.family: supTheme.fontMono
+                        Layout.alignment: Qt.AlignRight
+                    }
+                }
+                
+                Rectangle {
+                    Layout.preferredWidth: 1
+                    Layout.preferredHeight: 40
+                    color: supTheme.borderDefault
+                }
+                
+                RowLayout {
+                    spacing: 10
+                    Rectangle {
+                        width: 12
+                        height: 12
+                        radius: 6
+                        color: supportMainRoot.isSystemOnline ? supTheme.stateSuccess : supTheme.stateDanger
+                        
+                        SequentialAnimation on opacity {
+                            loops: Animation.Infinite
+                            running: supportMainRoot.isSystemOnline
+                            NumberAnimation { from: 1.0; to: 0.4; duration: 1000 }
+                            NumberAnimation { from: 0.4; to: 1.0; duration: 1000 }
+                        }
+                    }
+                    Text {
+                        text: supportMainRoot.isSystemOnline ? qsTr("NETWORK ONLINE") : qsTr("DISCONNECTED")
+                        color: supportMainRoot.isSystemOnline ? supTheme.stateSuccess : supTheme.stateDanger
+                        font.pixelSize: 13
+                        font.bold: true
+                        font.family: supTheme.fontMono
+                    }
+                }
+            }
+        }
+    }
+
+    // ==========================================
+    // BULLETPROOF LAYOUT: SCROLLABLE DASHBOARD
+    // ==========================================
+    Flickable {
+        anchors.top: topNavBar.bottom
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.bottom: parent.bottom
+        contentWidth: width
+        contentHeight: dashboardLayout.implicitHeight + 80 // Ensures scrolling
+        clip: true
+        boundsBehavior: Flickable.StopAtBounds
+
+        // Custom Scrollbar
+        ScrollBar.vertical: ScrollBar {
+            width: 8
+            contentItem: Rectangle {
+                implicitWidth: 8
+                radius: 4
+                color: supTheme.borderHighlight
+            }
+        }
+
+        // Main Content Container
+        RowLayout {
+            id: dashboardLayout
+            width: Math.min(parent.width - 64, 1200) // Caps maximum width, adds side margins
+            anchors.horizontalCenter: parent.horizontalCenter
+            anchors.top: parent.top
+            anchors.topMargin: 32
+            spacing: 32
+
+            // ==========================================
+            // LEFT COLUMN (ACTIONS & BROADCASTS)
+            // ==========================================
+            ColumnLayout {
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                spacing: 32
+                Layout.alignment: Qt.AlignTop
+
+                // 1. Welcome Banner
+                Rectangle {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 130
+                    radius: 12
+                    color: supTheme.bgPanel
+                    border.color: supTheme.borderDefault
+                    border.width: 1
+                    clip: true
+
+                    // Left-side accent stripe
+                    Rectangle {
+                        width: 6
+                        height: parent.height
+                        anchors.left: parent.left
+                        color: supTheme.accentCore
+                    }
+
+                    RowLayout {
+                        anchors.fill: parent
+                        anchors.margins: 24
+                        anchors.leftMargin: 32
+                        spacing: 24
+
+                        ColumnLayout {
+                            Layout.fillWidth: true
+                            spacing: 8
+
+                            Text {
+                                text: qsTr("Welcome to the Support Operations Center.")
+                                color: supTheme.textHeader
+                                font.pixelSize: 22
+                                font.bold: true
+                                font.family: supTheme.fontMain
+                            }
+
+                            Text {
+                                text: qsTr("Your secure connection to Mnjnef Core is established. Select an action below to initiate diagnostic procedures, track existing tickets, or access the localization matrix.")
+                                color: supTheme.textMuted
+                                font.pixelSize: 14
+                                font.family: supTheme.fontMain
+                                wrapMode: Text.WordWrap
+                                Layout.fillWidth: true
+                                lineHeight: 1.4
+                            }
+                        }
+                    }
+                }
+
+                // 2. Action Grid Section
+                ColumnLayout {
+                    Layout.fillWidth: true
+                    spacing: 12
+                    
+                    Text {
+                        text: qsTr("QUICK DEPLOYMENT ACTIONS")
+                        color: supTheme.textMuted
+                        font.pixelSize: 13
+                        font.bold: true
+                        font.family: supTheme.fontMono
+                        font.letterSpacing: 1.0
+                    }
+
+                    GridLayout {
+                        Layout.fillWidth: true
+                        columns: 2
+                        rowSpacing: 16
+                        columnSpacing: 16
+
+                        Repeater {
+                            model: quickActionsModel
+                            
+                            Rectangle {
+                                Layout.fillWidth: true
+                                Layout.preferredHeight: 120
+                                radius: 12
+                                color: actionMouse.containsMouse ? (isPrimary ? supTheme.accentCore : supTheme.bgElevated) : supTheme.bgPanel
+                                border.color: actionMouse.containsMouse ? supTheme.accentHover : supTheme.borderDefault
+                                border.width: 1
+                                
+                                Behavior on color { ColorAnimation { duration: 150 } }
+
+                                RowLayout {
+                                    anchors.fill: parent
+                                    anchors.margins: 20
+                                    spacing: 16
+
+                                    // Action Icon
+                                    Rectangle {
+                                        Layout.preferredWidth: 56
+                                        Layout.preferredHeight: 56
+                                        radius: 12
+                                        color: isPrimary ? (actionMouse.containsMouse ? supTheme.accentHover : supTheme.accentActive) : supTheme.bgInput
+                                        border.color: supTheme.borderHighlight
+                                        border.width: 1
+                                        
+                                        Text {
+                                            anchors.centerIn: parent
+                                            text: icon
+                                            font.pixelSize: 28
+                                        }
+                                    }
+
+                                    // Action Text
+                                    ColumnLayout {
+                                        Layout.fillWidth: true
+                                        spacing: 6
+                                        
+                                        Text {
+                                            text: title
+                                            color: actionMouse.containsMouse && isPrimary ? "#FFFFFF" : supTheme.textHeader
+                                            font.pixelSize: 16
+                                            font.bold: true
+                                            font.family: supTheme.fontMain
+                                        }
+                                        
+                                        Text {
+                                            text: desc
+                                            color: actionMouse.containsMouse && isPrimary ? "#E2E8F0" : supTheme.textMuted
+                                            font.pixelSize: 13
+                                            font.family: supTheme.fontMain
+                                            wrapMode: Text.WordWrap
+                                            Layout.fillWidth: true
+                                            lineHeight: 1.3
+                                        }
+                                    }
+                                    
+                                    // Arrow Indicator
+                                    Text {
+                                        text: "➔"
+                                        color: actionMouse.containsMouse ? (isPrimary ? "#FFFFFF" : supTheme.accentCore) : supTheme.textMuted
+                                        font.pixelSize: 20
+                                        font.bold: true
+                                        x: actionMouse.containsMouse ? 8 : 0
+                                        Behavior on x { NumberAnimation { duration: 200; easing.type: Easing.OutBack } }
+                                    }
+                                }
+
+                                MouseArea {
+                                    id: actionMouse
+                                    anchors.fill: parent
+                                    hoverEnabled: true
+                                    cursorShape: Qt.PointingHandCursor
+                                    onClicked: {
+                                        if (StackView.view) {
+                                            StackView.view.push(targetFile);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // 3. System Broadcasts
+                ColumnLayout {
+                    Layout.fillWidth: true
+                    spacing: 12
+
+                    Text {
+                        text: qsTr("SECURE PLATFORM BROADCASTS")
+                        color: supTheme.textMuted
+                        font.pixelSize: 13
+                        font.bold: true
+                        font.family: supTheme.fontMono
+                        font.letterSpacing: 1.0
+                    }
+
+                    Rectangle {
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: announcementsModel.count * 64
+                        radius: 12
+                        color: supTheme.bgPanel
+                        border.color: supTheme.borderDefault
+                        border.width: 1
+                        clip: true
+
+                        ListView {
+                            anchors.fill: parent
+                            model: announcementsModel
+                            interactive: false
+                            
+                            delegate: Rectangle {
+                                width: ListView.view.width
+                                height: 64
+                                color: "transparent"
+                                
+                                // Divider Line
+                                Rectangle {
+                                    width: parent.width - 32
+                                    height: 1
+                                    anchors.bottom: parent.bottom
+                                    anchors.horizontalCenter: parent.horizontalCenter
+                                    color: supTheme.borderDefault
+                                    visible: index < announcementsModel.count - 1
+                                }
+
+                                RowLayout {
+                                    anchors.fill: parent
+                                    anchors.leftMargin: 20
+                                    anchors.rightMargin: 20
+                                    spacing: 20
+                                    
+                                    Text {
+                                        text: date
+                                        color: supTheme.textMuted
+                                        font.pixelSize: 12
+                                        font.bold: true
+                                        font.family: supTheme.fontMono
+                                        Layout.preferredWidth: 70
+                                    }
+                                    
+                                    Rectangle {
+                                        Layout.preferredWidth: 80
+                                        Layout.preferredHeight: 24
+                                        radius: 6
+                                        color: supTheme.bgInput
+                                        border.color: supTheme.borderHighlight
+                                        border.width: 1
+                                        
+                                        Text {
+                                            anchors.centerIn: parent
+                                            text: badge
+                                            color: {
+                                                if (badge === "UPDATE") return supTheme.accentCore;
+                                                if (badge === "MAINT") return supTheme.stateWarning;
+                                                if (badge === "SECURITY") return supTheme.stateDanger;
+                                                return supTheme.stateSuccess;
+                                            }
+                                            font.pixelSize: 11
+                                            font.bold: true
+                                            font.family: supTheme.fontMono
+                                        }
+                                    }
+                                    
+                                    Text {
+                                        text: text
+                                        color: supTheme.textBody
+                                        font.pixelSize: 14
+                                        font.family: supTheme.fontMain
+                                        Layout.fillWidth: true
+                                        elide: Text.ElideRight
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // ==========================================
+            // RIGHT COLUMN (TRANSLATION & TELEMETRY)
+            // ==========================================
+            ColumnLayout {
+                Layout.preferredWidth: 420
+                Layout.fillHeight: true
+                spacing: 32
+                Layout.alignment: Qt.AlignTop
+
+                // 1. DEDICATED TRANSLATION MODULE CARD
+                Rectangle {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 240
+                    radius: 16
+                    color: transMouse.containsMouse ? supTheme.bgElevated : supTheme.bgPanel
+                    border.color: transMouse.containsMouse ? supTheme.accentAlt : supTheme.borderDefault
+                    border.width: transMouse.containsMouse ? 2 : 1
+                    clip: true
+                    
+                    Behavior on color { ColorAnimation { duration: 200 } }
+                    Behavior on border.color { ColorAnimation { duration: 200 } }
+
+                    ColumnLayout {
+                        anchors.fill: parent
+                        anchors.margins: 24
+                        spacing: 16
+
+                        RowLayout {
+                            Layout.fillWidth: true
+                            
+                            Rectangle {
+                                Layout.preferredWidth: 56
+                                Layout.preferredHeight: 56
+                                radius: 16
+                                color: supTheme.bgInput
+                                border.color: supTheme.accentAlt
+                                border.width: 2
+                                
+                                Text {
+                                    anchors.centerIn: parent
+                                    text: "🌐"
+                                    font.pixelSize: 28
+                                }
+                            }
+                            
+                            Item { Layout.fillWidth: true }
+                            
+                            Rectangle {
+                                Layout.preferredWidth: 70
+                                Layout.preferredHeight: 28
+                                radius: 14
+                                color: "#2A" + supTheme.accentAlt.substring(1) // Semi-transparent
+                                border.color: supTheme.accentAlt
+                                border.width: 1
+                                
+                                Text {
+                                    anchors.centerIn: parent
+                                    text: "GLOBAL"
+                                    color: supTheme.accentAlt
+                                    font.pixelSize: 11
+                                    font.bold: true
+                                    font.family: supTheme.fontMono
+                                }
+                            }
+                        }
+
+                        Text {
+                            text: qsTr("Localization & Translation")
+                            color: supTheme.textHeader
+                            font.pixelSize: 22
+                            font.bold: true
+                            font.family: supTheme.fontMain
+                        }
+
+                        Text {
+                            text: qsTr("Install and configure regional language packs for the Mnjnef ecosystem. Fully supports Arabic and all major dialects.")
+                            color: supTheme.textMuted
+                            font.pixelSize: 14
+                            font.family: supTheme.fontMain
+                            wrapMode: Text.WordWrap
+                            Layout.fillWidth: true
+                            lineHeight: 1.4
+                        }
+                        
+                        Item { Layout.fillHeight: true }
+
+                        // Action Link Footer
+                        Rectangle {
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: 1
+                            color: transMouse.containsMouse ? supTheme.accentAlt : supTheme.borderDefault
+                        }
+
+                        RowLayout {
+                            Layout.fillWidth: true
+                            Layout.topMargin: 8
+                            
+                            Text {
+                                text: qsTr("ENTER TRANSLATION MODULE")
+                                color: transMouse.containsMouse ? supTheme.accentAlt : supTheme.textBody
+                                font.pixelSize: 13
+                                font.bold: true
+                                font.family: supTheme.fontMono
+                                
+                                Behavior on color { ColorAnimation { duration: 150 } }
+                            }
+                            
+                            Item { Layout.fillWidth: true }
+                            
+                            Text {
+                                text: "→"
+                                color: transMouse.containsMouse ? supTheme.accentAlt : supTheme.textMuted
+                                font.pixelSize: 20
+                                x: transMouse.containsMouse ? 8 : 0
+                                Behavior on x { NumberAnimation { duration: 200; easing.type: Easing.OutBack } }
+                            }
+                        }
+                    }
+
+                    MouseArea {
+                        id: transMouse
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: {
+                            if (StackView.view) {
+                                StackView.view.push("Support_11_TranslationModule.qml");
+                            }
+                        }
+                    }
+                }
+
+                // 2. LIVE TELEMETRY RADAR
+                ColumnLayout {
+                    Layout.fillWidth: true
+                    spacing: 12
+
+                    Text {
+                        text: qsTr("GLOBAL NODE TELEMETRY")
+                        color: supTheme.textMuted
+                        font.pixelSize: 13
+                        font.bold: true
+                        font.family: supTheme.fontMono
+                        font.letterSpacing: 1.0
+                    }
+
+                    Rectangle {
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: serverNodesModel.count * 80
+                        radius: 12
+                        color: supTheme.bgPanel
+                        border.color: supTheme.borderDefault
+                        border.width: 1
+                        clip: true
+
+                        ListView {
+                            anchors.fill: parent
+                            model: serverNodesModel
+                            interactive: false
+                            
+                            delegate: Rectangle {
+                                width: ListView.view.width
+                                height: 80
+                                color: "transparent"
+                                
+                                Rectangle {
+                                    width: parent.width - 32
+                                    height: 1
+                                    anchors.bottom: parent.bottom
+                                    anchors.horizontalCenter: parent.horizontalCenter
+                                    color: supTheme.borderDefault
+                                    visible: index < serverNodesModel.count - 1
+                                }
+
+                                ColumnLayout {
+                                    anchors.fill: parent
+                                    anchors.margins: 16
+                                    spacing: 8
+                                    
+                                    RowLayout {
+                                        Layout.fillWidth: true
+                                        
+                                        Text { 
+                                            text: node; 
+                                            color: status === "MAINTENANCE" ? supTheme.textMuted : supTheme.textHeader; 
+                                            font.pixelSize: 14; 
+                                            font.bold: true; 
+                                            font.family: supTheme.fontMono 
+                                        }
+                                        
+                                        Item { Layout.fillWidth: true }
+                                        
+                                        Text { 
+                                            text: status; 
+                                            color: {
+                                                if (status === "OPTIMAL") return supTheme.stateSuccess;
+                                                if (status === "STABLE") return supTheme.accentCore;
+                                                if (status === "MAINTENANCE") return supTheme.textMuted;
+                                                return supTheme.stateWarning;
+                                            }
+                                            font.pixelSize: 11; 
+                                            font.bold: true; 
+                                            font.family: supTheme.fontMono 
+                                        }
+                                    }
+                                    
+                                    Rectangle {
+                                        Layout.fillWidth: true
+                                        Layout.preferredHeight: 8
+                                        radius: 4
+                                        color: supTheme.bgInput
+                                        clip: true
+                                        
+                                        Rectangle {
+                                            width: (load / 100) * parent.width
+                                            height: parent.height
+                                            radius: 4
+                                            color: {
+                                                if (load === 0) return "transparent";
+                                                if (load < 50) return supTheme.stateSuccess;
+                                                if (load < 80) return supTheme.accentCore;
+                                                return supTheme.stateWarning;
+                                            }
+                                            Behavior on width { NumberAnimation { duration: 300 } }
+                                        }
+                                    }
+                                    
+                                    RowLayout {
+                                        Layout.fillWidth: true
+                                        Text { text: qsTr("Load: ") + load + "%"; color: supTheme.textMuted; font.pixelSize: 11; font.family: supTheme.fontMono }
+                                        Item { Layout.fillWidth: true }
+                                        Text { text: ping === 999 ? "ERR" : ping + "ms"; color: supTheme.textMuted; font.pixelSize: 11; font.family: supTheme.fontMono }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // ==========================================
+    // LOGIC CONTROLLERS & TIMERS
+    // ==========================================
+    QtObject {
+        id: sysController
+        
+        function updateClock() {
+            let d = new Date();
+            let h = d.getHours().toString().padStart(2, '0');
+            let m = d.getMinutes().toString().padStart(2, '0');
+            let s = d.getSeconds().toString().padStart(2, '0');
+            supportMainRoot.currentTimeString = h + ":" + m + ":" + s;
+        }
+        
+        function simulateTelemetry() {
+            for (let i = 0; i < serverNodesModel.count; i++) {
+                let nodeStatus = serverNodesModel.get(i).status;
+                if (nodeStatus !== "MAINTENANCE") {
+                    let currentLoad = serverNodesModel.get(i).load;
+                    let loadChange = Math.floor((Math.random() * 8) - 4);
+                    let finalLoad = currentLoad + loadChange;
+                    if (finalLoad > 99) finalLoad = 99;
+                    if (finalLoad < 10) finalLoad = 10;
+                    serverNodesModel.setProperty(i, "load", finalLoad);
+                    
+                    let pingChange = Math.floor((Math.random() * 4) - 2);
+                    let currentPing = serverNodesModel.get(i).ping;
+                    let finalPing = currentPing + pingChange;
+                    if (finalPing < 5) finalPing = 5;
+                    serverNodesModel.setProperty(i, "ping", finalPing);
+                }
+            }
+        }
+    }
+
+    Timer {
+        id: globalClockTimer
+        interval: 1000
+        repeat: true
+        running: true
+        onTriggered: sysController.updateClock()
+    }
+    
+    Timer {
+        id: telemetryTimer
+        interval: 2500
+        repeat: true
+        running: true
+        onTriggered: sysController.simulateTelemetry()
+    }
+    
+    Component.onCompleted: {
+        sysController.updateClock();
+    }
+}
