@@ -3,591 +3,636 @@ import QtQuick.Controls
 import QtQuick.Layouts
 
 Item {
-    id: mnjnefGuidelinesRoot
+    id: mnjnefOtpAuthRoot
     anchors.fill: parent
     clip: true
 
     // ==========================================
-    // SIGNALS & SYSTEM PROPERTIES
+    // SYSTEM SIGNALS & PROPERTIES
     // ==========================================
-    signal guidelinesAccepted()
-    signal guidelinesDeclined()
+    signal authSuccessful(string username, string email, string authHash)
+    signal authFailed(string reason)
+    signal authCancelled()
     
-    property bool isFullyScrolled: false
-    property int totalClauses: guidelinesModel.count
-    property int acceptedClauses: 0
-    property int readingCountdown: 10
-    property bool isTimerActive: true
+    // 0: Credential Input, 1: OTP Verification, 2: Success
+    property int currentAuthStep: 0 
+    
+    // User Data
+    property string authUsername: ""
+    property string authEmail: ""
+    property string generatedOtp: ""
+    property string enteredOtp: ""
+    
+    // State Flags
+    property bool isProcessing: false
+    property int resendCooldown: 60
+    property int maxAttempts: 3
+    property int currentAttempts: 0
 
     // ==========================================
     // THEME & STYLING CORE
     // ==========================================
     QtObject {
-        id: glTheme
+        id: authTheme
         property color bgPrimary: "#030712"
-        property color bgSurface: "#0f172a"
-        property color bgElevated: "#1e293b"
-        property color bgHighlight: "#334155"
+        property color bgPanel: "#0f172a"
+        property color bgInput: "#020617"
         
-        property color accentPrimary: "#1f6feb"
+        property color accentCore: "#1f6feb"
         property color accentHover: "#3b82f6"
-        property color accentDisabled: "#0f2744"
+        property color accentGlow: "#60a5fa"
+        property color accentLock: "#8b5cf6"
         
-        property color textHeader: "#ffffff"
-        property color textBody: "#f8fafc"
-        property color textMuted: "#94a3b8"
-        property color textDisabled: "#475569"
+        property color textHeader: "#f8fafc"
+        property color textBody: "#cbd5e1"
+        property color textMuted: "#64748b"
+        property color textError: "#ef4444"
+        property color textSuccess: "#10b981"
         
         property color borderDefault: "#1e293b"
-        property color borderActive: "#3b82f6"
-        
-        property color statusWarning: "#f59e0b"
-        property color statusWarningBg: "#452500"
-        property color statusSuccess: "#10b981"
-        property color statusDanger: "#ef4444"
+        property color borderFocus: "#3b82f6"
+        property color borderError: "#7f1d1d"
+        property color borderSuccess: "#064e3b"
         
         property string fontMain: "Segoe UI"
         property string fontMono: "Consolas"
     }
 
     // ==========================================
-    // GUIDELINES DATA MODEL
-    // ==========================================
-    ListModel {
-        id: guidelinesModel
-        
-        ListElement {
-            clauseId: "GL-001"
-            title: "Accuracy of Information"
-            description: "You must provide accurate, current, and complete information regarding your technical issue. Falsified network logs, modified screenshots, or deceptive bug reports will result in an immediate hardware ban."
-            isRequired: true
-            isAccepted: false
-        }
-        ListElement {
-            clauseId: "GL-002"
-            title: "Response Time Service Level Agreement (SLA)"
-            description: "Mnjnef Premium Support operates on a queue system. Standard response time is between 12 to 24 hours. Submitting duplicate tickets for the same issue will push your priority to the bottom of the queue."
-            isRequired: true
-            isAccepted: false
-        }
-        ListElement {
-            clauseId: "GL-003"
-            title: "Zero Tolerance for Abuse"
-            description: "Any use of profanity, threats, or harassment towards Mnjnef support staff will lead to immediate ticket closure and permanent suspension of your Mnjnef account without right to appeal."
-            isRequired: true
-            isAccepted: false
-        }
-        ListElement {
-            clauseId: "GL-004"
-            title: "Remote Telemetry & Diagnostic Data"
-            description: "By submitting a technical ticket, you authorize Mnjnef Support tools to temporarily gather hardware telemetry, crash dumps, and system logs directly related to Mnjnef software."
-            isRequired: true
-            isAccepted: false
-        }
-        ListElement {
-            clauseId: "GL-005"
-            title: "Account Ownership Verification"
-            description: "Support staff will never ask for your password. However, you must verify ownership via your registered email or two-factor authentication (2FA) device before sensitive account changes are made."
-            isRequired: true
-            isAccepted: false
-        }
-        ListElement {
-            clauseId: "GL-006"
-            title: "Third-Party Modifications"
-            description: "We do not provide support for issues arising from unauthorized third-party modifications, custom scripts, or injected DLLs. Ensure your client is vanilla before submitting."
-            isRequired: true
-            isAccepted: false
-        }
-    }
-
-    // ==========================================
-    // BACKGROUND & AMBIENT EFFECTS
+    // AMBIENT BACKGROUND EFFECTS
     // ==========================================
     Rectangle {
         anchors.fill: parent
-        color: glTheme.bgPrimary
+        color: authTheme.bgPrimary
         
-        // Ambient Grid
-        Grid {
+        // Digital Rain / Data Flow Simulation
+        Canvas {
+            id: bgCanvas
             anchors.fill: parent
-            anchors.margins: 2
-            rows: 20
-            columns: 20
-            spacing: 1
+            opacity: 0.1
             
-            Repeater {
-                model: 400
-                Rectangle {
-                    width: (mnjnefGuidelinesRoot.width / 20) - 1
-                    height: (mnjnefGuidelinesRoot.height / 20) - 1
-                    color: "transparent"
-                    border.color: glTheme.borderDefault
-                    border.width: 1
-                    opacity: 0.15
+            property var particles: []
+            
+            onPaint: {
+                var ctx = getContext("2d");
+                ctx.clearRect(0, 0, width, height);
+                ctx.fillStyle = authTheme.accentCore;
+                
+                for (var i = 0; i < particles.length; i++) {
+                    var p = particles[i];
+                    ctx.globalAlpha = p.alpha;
+                    ctx.fillRect(p.x, p.y, 2, p.length);
+                }
+            }
+            
+            Timer {
+                interval: 33
+                running: true
+                repeat: true
+                onRunningChanged: { if(running){} }
+                onTriggered: {
+                    if (Math.random() < 0.2 && bgCanvas.particles.length < 50) {
+                        bgCanvas.particles.push({
+                            x: Math.random() * bgCanvas.width,
+                            y: -20,
+                            speed: Math.random() * 5 + 2,
+                            length: Math.random() * 20 + 10,
+                            alpha: Math.random() * 0.5 + 0.1
+                        });
+                    }
+                    
+                    for (var i = bgCanvas.particles.length - 1; i >= 0; i--) {
+                        var p = bgCanvas.particles[i];
+                        p.y += p.speed;
+                        if (p.y > bgCanvas.height) {
+                            bgCanvas.particles.splice(i, 1);
+                        }
+                    }
+                    bgCanvas.requestPaint();
                 }
             }
         }
         
-        // Gradient Fade at Top and Bottom
+        // Vignette Overlay
         Rectangle {
-            anchors.top: parent.top
-            width: parent.width
-            height: 40
+            anchors.fill: parent
             gradient: Gradient {
-                GradientStop { position: 0.0; color: glTheme.bgPrimary }
-                GradientStop { position: 1.0; color: "transparent" }
+                GradientStop { position: 0.0; color: "#00000000" }
+                GradientStop { position: 1.0; color: "#aa000000" }
             }
-            z: 10
-        }
-        Rectangle {
-            anchors.bottom: footerPanel.top
-            width: parent.width
-            height: 40
-            gradient: Gradient {
-                GradientStop { position: 0.0; color: "transparent" }
-                GradientStop { position: 1.0; color: glTheme.bgPrimary }
-            }
-            z: 10
         }
     }
 
     // ==========================================
-    // MAIN LAYOUT
+    // MAIN LAYOUT CONTAINER
     // ==========================================
-    ColumnLayout {
+    CenterLayout {
         anchors.fill: parent
-        spacing: 0
-
-        // ------------------------------------------
-        // HEADER: TITLE & WARNING
-        // ------------------------------------------
+        
         Rectangle {
-            Layout.fillWidth: true
-            Layout.preferredHeight: 80
-            color: glTheme.bgSurface
-            border.color: glTheme.borderDefault
+            id: mainPanel
+            width: 480
+            height: 560
+            color: authTheme.bgPanel
+            radius: 16
+            border.color: authTheme.borderDefault
             border.width: 1
-            z: 20
-
-            RowLayout {
+            clip: true
+            anchors.centerIn: parent
+            
+            // Outer Glow based on state
+            Rectangle {
                 anchors.fill: parent
-                anchors.leftMargin: 24
-                anchors.rightMargin: 24
-                spacing: 16
-
-                // Warning Icon Container
-                Rectangle {
-                    Layout.preferredWidth: 48
-                    Layout.preferredHeight: 48
-                    radius: 12
-                    color: glTheme.statusWarningBg
-                    border.color: glTheme.statusWarning
-                    border.width: 1
-
-                    Text {
-                        anchors.centerIn: parent
-                        text: "⚠️"
-                        font.pixelSize: 24
-                    }
-                    
-                    // Pulse Effect
-                    Rectangle {
-                        anchors.fill: parent
-                        radius: 12
-                        color: "transparent"
-                        border.color: glTheme.statusWarning
-                        border.width: 2
-                        opacity: 0.0
-                        
-                        SequentialAnimation on opacity {
-                            loops: Animation.Infinite
-                            running: true
-                            NumberAnimation { from: 0.0; to: 0.5; duration: 1000 }
-                            NumberAnimation { from: 0.5; to: 0.0; duration: 1000 }
-                        }
-                    }
+                anchors.margins: -1
+                radius: 17
+                color: "transparent"
+                border.color: {
+                    if (mnjnefOtpAuthRoot.currentAuthStep === 2) return authTheme.textSuccess;
+                    if (authController.hasError) return authTheme.textError;
+                    return authTheme.accentLock;
                 }
+                border.width: 1
+                opacity: 0.3
+                Behavior on border.color { ColorAnimation { duration: 300 } }
+            }
 
-                // Titles
+            ColumnLayout {
+                anchors.fill: parent
+                anchors.margins: 32
+                spacing: 24
+
+                // ------------------------------------------
+                // HEADER SECTION
+                // ------------------------------------------
                 ColumnLayout {
                     Layout.fillWidth: true
-                    spacing: 4
-
-                    Text {
-                        text: qsTr("MANDATORY SUPPORT GUIDELINES")
-                        color: glTheme.textHeader
-                        font.pixelSize: 18
-                        font.bold: true
-                        font.family: glTheme.fontMain
-                        font.letterSpacing: 1.5
-                    }
-
-                    Text {
-                        text: qsTr("Carefully read and accept all clauses before proceeding to the ticket portal.")
-                        color: glTheme.textMuted
-                        font.pixelSize: 13
-                        font.family: glTheme.fontMain
-                    }
-                }
-                
-                // Read Progress
-                ColumnLayout {
-                    Layout.alignment: Qt.AlignVCenter | Qt.AlignRight
-                    spacing: 4
+                    spacing: 16
                     
-                    Text {
-                        text: qsTr("AGREEMENT PROGRESS")
-                        color: glTheme.textDisabled
-                        font.pixelSize: 10
-                        font.family: glTheme.fontMono
-                        Layout.alignment: Qt.AlignRight
-                    }
-                    
-                    RowLayout {
-                        spacing: 8
-                        Layout.alignment: Qt.AlignRight
+                    // Secure Lock Icon
+                    Rectangle {
+                        Layout.preferredWidth: 64
+                        Layout.preferredHeight: 64
+                        radius: 32
+                        color: authTheme.bgInput
+                        border.color: authTheme.accentLock
+                        border.width: 2
+                        Layout.alignment: Qt.AlignHCenter
                         
                         Text {
-                            text: mnjnefGuidelinesRoot.acceptedClauses + " / " + mnjnefGuidelinesRoot.totalClauses
-                            color: mnjnefGuidelinesRoot.acceptedClauses === mnjnefGuidelinesRoot.totalClauses ? glTheme.statusSuccess : glTheme.statusWarning
-                            font.pixelSize: 18
-                            font.bold: true
-                            font.family: glTheme.fontMono
+                            anchors.centerIn: parent
+                            text: mnjnefOtpAuthRoot.currentAuthStep === 2 ? "🔓" : "🔒"
+                            font.pixelSize: 28
+                        }
+                        
+                        // Radar pulse ring
+                        Rectangle {
+                            anchors.centerIn: parent
+                            width: 64
+                            height: 64
+                            radius: 32
+                            color: "transparent"
+                            border.color: authTheme.accentLock
+                            border.width: 2
+                            opacity: 0.0
+                            
+                            SequentialAnimation on width {
+                                loops: Animation.Infinite
+                                running: mnjnefOtpAuthRoot.currentAuthStep !== 2
+                                NumberAnimation { from: 64; to: 120; duration: 2000; easing.type: Easing.OutQuad }
+                            }
+                            SequentialAnimation on height {
+                                loops: Animation.Infinite
+                                running: mnjnefOtpAuthRoot.currentAuthStep !== 2
+                                NumberAnimation { from: 64; to: 120; duration: 2000; easing.type: Easing.OutQuad }
+                            }
+                            SequentialAnimation on opacity {
+                                loops: Animation.Infinite
+                                running: mnjnefOtpAuthRoot.currentAuthStep !== 2
+                                NumberAnimation { from: 0.6; to: 0.0; duration: 2000; easing.type: Easing.OutQuad }
+                            }
                         }
                     }
-                }
-            }
-            
-            // Bottom glowing border line
-            Rectangle {
-                anchors.bottom: parent.bottom
-                width: parent.width
-                height: 2
-                color: glTheme.accentPrimary
-                opacity: 0.4
-            }
-        }
-
-        // ------------------------------------------
-        // MIDDLE: SCROLLABLE CLAUSES
-        // ------------------------------------------
-        Item {
-            Layout.fillWidth: true
-            Layout.fillHeight: true
-
-            Flickable {
-                id: guidelinesFlickable
-                anchors.fill: parent
-                anchors.margins: 24
-                contentWidth: width
-                contentHeight: clauseColumn.implicitHeight + 40
-                clip: true
-                boundsBehavior: Flickable.StopAtBounds
-
-                onContentYChanged: {
-                    if (contentY >= contentHeight - height - 10) {
-                        mnjnefGuidelinesRoot.isFullyScrolled = true;
-                    }
-                }
-
-                ColumnLayout {
-                    id: clauseColumn
-                    width: parent.width
-                    spacing: 16
 
                     Text {
-                        text: qsTr("Terms of Support Engagement")
-                        color: glTheme.textHeader
-                        font.pixelSize: 16
+                        text: qsTr("IDENTITY VERIFICATION")
+                        color: authTheme.textHeader
+                        font.pixelSize: 22
                         font.bold: true
-                        font.family: glTheme.fontMain
-                        Layout.bottomMargin: 8
+                        font.family: authTheme.fontMain
+                        font.letterSpacing: 2.0
+                        Layout.alignment: Qt.AlignHCenter
                     }
 
-                    Repeater {
-                        model: guidelinesModel
-                        
-                        // Custom Interactive Clause Component
-                        Rectangle {
+                    Text {
+                        text: {
+                            if (mnjnefOtpAuthRoot.currentAuthStep === 0) return qsTr("Establish secure parameters to receive your OTP.");
+                            if (mnjnefOtpAuthRoot.currentAuthStep === 1) return qsTr("Enter the 6-digit code sent to your email.");
+                            return qsTr("Identity confirmed. Secure session established.");
+                        }
+                        color: authTheme.textMuted
+                        font.pixelSize: 13
+                        font.family: authTheme.fontMain
+                        Layout.alignment: Qt.AlignHCenter
+                        horizontalAlignment: Text.AlignHCenter
+                        wrapMode: Text.WordWrap
+                        Layout.maximumWidth: 380
+                    }
+                }
+
+                // ------------------------------------------
+                // DYNAMIC CONTENT AREA (STACK VIEW SIMULATION)
+                // ------------------------------------------
+                Item {
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+
+                    // ==========================================
+                    // STEP 0: USERNAME & EMAIL INPUT
+                    // ==========================================
+                    ColumnLayout {
+                        anchors.fill: parent
+                        spacing: 20
+                        visible: mnjnefOtpAuthRoot.currentAuthStep === 0
+                        opacity: visible ? 1.0 : 0.0
+                        Behavior on opacity { NumberAnimation { duration: 300 } }
+
+                        // Username Field
+                        ColumnLayout {
                             Layout.fillWidth: true
-                            Layout.preferredHeight: clauseTextCol.implicitHeight + 32
-                            color: isAccepted ? glTheme.bgElevated : glTheme.bgSurface
-                            radius: 8
-                            border.color: isAccepted ? glTheme.borderActive : glTheme.borderDefault
-                            border.width: isAccepted ? 2 : 1
+                            spacing: 8
                             
-                            Behavior on color { ColorAnimation { duration: 200 } }
-                            Behavior on border.color { ColorAnimation { duration: 200 } }
-
-                            RowLayout {
-                                anchors.fill: parent
-                                anchors.margins: 16
-                                spacing: 16
-
-                                // Status Indicator / Code
-                                ColumnLayout {
-                                    Layout.alignment: Qt.AlignTop
-                                    Layout.preferredWidth: 60
-                                    spacing: 4
+                            Text {
+                                text: qsTr("MNJNEF USERNAME")
+                                color: authTheme.textMuted
+                                font.pixelSize: 11
+                                font.bold: true
+                                font.family: authTheme.fontMono
+                            }
+                            
+                            Rectangle {
+                                Layout.fillWidth: true
+                                Layout.preferredHeight: 50
+                                color: authTheme.bgInput
+                                radius: 8
+                                border.color: usernameInput.activeFocus ? authTheme.borderFocus : authTheme.borderDefault
+                                border.width: usernameInput.activeFocus ? 2 : 1
+                                
+                                Behavior on border.color { ColorAnimation { duration: 200 } }
+                                
+                                TextInput {
+                                    id: usernameInput
+                                    anchors.fill: parent
+                                    anchors.margins: 16
+                                    color: authTheme.textHeader
+                                    font.pixelSize: 15
+                                    font.family: authTheme.fontMain
+                                    verticalAlignment: TextInput.AlignVCenter
+                                    selectByMouse: true
+                                    maximumLength: 30
                                     
                                     Text {
-                                        text: clauseId
-                                        color: isAccepted ? glTheme.accentPrimary : glTheme.textDisabled
-                                        font.pixelSize: 12
-                                        font.bold: true
-                                        font.family: glTheme.fontMono
-                                    }
-                                    
-                                    Rectangle {
-                                        Layout.preferredWidth: 24
-                                        Layout.preferredHeight: 4
-                                        radius: 2
-                                        color: isAccepted ? glTheme.statusSuccess : glTheme.statusWarning
-                                    }
-                                }
-
-                                // Clause Content
-                                ColumnLayout {
-                                    id: clauseTextCol
-                                    Layout.fillWidth: true
-                                    spacing: 6
-                                    
-                                    Text {
-                                        text: title
-                                        color: isAccepted ? glTheme.textHeader : glTheme.textBody
+                                        text: qsTr("Enter your registered username")
+                                        color: authTheme.textMuted
                                         font.pixelSize: 15
-                                        font.bold: true
-                                        font.family: glTheme.fontMain
-                                        Layout.fillWidth: true
-                                        wrapMode: Text.WordWrap
-                                    }
-                                    
-                                    Text {
-                                        text: description
-                                        color: isAccepted ? glTheme.textBody : glTheme.textMuted
-                                        font.pixelSize: 13
-                                        font.family: glTheme.fontMain
-                                        Layout.fillWidth: true
-                                        wrapMode: Text.WordWrap
-                                        lineHeight: 1.4
+                                        font.family: authTheme.fontMain
+                                        visible: !usernameInput.text && !usernameInput.activeFocus
+                                        anchors.verticalCenter: parent.verticalCenter
                                     }
                                 }
+                            }
+                        }
 
-                                // Custom Checkbox Toggle
-                                Rectangle {
-                                    Layout.alignment: Qt.AlignVCenter | Qt.AlignRight
-                                    Layout.preferredWidth: 32
-                                    Layout.preferredHeight: 32
-                                    radius: 16
-                                    color: isAccepted ? glTheme.accentPrimary : "transparent"
-                                    border.color: isAccepted ? glTheme.accentPrimary : glTheme.textDisabled
-                                    border.width: 2
+                        // Email Field
+                        ColumnLayout {
+                            Layout.fillWidth: true
+                            spacing: 8
+                            
+                            Text {
+                                text: qsTr("SECURE EMAIL ADDRESS")
+                                color: authTheme.textMuted
+                                font.pixelSize: 11
+                                font.bold: true
+                                font.family: authTheme.fontMono
+                            }
+                            
+                            Rectangle {
+                                Layout.fillWidth: true
+                                Layout.preferredHeight: 50
+                                color: authTheme.bgInput
+                                radius: 8
+                                border.color: {
+                                    if (authController.emailError) return authTheme.borderError;
+                                    if (emailInput.activeFocus) return authTheme.borderFocus;
+                                    return authTheme.borderDefault;
+                                }
+                                border.width: emailInput.activeFocus || authController.emailError ? 2 : 1
+                                
+                                Behavior on border.color { ColorAnimation { duration: 200 } }
+                                
+                                TextInput {
+                                    id: emailInput
+                                    anchors.fill: parent
+                                    anchors.margins: 16
+                                    color: authTheme.textHeader
+                                    font.pixelSize: 15
+                                    font.family: authTheme.fontMain
+                                    verticalAlignment: TextInput.AlignVCenter
+                                    selectByMouse: true
+                                    maximumLength: 100
                                     
-                                    Behavior on color { ColorAnimation { duration: 150 } }
-                                    
-                                    Text {
-                                        anchors.centerIn: parent
-                                        text: "✓"
-                                        color: glTheme.textHeader
-                                        font.pixelSize: 16
-                                        font.bold: true
-                                        opacity: isAccepted ? 1.0 : 0.0
-                                        Behavior on opacity { NumberAnimation { duration: 150 } }
-                                        y: isAccepted ? 0 : 10
-                                        Behavior on y { NumberAnimation { duration: 200; easing.type: Easing.OutBack } }
+                                    onTextChanged: {
+                                        if (authController.emailError) authController.emailError = false;
                                     }
                                     
-                                    MouseArea {
+                                    Text {
+                                        text: qsTr("e.g., commander@mnjnef.com")
+                                        color: authTheme.textMuted
+                                        font.pixelSize: 15
+                                        font.family: authTheme.fontMain
+                                        visible: !emailInput.text && !emailInput.activeFocus
+                                        anchors.verticalCenter: parent.verticalCenter
+                                    }
+                                }
+                            }
+                            
+                            Text {
+                                text: qsTr("Invalid email format detected.")
+                                color: authTheme.textError
+                                font.pixelSize: 12
+                                font.family: authTheme.fontMain
+                                visible: authController.emailError
+                            }
+                        }
+
+                        Item { Layout.fillHeight: true } // Flexible spacer
+                    }
+
+                    // ==========================================
+                    // STEP 1: OTP VERIFICATION
+                    // ==========================================
+                    ColumnLayout {
+                        anchors.fill: parent
+                        spacing: 24
+                        visible: mnjnefOtpAuthRoot.currentAuthStep === 1
+                        opacity: visible ? 1.0 : 0.0
+                        Behavior on opacity { NumberAnimation { duration: 300 } }
+
+                        Text {
+                            text: qsTr("Sent to: ") + authEmail
+                            color: authTheme.accentCore
+                            font.pixelSize: 14
+                            font.family: authTheme.fontMain
+                            font.bold: true
+                            Layout.alignment: Qt.AlignHCenter
+                        }
+
+                        // 6-Digit OTP Input Row
+                        RowLayout {
+                            id: otpRow
+                            Layout.alignment: Qt.AlignHCenter
+                            spacing: 12
+                            
+                            Repeater {
+                                model: 6
+                                Rectangle {
+                                    id: digitBox
+                                    Layout.preferredWidth: 48
+                                    Layout.preferredHeight: 60
+                                    color: authTheme.bgInput
+                                    radius: 8
+                                    border.color: {
+                                        if (authController.otpError) return authTheme.borderError;
+                                        if (digitInput.activeFocus) return authTheme.borderFocus;
+                                        if (digitInput.text.length > 0) return authTheme.borderSuccess;
+                                        return authTheme.borderDefault;
+                                    }
+                                    border.width: digitInput.activeFocus || authController.otpError ? 2 : 1
+                                    
+                                    Behavior on border.color { ColorAnimation { duration: 150 } }
+                                    
+                                    TextInput {
+                                        id: digitInput
                                         anchors.fill: parent
-                                        anchors.margins: -10 // Expand hit area
-                                        hoverEnabled: true
-                                        cursorShape: Qt.PointingHandCursor
+                                        horizontalAlignment: TextInput.AlignHCenter
+                                        verticalAlignment: TextInput.AlignVCenter
+                                        color: authTheme.textHeader
+                                        font.pixelSize: 24
+                                        font.bold: true
+                                        font.family: authTheme.fontMono
+                                        maximumLength: 1
+                                        validator: RegularExpressionValidator { regularExpression: /[0-9]/ }
                                         
-                                        onEntered: {
-                                            if (!isAccepted) parent.border.color = glTheme.textMuted
+                                        onTextChanged: {
+                                            authController.otpError = false;
+                                            if (text.length === 1 && index < 5) {
+                                                otpRow.children[index + 1].children[0].forceActiveFocus();
+                                            }
+                                            authController.collectOtp();
                                         }
-                                        onExited: {
-                                            if (!isAccepted) parent.border.color = glTheme.textDisabled
-                                        }
-                                        onClicked: {
-                                            guidelinesModel.setProperty(index, "isAccepted", !isAccepted);
-                                            recalculateAcceptance();
+                                        
+                                        Keys.onPressed: (event) => {
+                                            if (event.key === Qt.Key_Backspace && text.length === 0 && index > 0) {
+                                                otpRow.children[index - 1].children[0].forceActiveFocus();
+                                                otpRow.children[index - 1].children[0].text = "";
+                                            }
                                         }
                                     }
                                 }
                             }
                         }
+
+                        Text {
+                            text: qsTr("Incorrect OTP or Token Expired.")
+                            color: authTheme.textError
+                            font.pixelSize: 12
+                            font.family: authTheme.fontMain
+                            visible: authController.otpError
+                            Layout.alignment: Qt.AlignHCenter
+                        }
+
+                        // Resend Controls
+                        RowLayout {
+                            Layout.alignment: Qt.AlignHCenter
+                            spacing: 8
+                            
+                            Text {
+                                text: qsTr("Didn't receive the code?")
+                                color: authTheme.textMuted
+                                font.pixelSize: 13
+                                font.family: authTheme.fontMain
+                            }
+                            
+                            Text {
+                                text: mnjnefOtpAuthRoot.resendCooldown > 0 ? qsTr("Resend in ") + mnjnefOtpAuthRoot.resendCooldown + "s" : qsTr("RESEND OTP")
+                                color: mnjnefOtpAuthRoot.resendCooldown > 0 ? authTheme.textMuted : authTheme.accentHover
+                                font.pixelSize: 13
+                                font.bold: true
+                                font.family: authTheme.fontMain
+                                
+                                MouseArea {
+                                    anchors.fill: parent
+                                    hoverEnabled: mnjnefOtpAuthRoot.resendCooldown === 0
+                                    cursorShape: mnjnefOtpAuthRoot.resendCooldown === 0 ? Qt.PointingHandCursor : Qt.ArrowCursor
+                                    onClicked: {
+                                        if (mnjnefOtpAuthRoot.resendCooldown === 0) {
+                                            authController.requestOtp();
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        
+                        Item { Layout.fillHeight: true }
                     }
-                }
-            }
 
-            // Custom Advanced Scrollbar
-            Rectangle {
-                anchors.right: parent.right
-                anchors.top: parent.top
-                anchors.bottom: parent.bottom
-                anchors.margins: 4
-                width: 6
-                radius: 3
-                color: glTheme.bgSurface
-                
-                Rectangle {
-                    width: parent.width
-                    radius: 3
-                    color: guidelinesFlickable.moving ? glTheme.accentPrimary : glTheme.textDisabled
-                    height: Math.max(30, (guidelinesFlickable.height / guidelinesFlickable.contentHeight) * parent.height)
-                    y: (guidelinesFlickable.contentY / (guidelinesFlickable.contentHeight - guidelinesFlickable.height)) * (parent.height - height)
-                    
-                    Behavior on color { ColorAnimation { duration: 150 } }
-                }
-            }
-        }
-
-        // ------------------------------------------
-        // FOOTER: ACTION CONTROLS & TIMER
-        // ------------------------------------------
-        Rectangle {
-            id: footerPanel
-            Layout.fillWidth: true
-            Layout.preferredHeight: 80
-            color: glTheme.bgSurface
-            border.color: glTheme.borderDefault
-            border.width: 1
-            z: 20
-
-            RowLayout {
-                anchors.fill: parent
-                anchors.margins: 16
-                spacing: 16
-
-                // Decline Button
-                Rectangle {
-                    Layout.preferredWidth: 140
-                    Layout.fillHeight: true
-                    radius: 8
-                    color: declineMouse.containsMouse ? glTheme.bgHighlight : "transparent"
-                    border.color: declineMouse.containsMouse ? glTheme.textMuted : glTheme.borderDefault
-                    border.width: 1
-                    
-                    Behavior on color { ColorAnimation { duration: 150 } }
-
-                    Text {
+                    // ==========================================
+                    // STEP 2: SUCCESS VERIFICATION
+                    // ==========================================
+                    ColumnLayout {
                         anchors.centerIn: parent
-                        text: qsTr("DECLINE")
-                        color: glTheme.textMuted
-                        font.pixelSize: 14
-                        font.bold: true
-                        font.family: glTheme.fontMain
-                    }
+                        spacing: 24
+                        visible: mnjnefOtpAuthRoot.currentAuthStep === 2
+                        opacity: visible ? 1.0 : 0.0
+                        Behavior on opacity { NumberAnimation { duration: 500 } }
 
-                    MouseArea {
-                        id: declineMouse
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: mnjnefGuidelinesRoot.guidelinesDeclined()
+                        Rectangle {
+                            Layout.preferredWidth: 100
+                            Layout.preferredHeight: 100
+                            radius: 50
+                            color: "transparent"
+                            border.color: authTheme.textSuccess
+                            border.width: 4
+                            Layout.alignment: Qt.AlignHCenter
+                            
+                            Text {
+                                anchors.centerIn: parent
+                                text: "✓"
+                                color: authTheme.textSuccess
+                                font.pixelSize: 50
+                                font.bold: true
+                            }
+                        }
+                        
+                        Text {
+                            text: qsTr("AUTHENTICATION COMPLETE")
+                            color: authTheme.textSuccess
+                            font.pixelSize: 18
+                            font.bold: true
+                            font.family: authTheme.fontMain
+                            font.letterSpacing: 2.0
+                            Layout.alignment: Qt.AlignHCenter
+                        }
+                        
+                        Text {
+                            text: qsTr("Generating cryptographic token...")
+                            color: authTheme.textMuted
+                            font.pixelSize: 12
+                            font.family: authTheme.fontMono
+                            Layout.alignment: Qt.AlignHCenter
+                        }
                     }
                 }
 
-                Item { Layout.fillWidth: true } // Spacer
-
-                // Timer Visualizer
-                RowLayout {
-                    Layout.alignment: Qt.AlignVCenter
-                    spacing: 8
-                    visible: mnjnefGuidelinesRoot.isTimerActive
-                    
-                    Text {
-                        text: qsTr("Reading Time Enforcement:")
-                        color: glTheme.textDisabled
-                        font.pixelSize: 12
-                        font.family: glTheme.fontMain
-                    }
-                    
-                    Text {
-                        text: mnjnefGuidelinesRoot.readingCountdown + "s"
-                        color: glTheme.statusWarning
-                        font.pixelSize: 14
-                        font.bold: true
-                        font.family: glTheme.fontMono
-                    }
-                }
-
-                // Accept Button
+                // ------------------------------------------
+                // FOOTER: ACTION BUTTON
+                // ------------------------------------------
                 Rectangle {
-                    id: acceptBtn
-                    Layout.preferredWidth: 220
-                    Layout.fillHeight: true
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 54
                     radius: 8
-                    
-                    property bool canAccept: mnjnefGuidelinesRoot.acceptedClauses === mnjnefGuidelinesRoot.totalClauses && !mnjnefGuidelinesRoot.isTimerActive
-                    
-                    color: {
-                        if (!canAccept) return glTheme.accentDisabled;
-                        if (acceptMouse.containsPress) return glTheme.accentPrimary;
-                        if (acceptMouse.containsMouse) return glTheme.accentHover;
-                        return glTheme.accentPrimary;
-                    }
-                    
-                    border.color: canAccept ? glTheme.borderActive : "transparent"
-                    border.width: canAccept ? 1 : 0
+                    color: mnjnefOtpAuthRoot.isProcessing ? authTheme.bgInput : authTheme.accentCore
+                    border.color: mnjnefOtpAuthRoot.isProcessing ? authTheme.borderDefault : "transparent"
+                    border.width: 1
+                    visible: mnjnefOtpAuthRoot.currentAuthStep !== 2
                     
                     Behavior on color { ColorAnimation { duration: 200 } }
 
-                    // Glow Effect when active
-                    Rectangle {
-                        anchors.fill: parent
-                        radius: 8
-                        color: "transparent"
-                        border.color: glTheme.accentHover
-                        border.width: 2
-                        opacity: acceptBtn.canAccept ? 0.6 : 0.0
-                        
-                        SequentialAnimation on opacity {
-                            loops: Animation.Infinite
-                            running: acceptBtn.canAccept && !acceptMouse.containsMouse
-                            NumberAnimation { from: 0.2; to: 0.8; duration: 1500 }
-                            NumberAnimation { from: 0.8; to: 0.2; duration: 1500 }
-                        }
-                    }
-
+                    // Button Content
                     RowLayout {
                         anchors.centerIn: parent
-                        spacing: 8
-
-                        Text {
-                            text: "✓"
-                            color: glTheme.textHeader
-                            font.pixelSize: 16
-                            font.bold: true
-                            visible: acceptBtn.canAccept
+                        spacing: 12
+                        
+                        // Loading Spinner
+                        Rectangle {
+                            Layout.preferredWidth: 20
+                            Layout.preferredHeight: 20
+                            radius: 10
+                            color: "transparent"
+                            border.color: authTheme.textHeader
+                            border.width: 2
+                            visible: mnjnefOtpAuthRoot.isProcessing
+                            clip: true
+                            
+                            RotationAnimation on rotation {
+                                loops: Animation.Infinite
+                                from: 0; to: 360; duration: 800
+                                running: mnjnefOtpAuthRoot.isProcessing
+                            }
                         }
 
                         Text {
                             text: {
-                                if (mnjnefGuidelinesRoot.isTimerActive) return qsTr("PLEASE READ...");
-                                if (mnjnefGuidelinesRoot.acceptedClauses < mnjnefGuidelinesRoot.totalClauses) return qsTr("ACCEPT ALL CLAUSES");
-                                return qsTr("I AGREE & PROCEED");
+                                if (mnjnefOtpAuthRoot.isProcessing) return qsTr("PROCESSING...");
+                                if (mnjnefOtpAuthRoot.currentAuthStep === 0) return qsTr("REQUEST SECURE OTP");
+                                return qsTr("VERIFY & AUTHENTICATE");
                             }
-                            color: acceptBtn.canAccept ? glTheme.textHeader : glTheme.textDisabled
+                            color: authTheme.textHeader
                             font.pixelSize: 14
                             font.bold: true
-                            font.family: glTheme.fontMain
+                            font.family: authTheme.fontMain
                             font.letterSpacing: 1.0
                         }
                     }
 
                     MouseArea {
-                        id: acceptMouse
+                        id: actionMouse
                         anchors.fill: parent
-                        hoverEnabled: acceptBtn.canAccept
-                        cursorShape: acceptBtn.canAccept ? Qt.PointingHandCursor : Qt.ForbiddenCursor
+                        hoverEnabled: !mnjnefOtpAuthRoot.isProcessing
+                        cursorShape: mnjnefOtpAuthRoot.isProcessing ? Qt.ForbiddenCursor : Qt.PointingHandCursor
                         
+                        onEntered: {
+                            if (!mnjnefOtpAuthRoot.isProcessing) parent.color = authTheme.accentHover;
+                        }
+                        onExited: {
+                            if (!mnjnefOtpAuthRoot.isProcessing) parent.color = authTheme.accentCore;
+                        }
+                        onPressed: {
+                            if (!mnjnefOtpAuthRoot.isProcessing) parent.color = authTheme.accentCore;
+                        }
+                        onReleased: {
+                            if (!mnjnefOtpAuthRoot.isProcessing && containsMouse) parent.color = authTheme.accentHover;
+                        }
                         onClicked: {
-                            if (acceptBtn.canAccept) {
-                                mnjnefGuidelinesRoot.guidelinesAccepted()
+                            if (mnjnefOtpAuthRoot.isProcessing) return;
+                            
+                            if (mnjnefOtpAuthRoot.currentAuthStep === 0) {
+                                authController.validateAndRequestOtp();
+                            } else if (mnjnefOtpAuthRoot.currentAuthStep === 1) {
+                                authController.verifyOtp();
                             }
                         }
+                    }
+                }
+                
+                // Network Telemetry Info
+                RowLayout {
+                    Layout.fillWidth: true
+                    Layout.alignment: Qt.AlignBottom
+                    
+                    Text {
+                        text: qsTr("SERVER: UAE-DXB-AUTH")
+                        color: authTheme.textMuted
+                        font.pixelSize: 10
+                        font.family: authTheme.fontMono
+                    }
+                    
+                    Item { Layout.fillWidth: true }
+                    
+                    Text {
+                        text: qsTr("SECURE SSL: ON")
+                        color: authTheme.textSuccess
+                        font.pixelSize: 10
+                        font.family: authTheme.fontMono
                     }
                 }
             }
@@ -595,61 +640,159 @@ Item {
     }
 
     // ==========================================
-    // LOGIC & CONTROLLERS
+    // AUTHENTICATION LOGIC CONTROLLER
     // ==========================================
-    
-    function recalculateAcceptance() {
-        let count = 0;
-        for (let i = 0; i < guidelinesModel.count; i++) {
-            if (guidelinesModel.get(i).isAccepted) count++;
+    QtObject {
+        id: authController
+        
+        property bool emailError: false
+        property bool otpError: false
+        property bool hasError: emailError || otpError
+        
+        function validateEmail(email) {
+            let re = /^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/;
+            return re.test(email);
         }
-        mnjnefGuidelinesRoot.acceptedClauses = count;
+        
+        function validateAndRequestOtp() {
+            emailError = false;
+            let uName = usernameInput.text.trim();
+            let eMail = emailInput.text.trim();
+            
+            if (uName.length < 3) {
+                // Focus username if empty
+                usernameInput.forceActiveFocus();
+                return;
+            }
+            
+            if (!validateEmail(eMail)) {
+                emailError = true;
+                emailInput.forceActiveFocus();
+                return;
+            }
+            
+            mnjnefOtpAuthRoot.authUsername = uName;
+            mnjnefOtpAuthRoot.authEmail = eMail;
+            
+            requestOtp();
+        }
+        
+        function requestOtp() {
+            mnjnefOtpAuthRoot.isProcessing = true;
+            
+            // Generate mock 6-digit OTP
+            mnjnefOtpAuthRoot.generatedOtp = Math.floor(100000 + Math.random() * 900000).toString();
+            console.log("[MNJNEF_SECURE] OTP Generated: " + mnjnefOtpAuthRoot.generatedOtp + " for " + mnjnefOtpAuthRoot.authEmail);
+            
+            // Simulate network latency
+            networkTimer.callback = function() {
+                mnjnefOtpAuthRoot.isProcessing = false;
+                mnjnefOtpAuthRoot.currentAuthStep = 1;
+                mnjnefOtpAuthRoot.resendCooldown = 60;
+                resendTimer.start();
+                
+                // Auto focus first digit box
+                otpRow.children[0].children[0].forceActiveFocus();
+            };
+            networkTimer.start();
+        }
+        
+        function collectOtp() {
+            let code = "";
+            for (let i = 0; i < 6; i++) {
+                code += otpRow.children[i].children[0].text;
+            }
+            mnjnefOtpAuthRoot.enteredOtp = code;
+        }
+        
+        function verifyOtp() {
+            collectOtp();
+            otpError = false;
+            
+            if (mnjnefOtpAuthRoot.enteredOtp.length < 6) {
+                otpError = true;
+                return;
+            }
+            
+            mnjnefOtpAuthRoot.isProcessing = true;
+            
+            // Simulate verification latency
+            networkTimer.callback = function() {
+                mnjnefOtpAuthRoot.isProcessing = false;
+                
+                if (mnjnefOtpAuthRoot.enteredOtp === mnjnefOtpAuthRoot.generatedOtp) {
+                    // Success
+                    mnjnefOtpAuthRoot.currentAuthStep = 2;
+                    successTimer.start();
+                } else {
+                    // Failure
+                    otpError = true;
+                    mnjnefOtpAuthRoot.currentAttempts++;
+                    
+                    // Clear inputs
+                    for (let i = 0; i < 6; i++) {
+                        otpRow.children[i].children[0].text = "";
+                    }
+                    otpRow.children[0].children[0].forceActiveFocus();
+                    
+                    if (mnjnefOtpAuthRoot.currentAttempts >= mnjnefOtpAuthRoot.maxAttempts) {
+                        mnjnefOtpAuthRoot.authFailed("MAX_ATTEMPTS_EXCEEDED");
+                    }
+                }
+            };
+            networkTimer.start();
+        }
     }
 
+    // ==========================================
+    // TIMERS
+    // ==========================================
+    
+    // Simulates network latency
     Timer {
-        id: mandatoryReadTimer
+        id: networkTimer
+        interval: 1500
+        repeat: false
+        property var callback: null
+        
+        onRunningChanged: { if(running){} }
+        onTriggered: {
+            if (callback) callback();
+        }
+    }
+    
+    // Countdown for OTP resend
+    Timer {
+        id: resendTimer
         interval: 1000
         repeat: true
-        running: true
         
-        onRunningChanged: {
-            if (running) {
-                // initialization if needed
-            }
-        }
-
+        onRunningChanged: { if(running){} }
         onTriggered: {
-            if (mnjnefGuidelinesRoot.readingCountdown > 0) {
-                mnjnefGuidelinesRoot.readingCountdown--;
+            if (mnjnefOtpAuthRoot.resendCooldown > 0) {
+                mnjnefOtpAuthRoot.resendCooldown--;
             } else {
-                mnjnefGuidelinesRoot.isTimerActive = false;
                 stop();
             }
         }
     }
     
-    // Auto-scroll simulation on load to hint there is content below
-    Component.onCompleted: {
-        startupAnimationTimer.start()
-    }
-    
+    // Delays final signal to show success screen
     Timer {
-        id: startupAnimationTimer
-        interval: 500
+        id: successTimer
+        interval: 2000
         repeat: false
+        
         onRunningChanged: { if(running){} }
         onTriggered: {
-            guidelinesFlickable.contentY = 20;
-            returnToTopAnim.start();
+            let hash = "AUTH-OK-" + Math.floor(Math.random() * 9999999);
+            mnjnefOtpAuthRoot.authSuccessful(mnjnefOtpAuthRoot.authUsername, mnjnefOtpAuthRoot.authEmail, hash);
         }
     }
     
-    NumberAnimation {
-        id: returnToTopAnim
-        target: guidelinesFlickable
-        property: "contentY"
-        to: 0
-        duration: 400
-        easing.type: Easing.OutQuad
+    // Optional Layout Component to Center the Panel dynamically
+    component CenterLayout : Item {
+        id: clRoot
+        default property alias content: clRoot.children
     }
 }
