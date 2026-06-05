@@ -1,873 +1,620 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import QtQuick.Window
 
-Item {
-    id: mnjnefContactUsRoot
-    anchors.fill: parent
-    clip: true
+ApplicationWindow {
+    id: mainMnjnefWindow
+    width: 1280
+    height: 720
+    visible: true
+    title: qsTr("Mnjnef Platform - Authentication")
+    color: mnjTheme.bgBase
 
     // ==========================================
-    // SIGNALS & SYSTEM PROPERTIES
+    // SYSTEM SIGNALS & GLOBAL PROPERTIES
     // ==========================================
-    signal initiateSupportSequence()
-    signal openLiveChat()
-    signal openKnowledgeBase()
-    
-    property bool isConnecting: false
-    property string activeRegion: "UAE-DXB-CORE"
-    property real globalNetworkLoad: 42.5
-    property int activeAgents: 14
+    signal loginRequested(string username, string email, string password)
+    signal supportRequested()
+    signal translationRequested()
+    signal privacyPolicyRequested()
+
+    property bool isLoggingIn: false
+    property string currentLanguage: "EN"
+    property real windowCenterX: width / 2
+    property real windowCenterY: height / 2
 
     // ==========================================
     // THEME & STYLING CORE
     // ==========================================
     QtObject {
-        id: contactTheme
-        property color bgPrimary: "#010308"
-        property color bgPanel: "#0a0f1a"
-        property color bgElevated: "#111827"
-        property color bgHighlight: "#1e293b"
+        id: mnjTheme
+        property color bgBase: "#020617"
+        property color bgPanel: "#1affffff" // Glassmorphism base
+        property color bgInput: "#0f172a"
+        property color bgInputFocus: "#1e293b"
         
-        property color accentPrimary: "#2563eb"
-        property color accentHover: "#3b82f6"
-        property color accentGlow: "#60a5fa"
-        property color accentSecondary: "#8b5cf6"
+        property color accentPrimary: "#3b82f6"
+        property color accentHover: "#60a5fa"
+        property color accentGlow: "#2563eb"
         
-        property color textHeader: "#f8fafc"
+        property color textHeader: "#ffffff"
         property color textBody: "#cbd5e1"
         property color textMuted: "#64748b"
+        property color textLink: "#93c5fd"
         
-        property color borderDefault: "#1e293b"
-        property color borderActive: "#3b82f6"
+        property color borderLight: "#33ffffff"
+        property color borderFocus: "#3b82f6"
+        property color borderError: "#ef4444"
         
         property color stateSuccess: "#10b981"
         property color stateWarning: "#f59e0b"
-        property color stateDanger: "#ef4444"
+        property color stateError: "#ef4444"
         
         property string fontMain: "Segoe UI"
         property string fontMono: "Consolas"
     }
 
     // ==========================================
-    // DATA MODELS
-    // ==========================================
-    ListModel {
-        id: supportNodesModel
-        ListElement { nodeName: "Dubai (DXB)"; status: "ONLINE"; latency: 12; load: 45; coordsX: 0.65; coordsY: 0.45 }
-        ListElement { nodeName: "Frankfurt (FRA)"; status: "ONLINE"; latency: 110; load: 78; coordsX: 0.52; coordsY: 0.35 }
-        ListElement { nodeName: "Singapore (SGP)"; status: "ONLINE"; latency: 85; load: 62; coordsX: 0.78; coordsY: 0.60 }
-        ListElement { nodeName: "Tokyo (NRT)"; status: "ONLINE"; latency: 130; load: 88; coordsX: 0.88; coordsY: 0.40 }
-        ListElement { nodeName: "New York (NYC)"; status: "MAINTENANCE"; latency: 220; load: 95; coordsX: 0.25; coordsY: 0.38 }
-    }
-
-    ListModel {
-        id: faqModel
-        ListElement { 
-            question: "How do I report a critical platform bug?"
-            answer: "Critical bugs should be reported via the 'Mnjnef Support' portal. Select the 'Bug Report' category and attach your crash dumps and system telemetry for expedited routing."
-            isExpanded: false
-        }
-        ListElement { 
-            question: "What is the standard response time for tickets?"
-            answer: "Premium users experience an SLA of 2-4 hours. Standard tier responses range from 12-24 hours depending on global network load and ticket complexity."
-            isExpanded: false
-        }
-        ListElement { 
-            question: "Can I appeal an automated hardware ban?"
-            answer: "Yes, but appeals are strictly reviewed by human operatives. Automated bans triggered by the Anti-Tamper Protocol require a detailed explanation and system logs."
-            isExpanded: false
-        }
-        ListElement { 
-            question: "Is there phone support available?"
-            answer: "Mnjnef operates exclusively via encrypted digital channels to ensure maximum security and proper diagnostic tracking. Voice support is only available to Enterprise nodes."
-            isExpanded: false
-        }
-    }
-
-    ListModel {
-        id: recentAlertsModel
-        ListElement { alertTime: "10:42 AM"; alertLevel: "INFO"; alertText: "Routine maintenance scheduled for EU-West clusters." }
-        ListElement { alertTime: "08:15 AM"; alertLevel: "WARN"; alertText: "Elevated latency detected in SEA routing nodes." }
-        ListElement { alertTime: "01:00 AM"; alertLevel: "SUCCESS"; alertText: "Patch v5.7.1 deployed successfully globally." }
-    }
-
-    // ==========================================
-    // AMBIENT BACKGROUND SYSTEM
+    // DYNAMIC BACKGROUND (PARTICLES & GLOW)
     // ==========================================
     Rectangle {
         anchors.fill: parent
-        color: contactTheme.bgPrimary
-
-        // Starfield / Data Dust
-        Canvas {
-            id: starfieldCanvas
+        color: mnjTheme.bgBase
+        
+        // Deep Blue Gradient Mesh
+        Rectangle {
             anchors.fill: parent
-            opacity: 0.4
+            gradient: Gradient {
+                GradientStop { position: 0.0; color: "#020617" }
+                GradientStop { position: 0.5; color: "#0f172a" }
+                GradientStop { position: 1.0; color: "#020617" }
+            }
+        }
+
+        // Animated Ambient Glows
+        Rectangle {
+            width: 800; height: 800; radius: 400
+            x: parent.width * 0.1; y: parent.height * 0.1
+            color: mnjTheme.accentPrimary
+            opacity: 0.15
+            filterMode: Image.Smooth
             
-            property var stars: []
+            SequentialAnimation on x {
+                loops: Animation.Infinite
+                NumberAnimation { to: parent.width * 0.3; duration: 20000; easing.type: Easing.InOutSine }
+                NumberAnimation { to: parent.width * 0.1; duration: 20000; easing.type: Easing.InOutSine }
+            }
+        }
+        
+        Rectangle {
+            width: 600; height: 600; radius: 300
+            x: parent.width * 0.6; y: parent.height * 0.4
+            color: "#8b5cf6"
+            opacity: 0.1
+            
+            SequentialAnimation on y {
+                loops: Animation.Infinite
+                NumberAnimation { to: parent.height * 0.1; duration: 25000; easing.type: Easing.InOutSine }
+                NumberAnimation { to: parent.height * 0.4; duration: 25000; easing.type: Easing.InOutSine }
+            }
+        }
+
+        // Interactive Particle Canvas
+        Canvas {
+            id: particleCanvas
+            anchors.fill: parent
+            
+            property var particles: []
+            property real mouseXPos: -1000
+            property real mouseYPos: -1000
             
             onPaint: {
                 var ctx = getContext("2d");
                 ctx.clearRect(0, 0, width, height);
-                ctx.fillStyle = contactTheme.textMuted;
+                ctx.fillStyle = "#ffffff";
                 
-                for(var i=0; i<stars.length; i++) {
-                    var s = stars[i];
-                    ctx.globalAlpha = s.alpha;
+                for(var i=0; i<particles.length; i++) {
+                    var p = particles[i];
+                    
+                    // Mouse repel logic
+                    var dx = mouseXPos - p.x;
+                    var dy = mouseYPos - p.y;
+                    var dist = Math.sqrt(dx*dx + dy*dy);
+                    
+                    if(dist < 150) {
+                        var angle = Math.atan2(dy, dx);
+                        p.x -= Math.cos(angle) * (150 - dist) * 0.02;
+                        p.y -= Math.sin(angle) * (150 - dist) * 0.02;
+                    }
+                    
+                    ctx.globalAlpha = p.alpha;
                     ctx.beginPath();
-                    ctx.arc(s.x, s.y, s.size, 0, 2*Math.PI);
+                    ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
                     ctx.fill();
                 }
             }
             
             Component.onCompleted: {
-                for(var i=0; i<150; i++) {
-                    stars.push({
+                for(var i=0; i<100; i++) {
+                    particles.push({
                         x: Math.random() * width,
                         y: Math.random() * height,
-                        size: Math.random() * 1.5,
-                        alpha: Math.random(),
-                        speed: Math.random() * 0.05 + 0.01
+                        vx: (Math.random() - 0.5) * 0.5,
+                        vy: (Math.random() - 0.5) * 0.5,
+                        size: Math.random() * 2 + 0.5,
+                        alpha: Math.random() * 0.5 + 0.1
                     });
                 }
             }
             
             Timer {
-                interval: 50; running: true; repeat: true
+                interval: 33; running: true; repeat: true
                 onTriggered: {
-                    for(var i=0; i<starfieldCanvas.stars.length; i++) {
-                        var s = starfieldCanvas.stars[i];
-                        s.alpha += s.speed;
-                        if(s.alpha > 1.0 || s.alpha < 0.1) s.speed = -s.speed;
+                    for(var i=0; i<particleCanvas.particles.length; i++) {
+                        var p = particleCanvas.particles[i];
+                        p.x += p.vx;
+                        p.y += p.vy;
+                        
+                        if(p.x < 0 || p.x > particleCanvas.width) p.vx *= -1;
+                        if(p.y < 0 || p.y > particleCanvas.height) p.vy *= -1;
                     }
-                    starfieldCanvas.requestPaint();
+                    particleCanvas.requestPaint();
                 }
             }
-        }
-
-        // Global Grid Overlay
-        Canvas {
-            anchors.fill: parent
-            opacity: 0.05
-            onPaint: {
-                var ctx = getContext("2d");
-                ctx.strokeStyle = contactTheme.accentPrimary;
-                ctx.lineWidth = 1;
-                var step = 50;
-                ctx.beginPath();
-                for(var x=0; x<width; x+=step) { ctx.moveTo(x, 0); ctx.lineTo(x, height); }
-                for(var y=0; y<height; y+=step) { ctx.moveTo(0, y); ctx.lineTo(width, y); }
-                ctx.stroke();
+            
+            MouseArea {
+                anchors.fill: parent
+                hoverEnabled: true
+                onPositionChanged: (mouse) => {
+                    particleCanvas.mouseXPos = mouse.x;
+                    particleCanvas.mouseYPos = mouse.y;
+                }
+                onExited: {
+                    particleCanvas.mouseXPos = -1000;
+                    particleCanvas.mouseYPos = -1000;
+                }
             }
         }
     }
 
     // ==========================================
-    // MAIN LAYOUT
+    // MAIN LOGIN PANEL (GLASSMORPHISM)
     // ==========================================
-    ColumnLayout {
-        anchors.fill: parent
-        anchors.margins: 32
-        spacing: 24
+    Rectangle {
+        id: loginPanel
+        width: 440
+        height: 600
+        anchors.centerIn: parent
+        color: mnjTheme.bgPanel
+        radius: 24
+        border.color: mnjTheme.borderLight
+        border.width: 1
+        
+        // Simulating blur backdrop using layered semi-transparent rects
+        // In Qt6, MultiEffect can be used, but this is universally safe
+        Rectangle {
+            anchors.fill: parent
+            anchors.margins: 1
+            radius: 23
+            color: "#11000000"
+            z: -1
+        }
 
-        // ------------------------------------------
-        // HEADER: BRANDING & GLOBAL STATUS
-        // ------------------------------------------
-        RowLayout {
-            Layout.fillWidth: true
-            Layout.preferredHeight: 80
-            spacing: 24
+        ColumnLayout {
+            anchors.fill: parent
+            anchors.margins: 32
+            spacing: 20
 
-            // Branding Logo Area
-            Rectangle {
-                Layout.preferredWidth: 80
-                Layout.preferredHeight: 80
-                radius: 16
-                color: contactTheme.bgPanel
-                border.color: contactTheme.borderActive
-                border.width: 1
-                
-                Text {
-                    anchors.centerIn: parent
-                    text: "MNJ"
-                    color: contactTheme.textHeader
-                    font.pixelSize: 22
-                    font.bold: true
-                    font.family: contactTheme.fontMono
-                    font.letterSpacing: 2.0
-                }
-                
-                Rectangle {
-                    anchors.fill: parent
-                    radius: 16
-                    color: "transparent"
-                    border.color: contactTheme.accentGlow
-                    border.width: 2
-                    opacity: 0.5
-                    
-                    SequentialAnimation on opacity {
-                        loops: Animation.Infinite
-                        running: true
-                        NumberAnimation { from: 0.2; to: 0.8; duration: 2000 }
-                        NumberAnimation { from: 0.8; to: 0.2; duration: 2000 }
-                    }
-                }
-            }
-
+            // ------------------------------------------
+            // HEADER & LOGO
+            // ------------------------------------------
             ColumnLayout {
                 Layout.fillWidth: true
-                spacing: 4
-                
+                spacing: 8
+                Layout.alignment: Qt.AlignHCenter
+                Layout.bottomMargin: 10
+
                 Text {
-                    text: qsTr("MNJNEF GLOBAL SUPPORT NETWORK")
-                    color: contactTheme.textHeader
-                    font.pixelSize: 24
+                    text: "Mnjnef"
+                    color: mnjTheme.textHeader
+                    font.pixelSize: 42
                     font.bold: true
-                    font.family: contactTheme.fontMain
-                    font.letterSpacing: 1.5
+                    font.family: mnjTheme.fontMain
+                    font.letterSpacing: 2.0
+                    Layout.alignment: Qt.AlignHCenter
+                    
+                    // Subtle glowing drop shadow
+                    layer.enabled: true
                 }
-                
+
                 Text {
-                    text: qsTr("Secure connection established. Encrypted routing active.")
-                    color: contactTheme.textMuted
-                    font.pixelSize: 14
-                    font.family: contactTheme.fontMain
+                    text: qsTr("Join a gaming community and create your own world in the Mnjnef platform")
+                    color: mnjTheme.textMuted
+                    font.pixelSize: 13
+                    font.family: mnjTheme.fontMain
+                    Layout.alignment: Qt.AlignHCenter
+                    horizontalAlignment: Text.AlignHCenter
+                    wrapMode: Text.WordWrap
+                    Layout.maximumWidth: 320
+                    lineHeight: 1.2
                 }
             }
 
-            // Live Network Status
-            Rectangle {
-                Layout.preferredWidth: 280
-                Layout.fillHeight: true
-                color: contactTheme.bgPanel
-                radius: 12
-                border.color: contactTheme.borderDefault
-                border.width: 1
+            // ------------------------------------------
+            // INPUT FIELDS
+            // ------------------------------------------
+            ColumnLayout {
+                Layout.fillWidth: true
+                spacing: 16
 
-                RowLayout {
-                    anchors.fill: parent
-                    anchors.margins: 12
-                    spacing: 16
+                // Username Input
+                Rectangle {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 52
+                    radius: 8
+                    color: usernameInput.activeFocus ? mnjTheme.bgInputFocus : mnjTheme.bgInput
+                    border.color: usernameInput.activeFocus ? mnjTheme.borderFocus : mnjTheme.borderLight
+                    border.width: usernameInput.activeFocus ? 2 : 1
                     
-                    ColumnLayout {
+                    Behavior on border.color { ColorAnimation { duration: 150 } }
+                    Behavior on color { ColorAnimation { duration: 150 } }
+
+                    TextInput {
+                        id: usernameInput
+                        anchors.fill: parent
+                        anchors.margins: 16
+                        color: mnjTheme.textHeader
+                        font.pixelSize: 14
+                        font.family: mnjTheme.fontMain
+                        verticalAlignment: TextInput.AlignVCenter
+                        selectByMouse: true
+                        
+                        Text {
+                            text: qsTr("Enter Username")
+                            color: mnjTheme.textMuted
+                            font.pixelSize: 14
+                            font.family: mnjTheme.fontMain
+                            visible: !usernameInput.text && !usernameInput.activeFocus
+                            anchors.verticalCenter: parent.verticalCenter
+                        }
+                    }
+                }
+
+                // Email Input
+                Rectangle {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 52
+                    radius: 8
+                    color: emailInput.activeFocus ? mnjTheme.bgInputFocus : mnjTheme.bgInput
+                    border.color: {
+                        if (loginController.emailError) return mnjTheme.borderError;
+                        if (emailInput.activeFocus) return mnjTheme.borderFocus;
+                        return mnjTheme.borderLight;
+                    }
+                    border.width: emailInput.activeFocus || loginController.emailError ? 2 : 1
+                    
+                    Behavior on border.color { ColorAnimation { duration: 150 } }
+
+                    TextInput {
+                        id: emailInput
+                        anchors.fill: parent
+                        anchors.margins: 16
+                        color: mnjTheme.textHeader
+                        font.pixelSize: 14
+                        font.family: mnjTheme.fontMain
+                        verticalAlignment: TextInput.AlignVCenter
+                        selectByMouse: true
+                        
+                        onTextChanged: loginController.emailError = false
+
+                        Text {
+                            text: qsTr("Enter Email")
+                            color: mnjTheme.textMuted
+                            font.pixelSize: 14
+                            font.family: mnjTheme.fontMain
+                            visible: !emailInput.text && !emailInput.activeFocus
+                            anchors.verticalCenter: parent.verticalCenter
+                        }
+                    }
+                }
+
+                // Password Input
+                ColumnLayout {
+                    Layout.fillWidth: true
+                    spacing: 4
+
+                    Rectangle {
                         Layout.fillWidth: true
-                        spacing: 2
+                        Layout.preferredHeight: 52
+                        radius: 8
+                        color: passwordInput.activeFocus ? mnjTheme.bgInputFocus : mnjTheme.bgInput
+                        border.color: passwordInput.activeFocus ? mnjTheme.borderFocus : mnjTheme.borderLight
+                        border.width: passwordInput.activeFocus ? 2 : 1
                         
-                        Text { text: qsTr("NETWORK LOAD"); color: contactTheme.textMuted; font.pixelSize: 10; font.family: contactTheme.fontMono }
-                        
+                        Behavior on border.color { ColorAnimation { duration: 150 } }
+
                         RowLayout {
+                            anchors.fill: parent
+                            anchors.margins: 16
                             spacing: 8
-                            Text {
-                                text: mnjnefContactUsRoot.globalNetworkLoad.toFixed(1) + "%"
-                                color: mnjnefContactUsRoot.globalNetworkLoad > 80 ? contactTheme.stateDanger : contactTheme.stateSuccess
-                                font.pixelSize: 18
-                                font.bold: true
-                                font.family: contactTheme.fontMono
-                            }
-                            
-                            Rectangle {
-                                Layout.preferredWidth: 60
-                                Layout.preferredHeight: 4
-                                radius: 2
-                                color: contactTheme.bgElevated
-                                clip: true
+
+                            TextInput {
+                                id: passwordInput
+                                Layout.fillWidth: true
+                                Layout.fillHeight: true
+                                color: mnjTheme.textHeader
+                                font.pixelSize: 14
+                                font.family: mnjTheme.fontMain
+                                verticalAlignment: TextInput.AlignVCenter
+                                echoMode: passVisibilityIcon.isPasswordVisible ? TextInput.Normal : TextInput.Password
+                                selectByMouse: true
                                 
-                                Rectangle {
-                                    width: (mnjnefContactUsRoot.globalNetworkLoad / 100) * parent.width
-                                    height: parent.height
-                                    color: mnjnefContactUsRoot.globalNetworkLoad > 80 ? contactTheme.stateDanger : contactTheme.stateSuccess
-                                    radius: 2
-                                    Behavior on width { NumberAnimation { duration: 500 } }
+                                onTextChanged: loginController.evaluatePasswordStrength(text)
+
+                                Text {
+                                    text: qsTr("Enter Password")
+                                    color: mnjTheme.textMuted
+                                    font.pixelSize: 14
+                                    font.family: mnjTheme.fontMain
+                                    visible: !passwordInput.text && !passwordInput.activeFocus
+                                    anchors.verticalCenter: parent.verticalCenter
+                                }
+                            }
+
+                            // Visibility Toggle
+                            Text {
+                                id: passVisibilityIcon
+                                property bool isPasswordVisible: false
+                                text: isPasswordVisible ? "👁️" : "👁️‍🗨️"
+                                color: mnjTheme.textMuted
+                                font.pixelSize: 16
+                                Layout.alignment: Qt.AlignVCenter
+                                
+                                MouseArea {
+                                    anchors.fill: parent
+                                    anchors.margins: -10
+                                    cursorShape: Qt.PointingHandCursor
+                                    onClicked: passVisibilityIcon.isPasswordVisible = !passVisibilityIcon.isPasswordVisible
                                 }
                             }
                         }
                     }
                     
-                    Rectangle { Layout.preferredWidth: 1; Layout.fillHeight: true; color: contactTheme.borderDefault }
-                    
-                    ColumnLayout {
-                        spacing: 2
-                        Text { text: qsTr("AGENTS ONLINE"); color: contactTheme.textMuted; font.pixelSize: 10; font.family: contactTheme.fontMono }
-                        Text {
-                            text: mnjnefContactUsRoot.activeAgents
-                            color: contactTheme.accentPrimary
-                            font.pixelSize: 18
-                            font.bold: true
-                            font.family: contactTheme.fontMono
+                    // Password Strength Indicator
+                    RowLayout {
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 4
+                        spacing: 4
+                        visible: passwordInput.text.length > 0
+                        
+                        Repeater {
+                            model: 4
+                            Rectangle {
+                                Layout.fillWidth: true
+                                Layout.fillHeight: true
+                                radius: 2
+                                color: {
+                                    if (loginController.passStrength > index) {
+                                        if (loginController.passStrength <= 1) return mnjTheme.stateError;
+                                        if (loginController.passStrength === 2) return mnjTheme.stateWarning;
+                                        return mnjTheme.stateSuccess;
+                                    }
+                                    return mnjTheme.bgInput;
+                                }
+                                Behavior on color { ColorAnimation { duration: 300 } }
+                            }
                         }
                     }
                 }
             }
-        }
 
-        // ------------------------------------------
-        // MIDDLE: SPLIT DASHBOARD
-        // ------------------------------------------
-        RowLayout {
-            Layout.fillWidth: true
-            Layout.fillHeight: true
-            spacing: 24
-
-            // ====== LEFT COLUMN: ACTION PORTALS ======
-            ColumnLayout {
-                Layout.preferredWidth: 450
-                Layout.fillHeight: true
-                spacing: 24
-
-                // 1. PRIMARY SUPPORT BUTTON (Requested specifically by user)
+            // ------------------------------------------
+            // LOGIN BUTTON
+            // ------------------------------------------
+            Rectangle {
+                id: loginBtn
+                Layout.fillWidth: true
+                Layout.preferredHeight: 52
+                Layout.topMargin: 10
+                radius: 8
+                color: {
+                    if (mainMnjnefWindow.isLoggingIn) return mnjTheme.bgInput;
+                    if (loginMouse.containsPress) return mnjTheme.accentGlow;
+                    if (loginMouse.containsMouse) return mnjTheme.accentHover;
+                    return mnjTheme.accentPrimary;
+                }
+                border.color: mainMnjnefWindow.isLoggingIn ? mnjTheme.borderLight : "transparent"
+                border.width: mainMnjnefWindow.isLoggingIn ? 1 : 0
+                
+                Behavior on color { ColorAnimation { duration: 150 } }
+                
+                // Glow effect under button
                 Rectangle {
-                    id: primarySupportContainer
-                    Layout.fillWidth: true
-                    Layout.preferredHeight: 120
-                    radius: 16
-                    color: supportBtnMouse.containsMouse ? contactTheme.bgHighlight : contactTheme.bgPanel
-                    border.color: supportBtnMouse.containsMouse ? contactTheme.borderActive : contactTheme.borderDefault
+                    anchors.fill: parent
+                    radius: 8
+                    color: "transparent"
+                    border.color: mnjTheme.accentPrimary
                     border.width: 2
-                    clip: true
-                    
-                    Behavior on color { ColorAnimation { duration: 200 } }
-                    Behavior on border.color { ColorAnimation { duration: 200 } }
+                    opacity: loginMouse.containsMouse && !mainMnjnefWindow.isLoggingIn ? 0.4 : 0.0
+                    Behavior on opacity { NumberAnimation { duration: 200 } }
+                }
 
-                    // Glowing background accent
-                    Rectangle {
-                        anchors.fill: parent
-                        radius: 16
-                        color: contactTheme.accentPrimary
-                        opacity: supportBtnMouse.containsMouse ? 0.1 : 0.0
-                        Behavior on opacity { NumberAnimation { duration: 300 } }
+                RowLayout {
+                    anchors.centerIn: parent
+                    spacing: 12
+                    
+                    // Loading Spinner
+                    Item {
+                        Layout.preferredWidth: 20
+                        Layout.preferredHeight: 20
+                        visible: mainMnjnefWindow.isLoggingIn
+                        
+                        Rectangle {
+                            anchors.fill: parent
+                            radius: 10
+                            color: "transparent"
+                            border.color: mnjTheme.textHeader
+                            border.width: 2
+                            opacity: 0.2
+                        }
+                        
+                        Rectangle {
+                            anchors.fill: parent
+                            radius: 10
+                            color: "transparent"
+                            border.color: mnjTheme.textHeader
+                            border.width: 2
+                            clip: true
+                            
+                            RotationAnimation on rotation {
+                                loops: Animation.Infinite
+                                from: 0; to: 360; duration: 800
+                                running: mainMnjnefWindow.isLoggingIn
+                            }
+                        }
                     }
 
-                    RowLayout {
-                        anchors.fill: parent
-                        anchors.margins: 20
-                        spacing: 20
+                    Text {
+                        text: mainMnjnefWindow.isLoggingIn ? qsTr("Authenticating...") : qsTr("Login")
+                        color: mnjTheme.textHeader
+                        font.pixelSize: 16
+                        font.bold: true
+                        font.family: mnjTheme.fontMain
+                        font.letterSpacing: 1.0
+                    }
+                }
 
-                        // Icon Shield
+                MouseArea {
+                    id: loginMouse
+                    anchors.fill: parent
+                    hoverEnabled: !mainMnjnefWindow.isLoggingIn
+                    cursorShape: mainMnjnefWindow.isLoggingIn ? Qt.ForbiddenCursor : Qt.PointingHandCursor
+                    onClicked: {
+                        if (!mainMnjnefWindow.isLoggingIn) {
+                            loginController.processLogin();
+                        }
+                    }
+                }
+            }
+
+            // Error Message Display
+            Text {
+                text: loginController.errorMessage
+                color: mnjTheme.stateError
+                font.pixelSize: 13
+                font.family: mnjTheme.fontMain
+                Layout.alignment: Qt.AlignHCenter
+                visible: loginController.errorMessage !== ""
+            }
+
+            Item { Layout.fillHeight: true } // Spacer pushes footer down
+
+            // ------------------------------------------
+            // FOOTER: PRIVACY, SUPPORT & TRANSLATION
+            // ------------------------------------------
+            Rectangle {
+                Layout.fillWidth: true
+                Layout.preferredHeight: 1
+                color: mnjTheme.borderLight
+                Layout.bottomMargin: 10
+            }
+
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: 10
+
+                // 1. Privacy Policy (Left side)
+                Text {
+                    text: qsTr("Privacy Policy")
+                    color: privacyMouse.containsMouse ? mnjTheme.textHeader : mnjTheme.textMuted
+                    font.pixelSize: 12
+                    font.family: mnjTheme.fontMain
+                    
+                    Behavior on color { ColorAnimation { duration: 150 } }
+
+                    MouseArea {
+                        id: privacyMouse
+                        anchors.fill: parent
+                        anchors.margins: -5
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: mainMnjnefWindow.privacyPolicyRequested()
+                    }
+                }
+
+                Item { Layout.fillWidth: true } // Flexible spacer pushes content to edges
+
+                // 2. Mnjnef Support + Translation Icon (Right side)
+                RowLayout {
+                    spacing: 12
+                    
+                    // Support Text Button
+                    Text {
+                        text: qsTr("Mnjnef Support")
+                        color: supportMouse.containsMouse ? mnjTheme.textLink : mnjTheme.textMuted
+                        font.pixelSize: 13
+                        font.bold: true
+                        font.family: mnjTheme.fontMain
+                        
+                        Behavior on color { ColorAnimation { duration: 150 } }
+
+                        MouseArea {
+                            id: supportMouse
+                            anchors.fill: parent
+                            anchors.margins: -5
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: mainMnjnefWindow.supportRequested()
+                        }
+                    }
+                    
+                    // Translation / Language Icon Button
+                    Rectangle {
+                        Layout.preferredWidth: 32
+                        Layout.preferredHeight: 32
+                        radius: 8
+                        color: langMouse.containsMouse ? mnjTheme.bgInputFocus : "transparent"
+                        border.color: langMouse.containsMouse ? mnjTheme.borderLight : "transparent"
+                        border.width: 1
+                        
+                        Behavior on color { ColorAnimation { duration: 150 } }
+
+                        Text {
+                            anchors.centerIn: parent
+                            text: "🌐"
+                            font.pixelSize: 16
+                            opacity: langMouse.containsMouse ? 1.0 : 0.7
+                        }
+                        
+                        // Tooltip for translation
                         Rectangle {
-                            Layout.preferredWidth: 64
-                            Layout.preferredHeight: 64
-                            radius: 32
-                            color: contactTheme.bgElevated
-                            border.color: contactTheme.accentPrimary
-                            border.width: 2
+                            anchors.bottom: parent.top
+                            anchors.bottomMargin: 6
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            width: 120
+                            height: 28
+                            radius: 4
+                            color: mnjTheme.bgInput
+                            border.color: mnjTheme.borderLight
+                            border.width: 1
+                            visible: langMouse.containsMouse
                             
                             Text {
                                 anchors.centerIn: parent
-                                text: "🛡️"
-                                font.pixelSize: 28
-                            }
-                        }
-
-                        ColumnLayout {
-                            Layout.fillWidth: true
-                            spacing: 6
-                            
-                            // EXACT TEXT REQUIRED BY USER
-                            Text {
-                                text: "Mnjnef Support"
-                                color: contactTheme.textHeader
-                                font.pixelSize: 22
-                                font.bold: true
-                                font.family: contactTheme.fontMain
-                                font.letterSpacing: 1.0
-                            }
-                            
-                            Text {
-                                text: qsTr("Initiate secure ticket protocol. Connect with Tier 1 & 2 diagnostic agents.")
-                                color: contactTheme.textMuted
-                                font.pixelSize: 13
-                                font.family: contactTheme.fontMain
-                                wrapMode: Text.WordWrap
-                                Layout.fillWidth: true
-                            }
-                        }
-                        
-                        Text {
-                            text: "➔"
-                            color: supportBtnMouse.containsMouse ? contactTheme.accentPrimary : contactTheme.textMuted
-                            font.pixelSize: 24
-                            font.bold: true
-                            
-                            Behavior on color { ColorAnimation { duration: 200 } }
-                            x: supportBtnMouse.containsMouse ? 10 : 0
-                            Behavior on x { NumberAnimation { duration: 200; easing.type: Easing.OutBack } }
-                        }
-                    }
-
-                    // Loading overlay for the button
-                    Rectangle {
-                        anchors.fill: parent
-                        radius: 16
-                        color: "#cc0a0f1a"
-                        visible: mnjnefContactUsRoot.isConnecting
-                        
-                        RowLayout {
-                            anchors.centerIn: parent
-                            spacing: 12
-                            
-                            Text { text: "⏳"; font.pixelSize: 20 }
-                            
-                            Text {
-                                text: qsTr("ESTABLISHING SECURE UPLINK...")
-                                color: contactTheme.accentPrimary
-                                font.pixelSize: 14
-                                font.bold: true
-                                font.family: contactTheme.fontMono
-                            }
-                        }
-                    }
-
-                    MouseArea {
-                        id: supportBtnMouse
-                        anchors.fill: parent
-                        hoverEnabled: !mnjnefContactUsRoot.isConnecting
-                        cursorShape: mnjnefContactUsRoot.isConnecting ? Qt.ForbiddenCursor : Qt.PointingHandCursor
-                        onClicked: {
-                            if (!mnjnefContactUsRoot.isConnecting) {
-                                mnjnefContactUsRoot.isConnecting = true;
-                                connectionSimulationTimer.start();
-                            }
-                        }
-                    }
-                }
-
-                // 2. SECONDARY CHANNELS
-                GridLayout {
-                    Layout.fillWidth: true
-                    columns: 2
-                    rowSpacing: 16
-                    columnSpacing: 16
-
-                    // Live Chat Channel
-                    Rectangle {
-                        Layout.fillWidth: true
-                        Layout.preferredHeight: 100
-                        radius: 12
-                        color: chatMouse.containsMouse ? contactTheme.bgElevated : contactTheme.bgPanel
-                        border.color: contactTheme.borderDefault
-                        border.width: 1
-                        
-                        Behavior on color { ColorAnimation { duration: 150 } }
-
-                        ColumnLayout {
-                            anchors.fill: parent
-                            anchors.margins: 16
-                            spacing: 8
-                            
-                            RowLayout {
-                                Layout.fillWidth: true
-                                Text { text: "💬"; font.pixelSize: 18 }
-                                Item { Layout.fillWidth: true }
-                                Rectangle {
-                                    width: 8; height: 8; radius: 4
-                                    color: contactTheme.stateSuccess
-                                }
-                            }
-                            
-                            Text {
-                                text: qsTr("Live Chat")
-                                color: contactTheme.textHeader
-                                font.pixelSize: 16
-                                font.bold: true
-                                font.family: contactTheme.fontMain
-                            }
-                            
-                            Text {
-                                text: qsTr("Avg Wait: 4m")
-                                color: contactTheme.textMuted
-                                font.pixelSize: 12
-                                font.family: contactTheme.fontMono
-                            }
-                        }
-                        
-                        MouseArea {
-                            id: chatMouse
-                            anchors.fill: parent
-                            hoverEnabled: true
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: mnjnefContactUsRoot.openLiveChat()
-                        }
-                    }
-
-                    // Knowledge Base Channel
-                    Rectangle {
-                        Layout.fillWidth: true
-                        Layout.preferredHeight: 100
-                        radius: 12
-                        color: kbMouse.containsMouse ? contactTheme.bgElevated : contactTheme.bgPanel
-                        border.color: contactTheme.borderDefault
-                        border.width: 1
-                        
-                        Behavior on color { ColorAnimation { duration: 150 } }
-
-                        ColumnLayout {
-                            anchors.fill: parent
-                            anchors.margins: 16
-                            spacing: 8
-                            
-                            RowLayout {
-                                Layout.fillWidth: true
-                                Text { text: "📚"; font.pixelSize: 18 }
-                            }
-                            
-                            Text {
-                                text: qsTr("Knowledge Base")
-                                color: contactTheme.textHeader
-                                font.pixelSize: 16
-                                font.bold: true
-                                font.family: contactTheme.fontMain
-                            }
-                            
-                            Text {
-                                text: qsTr("240+ Articles")
-                                color: contactTheme.textMuted
-                                font.pixelSize: 12
-                                font.family: contactTheme.fontMono
-                            }
-                        }
-                        
-                        MouseArea {
-                            id: kbMouse
-                            anchors.fill: parent
-                            hoverEnabled: true
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: mnjnefContactUsRoot.openKnowledgeBase()
-                        }
-                    }
-                }
-
-                // 3. SYSTEM ALERTS TERMINAL
-                Rectangle {
-                    Layout.fillWidth: true
-                    Layout.fillHeight: true
-                    color: contactTheme.bgPanel
-                    radius: 12
-                    border.color: contactTheme.borderDefault
-                    border.width: 1
-                    clip: true
-
-                    ColumnLayout {
-                        anchors.fill: parent
-                        spacing: 0
-
-                        Rectangle {
-                            Layout.fillWidth: true
-                            Layout.preferredHeight: 40
-                            color: contactTheme.bgElevated
-                            
-                            Text {
-                                anchors.verticalCenter: parent.verticalCenter
-                                anchors.left: parent.left
-                                anchors.leftMargin: 16
-                                text: qsTr("SYSTEM BROADCASTS")
-                                color: contactTheme.textMuted
+                                text: qsTr("Translate / اللغة")
+                                color: mnjTheme.textHeader
                                 font.pixelSize: 11
-                                font.bold: true
-                                font.family: contactTheme.fontMono
+                                font.family: mnjTheme.fontMain
                             }
                         }
 
-                        ListView {
-                            Layout.fillWidth: true
-                            Layout.fillHeight: true
-                            Layout.margins: 12
-                            model: recentAlertsModel
-                            spacing: 12
-                            interactive: false
-                            
-                            delegate: RowLayout {
-                                width: ListView.view.width
-                                spacing: 12
-                                
-                                Text {
-                                    text: "[" + alertTime + "]"
-                                    color: contactTheme.textMuted
-                                    font.pixelSize: 11
-                                    font.family: contactTheme.fontMono
-                                    Layout.alignment: Qt.AlignTop
-                                }
-                                
-                                Text {
-                                    text: alertLevel
-                                    color: {
-                                        if (alertLevel === "WARN") return contactTheme.stateWarning;
-                                        if (alertLevel === "SUCCESS") return contactTheme.stateSuccess;
-                                        return contactTheme.accentPrimary;
-                                    }
-                                    font.pixelSize: 11
-                                    font.bold: true
-                                    font.family: contactTheme.fontMono
-                                    Layout.alignment: Qt.AlignTop
-                                }
-                                
-                                Text {
-                                    text: alertText
-                                    color: contactTheme.textBody
-                                    font.pixelSize: 12
-                                    font.family: contactTheme.fontMain
-                                    Layout.fillWidth: true
-                                    wrapMode: Text.WordWrap
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            // ====== RIGHT COLUMN: INTERACTIVE MAP & FAQ ======
-            ColumnLayout {
-                Layout.fillWidth: true
-                Layout.fillHeight: true
-                spacing: 24
-
-                // 1. GLOBAL NODE RADAR
-                Rectangle {
-                    Layout.fillWidth: true
-                    Layout.preferredHeight: 300
-                    color: contactTheme.bgPanel
-                    radius: 16
-                    border.color: contactTheme.borderDefault
-                    border.width: 1
-                    clip: true
-
-                    // Simulated Map Graphic
-                    Item {
-                        anchors.fill: parent
-                        anchors.margins: 20
-
-                        Text {
-                            anchors.top: parent.top
-                            anchors.left: parent.left
-                            text: qsTr("GLOBAL ROUTING INFRASTRUCTURE")
-                            color: contactTheme.textMuted
-                            font.pixelSize: 11
-                            font.bold: true
-                            font.family: contactTheme.fontMono
-                            z: 10
-                        }
-
-                        Canvas {
-                            id: mapCanvas
+                        MouseArea {
+                            id: langMouse
                             anchors.fill: parent
-                            
-                            onPaint: {
-                                var ctx = getContext("2d");
-                                ctx.clearRect(0, 0, width, height);
-                                
-                                // Draw connections
-                                ctx.strokeStyle = contactTheme.borderHighlight;
-                                ctx.lineWidth = 1;
-                                ctx.globalAlpha = 0.3;
-                                
-                                var originX = width * 0.65; // DXB
-                                var originY = height * 0.45;
-                                
-                                for(var i=0; i<supportNodesModel.count; i++) {
-                                    var node = supportNodesModel.get(i);
-                                    if(node.nodeName !== "Dubai (DXB)") {
-                                        ctx.beginPath();
-                                        ctx.moveTo(originX, originY);
-                                        // Curve logic
-                                        var endX = width * node.coordsX;
-                                        var endY = height * node.coordsY;
-                                        ctx.quadraticCurveTo(width*0.5, height*0.2, endX, endY);
-                                        ctx.stroke();
-                                    }
-                                }
-                            }
-                        }
-
-                        Repeater {
-                            model: supportNodesModel
-                            
-                            Item {
-                                x: parent.width * coordsX - 10
-                                y: parent.height * coordsY - 10
-                                width: 20
-                                height: 20
-                                
-                                Rectangle {
-                                    anchors.centerIn: parent
-                                    width: 8
-                                    height: 8
-                                    radius: 4
-                                    color: status === "ONLINE" ? contactTheme.stateSuccess : contactTheme.stateDanger
-                                }
-                                
-                                Rectangle {
-                                    anchors.centerIn: parent
-                                    width: 20
-                                    height: 20
-                                    radius: 10
-                                    color: "transparent"
-                                    border.color: status === "ONLINE" ? contactTheme.stateSuccess : contactTheme.stateDanger
-                                    border.width: 1
-                                    
-                                    SequentialAnimation on scale {
-                                        loops: Animation.Infinite
-                                        running: true
-                                        NumberAnimation { from: 1.0; to: 2.0; duration: 1500 }
-                                    }
-                                    SequentialAnimation on opacity {
-                                        loops: Animation.Infinite
-                                        running: true
-                                        NumberAnimation { from: 0.8; to: 0.0; duration: 1500 }
-                                    }
-                                }
-                                
-                                // Node Tooltip
-                                Rectangle {
-                                    anchors.bottom: parent.top
-                                    anchors.bottomMargin: 8
-                                    anchors.horizontalCenter: parent.horizontalCenter
-                                    width: 120
-                                    height: 44
-                                    color: "#e60a0f1a" // Hex with alpha
-                                    radius: 6
-                                    border.color: contactTheme.borderDefault
-                                    border.width: 1
-                                    visible: nodeHover.containsMouse
-                                    
-                                    ColumnLayout {
-                                        anchors.fill: parent
-                                        anchors.margins: 4
-                                        spacing: 2
-                                        
-                                        Text { text: nodeName; color: contactTheme.textHeader; font.pixelSize: 10; font.bold: true; font.family: contactTheme.fontMain }
-                                        RowLayout {
-                                            Text { text: status; color: status==="ONLINE"?contactTheme.stateSuccess:contactTheme.stateDanger; font.pixelSize: 9; font.family: contactTheme.fontMono }
-                                            Item { Layout.fillWidth: true }
-                                            Text { text: latency + "ms"; color: contactTheme.textMuted; font.pixelSize: 9; font.family: contactTheme.fontMono }
-                                        }
-                                    }
-                                }
-                                
-                                MouseArea {
-                                    id: nodeHover
-                                    anchors.fill: parent
-                                    hoverEnabled: true
-                                    cursorShape: Qt.PointingHandCursor
-                                }
-                            }
-                        }
-                    }
-                }
-
-                // 2. FAQ ACCORDION
-                Rectangle {
-                    Layout.fillWidth: true
-                    Layout.fillHeight: true
-                    color: contactTheme.bgPanel
-                    radius: 16
-                    border.color: contactTheme.borderDefault
-                    border.width: 1
-                    clip: true
-
-                    ColumnLayout {
-                        anchors.fill: parent
-                        spacing: 0
-
-                        Rectangle {
-                            Layout.fillWidth: true
-                            Layout.preferredHeight: 50
-                            color: contactTheme.bgElevated
-                            
-                            Text {
-                                anchors.verticalCenter: parent.verticalCenter
-                                anchors.left: parent.left
-                                anchors.leftMargin: 20
-                                text: qsTr("FREQUENTLY ASKED QUESTIONS")
-                                color: contactTheme.textHeader
-                                font.pixelSize: 14
-                                font.bold: true
-                                font.family: contactTheme.fontMain
-                                font.letterSpacing: 1.0
-                            }
-                        }
-
-                        ListView {
-                            Layout.fillWidth: true
-                            Layout.fillHeight: true
-                            model: faqModel
-                            boundsBehavior: Flickable.StopAtBounds
-                            clip: true
-                            
-                            delegate: ColumnLayout {
-                                width: ListView.view.width
-                                spacing: 0
-                                
-                                Rectangle {
-                                    Layout.fillWidth: true
-                                    Layout.preferredHeight: 60
-                                    color: faqMouse.containsMouse ? contactTheme.bgElevated : "transparent"
-                                    
-                                    Behavior on color { ColorAnimation { duration: 150 } }
-                                    
-                                    RowLayout {
-                                        anchors.fill: parent
-                                        anchors.leftMargin: 20
-                                        anchors.rightMargin: 20
-                                        spacing: 16
-                                        
-                                        Text {
-                                            text: isExpanded ? "▼" : "▶"
-                                            color: contactTheme.accentPrimary
-                                            font.pixelSize: 12
-                                        }
-                                        
-                                        Text {
-                                            text: question
-                                            color: contactTheme.textHeader
-                                            font.pixelSize: 14
-                                            font.bold: true
-                                            font.family: contactTheme.fontMain
-                                            Layout.fillWidth: true
-                                            wrapMode: Text.WordWrap
-                                        }
-                                    }
-                                    
-                                    Rectangle {
-                                        anchors.bottom: parent.bottom
-                                        width: parent.width
-                                        height: 1
-                                        color: contactTheme.borderDefault
-                                    }
-                                    
-                                    MouseArea {
-                                        id: faqMouse
-                                        anchors.fill: parent
-                                        hoverEnabled: true
-                                        cursorShape: Qt.PointingHandCursor
-                                        onClicked: {
-                                            faqModel.setProperty(index, "isExpanded", !isExpanded);
-                                        }
-                                    }
-                                }
-                                
-                                Rectangle {
-                                    Layout.fillWidth: true
-                                    Layout.preferredHeight: isExpanded ? answerText.implicitHeight + 32 : 0
-                                    color: contactTheme.bgPrimary
-                                    clip: true
-                                    
-                                    Behavior on Layout.preferredHeight { NumberAnimation { duration: 200; easing.type: Easing.OutQuad } }
-                                    
-                                    Text {
-                                        id: answerText
-                                        anchors.fill: parent
-                                        anchors.margins: 16
-                                        anchors.leftMargin: 48
-                                        text: answer
-                                        color: contactTheme.textBody
-                                        font.pixelSize: 13
-                                        font.family: contactTheme.fontMain
-                                        wrapMode: Text.WordWrap
-                                        lineHeight: 1.4
-                                        visible: isExpanded
-                                    }
-                                }
-                            }
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: mainMnjnefWindow.translationRequested()
                         }
                     }
                 }
@@ -876,39 +623,88 @@ Item {
     }
 
     // ==========================================
-    // LOGIC & TIMERS
+    // LOGIC CONTROLLER
     // ==========================================
-    Timer {
-        id: telemetryUpdateTimer
-        interval: 2500
-        repeat: true
-        running: true
-        onRunningChanged: { if(running){} }
-        onTriggered: {
-            // Simulate live network load
-            var variation = (Math.random() * 4) - 2;
-            var newLoad = mnjnefContactUsRoot.globalNetworkLoad + variation;
-            if(newLoad > 95) newLoad = 95;
-            if(newLoad < 20) newLoad = 20;
-            mnjnefContactUsRoot.globalNetworkLoad = newLoad;
+    QtObject {
+        id: loginController
+        
+        property bool emailError: false
+        property string errorMessage: ""
+        property int passStrength: 0
+        
+        function validateEmail(email) {
+            let re = /^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/;
+            return re.test(email);
+        }
+        
+        function evaluatePasswordStrength(pwd) {
+            let score = 0;
+            if (pwd.length > 5) score += 1;
+            if (pwd.length > 8) score += 1;
+            if (/[A-Z]/.test(pwd) && /[0-9]/.test(pwd)) score += 1;
+            if (/[^A-Za-z0-9]/.test(pwd)) score += 1;
+            passStrength = score;
+        }
+
+        function processLogin() {
+            errorMessage = "";
+            emailError = false;
             
-            // Randomly update agents online
-            if(Math.random() > 0.7) {
-                mnjnefContactUsRoot.activeAgents += (Math.random() > 0.5 ? 1 : -1);
-                if(mnjnefContactUsRoot.activeAgents < 5) mnjnefContactUsRoot.activeAgents = 5;
+            let uName = usernameInput.text.trim();
+            let eMail = emailInput.text.trim();
+            let pwd = passwordInput.text;
+            
+            if (uName === "") {
+                errorMessage = qsTr("Username cannot be empty.");
+                usernameInput.forceActiveFocus();
+                return;
             }
+            
+            if (!validateEmail(eMail)) {
+                errorMessage = qsTr("Please enter a valid email address.");
+                emailError = true;
+                emailInput.forceActiveFocus();
+                return;
+            }
+            
+            if (pwd === "") {
+                errorMessage = qsTr("Password cannot be empty.");
+                passwordInput.forceActiveFocus();
+                return;
+            }
+            
+            // Proceed to simulate network authentication
+            mainMnjnefWindow.isLoggingIn = true;
+            authSimulationTimer.start();
         }
     }
 
+    // Network Request Simulation
     Timer {
-        id: connectionSimulationTimer
-        interval: 1500
+        id: authSimulationTimer
+        interval: 2000
         repeat: false
         onRunningChanged: { if(running){} }
         onTriggered: {
-            mnjnefContactUsRoot.isConnecting = false;
-            // Emit signal to parent/MasterEngine to transition to Support_1_Main or OTPAuth
-            mnjnefContactUsRoot.initiateSupportSequence();
+            mainMnjnefWindow.isLoggingIn = false;
+            // Emit successful login signal to backend
+            mainMnjnefWindow.loginRequested(usernameInput.text, emailInput.text, passwordInput.text);
+        }
+    }
+    
+    // Connection handling for signals (Placeholder logs)
+    Connections {
+        target: mainMnjnefWindow
+        function onTranslationRequested() {
+            console.log("[MNJNEF_SYS] Preparing to load Support_TranslationModule.qml");
+            // Here you will dynamically load the next translation file we create
+        }
+        function onSupportRequested() {
+            console.log("[MNJNEF_SYS] Opening Mnjnef Support Portal...");
+            // Routes to Support_1_Main.qml
+        }
+        function onPrivacyPolicyRequested() {
+            console.log("[MNJNEF_SYS] Opening Privacy Policy Document...");
         }
     }
 }
