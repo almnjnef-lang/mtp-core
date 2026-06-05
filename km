@@ -10,29 +10,33 @@ ApplicationWindow {
     visible: true
     title: "Mnjnef Platform - Authentication"
     
-    // Global background color to prevent white flashes during transitions
-    color: "#09090B" 
+    // Base fallback color
+    color: "#050B14" 
 
     // ==========================================
-    // GLOBAL THEME (ENTERPRISE GRAYSCALE)
+    // GLOBAL THEME (PREMIUM GAMING BLUE)
     // ==========================================
     QtObject {
-        id: modernTheme
-        property color bgApp: "#09090B"
-        property color bgCard: "#18181B"
-        property color bgInput: "#121214"
-        property color bgHover: "#27272A"
+        id: gamingTheme
+        // Deep immersive blue backgrounds
+        property color bgApp: "#070E1D"          // Deepest navy blue
+        property color bgCard: "#0D1936"         // Card background (Dark Blue)
+        property color bgInput: "#0A1329"        // Inset input field blue
+        property color bgHover: "#15264D"        // Hover state blue
         
-        property color borderSubtle: "#27272A"
-        property color borderFocus: "#3F3F46"
+        // Borders
+        property color borderSubtle: "#1C356B"   // Soft blue border
+        property color borderFocus: "#00E5FF"    // Neon Cyan for active focus
         
-        property color textPrimary: "#FAFAFA"
-        property color textSecondary: "#A1A1AA"
-        property color textMuted: "#52525B"
+        // Text
+        property color textPrimary: "#FFFFFF"    // Pure white
+        property color textSecondary: "#94A3B8"  // Blue-gray for secondary text
+        property color textMuted: "#475569"      // Muted dark blue-gray
         
-        property color accent: "#FFFFFF"
-        property color error: "#EF4444"
-        property color success: "#10B981"
+        // Accents
+        property color accentPrimary: "#0070D1"  // PlayStation-esque solid blue
+        property color accentHighlight: "#00E5FF"// Steam-esque bright cyan
+        property color error: "#FF3366"          // Vibrant red-pink for errors
         
         property string fontMain: "Segoe UI"
         property string fontMono: "Consolas"
@@ -41,32 +45,30 @@ ApplicationWindow {
     // ==========================================
     // CENTRAL ROUTING ENGINE (STACKVIEW)
     // ==========================================
-    // This is the core engine that holds all pages. By anchoring it to the root,
-    // all pushed children will correctly inherit the StackView.view context.
     StackView {
         id: mainRouter
         anchors.fill: parent
         initialItem: loginComponent
 
-        // Smooth transition animations
+        // Premium snappy transitions
         pushEnter: Transition {
             PropertyAnimation { property: "opacity"; from: 0.0; to: 1.0; duration: 250 }
-            PropertyAnimation { property: "scale"; from: 0.98; to: 1.0; duration: 250; easing.type: Easing.OutQuad }
+            PropertyAnimation { property: "scale"; from: 0.95; to: 1.0; duration: 250; easing.type: Easing.OutQuart }
         }
         pushExit: Transition {
-            PropertyAnimation { property: "opacity"; from: 1.0; to: 0.0; duration: 250 }
+            PropertyAnimation { property: "opacity"; from: 1.0; to: 0.0; duration: 200 }
         }
         popEnter: Transition {
             PropertyAnimation { property: "opacity"; from: 0.0; to: 1.0; duration: 250 }
         }
         popExit: Transition {
-            PropertyAnimation { property: "opacity"; from: 1.0; to: 0.0; duration: 250 }
-            PropertyAnimation { property: "scale"; from: 1.0; to: 0.98; duration: 250; easing.type: Easing.OutQuad }
+            PropertyAnimation { property: "opacity"; from: 1.0; to: 0.0; duration: 200 }
+            PropertyAnimation { property: "scale"; from: 1.0; to: 0.95; duration: 250; easing.type: Easing.OutQuart }
         }
     }
 
     // ==========================================
-    // LOGIN COMPONENT (INITIAL SCREEN)
+    // LOGIN COMPONENT
     // ==========================================
     Component {
         id: loginComponent
@@ -74,21 +76,48 @@ ApplicationWindow {
         Item {
             anchors.fill: parent
 
+            // 1. PREMIUM BLUE GRADIENT BACKGROUND
             Rectangle {
                 anchors.fill: parent
-                color: modernTheme.bgApp
+                gradient: Gradient {
+                    GradientStop { position: 0.0; color: "#060D20" } // Top: Near Black Blue
+                    GradientStop { position: 0.5; color: "#0B1B42" } // Middle: Deep Royal Blue
+                    GradientStop { position: 1.0; color: "#040914" } // Bottom: Void Blue
+                }
+            }
+            
+            // Subtle ambient light effect in the background
+            Rectangle {
+                width: parent.width * 0.8
+                height: parent.width * 0.8
+                radius: width / 2
+                anchors.centerIn: parent
+                color: gamingTheme.accentPrimary
+                opacity: 0.05
+                // antialiasing ensures smooth edges without extra modules
+                antialiasing: true 
             }
 
-            // LOGIN PANEL
+            // 2. MAIN LOGIN PANEL
             Rectangle {
                 id: loginPanel
-                width: 440
-                height: 560
+                width: 460
+                height: 580
                 anchors.centerIn: parent
-                color: modernTheme.bgCard
-                radius: 12
-                border.color: modernTheme.borderSubtle
+                color: gamingTheme.bgCard
+                radius: 16
+                border.color: gamingTheme.borderSubtle
                 border.width: 1
+                
+                // Inner glow simulation for premium feel
+                Rectangle {
+                    anchors.fill: parent
+                    anchors.margins: 1
+                    radius: 15
+                    color: "transparent"
+                    border.color: "#1Affffff"
+                    border.width: 1
+                }
 
                 ColumnLayout {
                     anchors.fill: parent
@@ -103,36 +132,41 @@ ApplicationWindow {
 
                         Text {
                             text: "MNJNEF"
-                            color: modernTheme.textPrimary
-                            font.pixelSize: 32
+                            color: gamingTheme.textPrimary
+                            font.pixelSize: 36
                             font.bold: true
-                            font.family: modernTheme.fontMain
-                            font.letterSpacing: 4.0
+                            font.family: gamingTheme.fontMain
+                            font.letterSpacing: 6.0
                             Layout.alignment: Qt.AlignHCenter
+                            
+                            // Subtle text glow
+                            layer.enabled: true
                         }
 
                         Text {
-                            text: "Secure Authentication Gateway"
-                            color: modernTheme.textSecondary
+                            text: "Global Digital Gaming Platform"
+                            color: gamingTheme.accentHighlight
                             font.pixelSize: 13
-                            font.family: modernTheme.fontMono
+                            font.bold: true
+                            font.family: gamingTheme.fontMain
                             Layout.alignment: Qt.AlignHCenter
+                            font.letterSpacing: 1.0
                         }
                     }
 
                     // INPUT FIELDS
                     ColumnLayout {
                         Layout.fillWidth: true
-                        spacing: 16
+                        spacing: 18
                         Layout.topMargin: 20
 
                         // Username Input
                         Rectangle {
                             Layout.fillWidth: true
-                            Layout.preferredHeight: 50
+                            Layout.preferredHeight: 52
                             radius: 8
-                            color: modernTheme.bgInput
-                            border.color: usernameInput.activeFocus ? modernTheme.accent : modernTheme.borderSubtle
+                            color: gamingTheme.bgInput
+                            border.color: usernameInput.activeFocus ? gamingTheme.borderFocus : gamingTheme.borderSubtle
                             border.width: usernameInput.activeFocus ? 2 : 1
                             
                             Behavior on border.color { ColorAnimation { duration: 150 } }
@@ -141,17 +175,17 @@ ApplicationWindow {
                                 id: usernameInput
                                 anchors.fill: parent
                                 anchors.margins: 16
-                                color: modernTheme.textPrimary
+                                color: gamingTheme.textPrimary
                                 font.pixelSize: 15
-                                font.family: modernTheme.fontMain
+                                font.family: gamingTheme.fontMain
                                 verticalAlignment: TextInput.AlignVCenter
                                 selectByMouse: true
                                 
                                 Text {
-                                    text: "System ID / Username"
-                                    color: modernTheme.textMuted
+                                    text: "Mnjnef ID / Username"
+                                    color: gamingTheme.textSecondary
                                     font.pixelSize: 15
-                                    font.family: modernTheme.fontMain
+                                    font.family: gamingTheme.fontMain
                                     visible: !usernameInput.text && !usernameInput.activeFocus
                                     anchors.verticalCenter: parent.verticalCenter
                                 }
@@ -161,10 +195,10 @@ ApplicationWindow {
                         // Password Input
                         Rectangle {
                             Layout.fillWidth: true
-                            Layout.preferredHeight: 50
+                            Layout.preferredHeight: 52
                             radius: 8
-                            color: modernTheme.bgInput
-                            border.color: passwordInput.activeFocus ? modernTheme.accent : modernTheme.borderSubtle
+                            color: gamingTheme.bgInput
+                            border.color: passwordInput.activeFocus ? gamingTheme.borderFocus : gamingTheme.borderSubtle
                             border.width: passwordInput.activeFocus ? 2 : 1
                             
                             Behavior on border.color { ColorAnimation { duration: 150 } }
@@ -178,18 +212,18 @@ ApplicationWindow {
                                     id: passwordInput
                                     Layout.fillWidth: true
                                     Layout.fillHeight: true
-                                    color: modernTheme.textPrimary
+                                    color: gamingTheme.textPrimary
                                     font.pixelSize: 15
-                                    font.family: modernTheme.fontMain
+                                    font.family: gamingTheme.fontMain
                                     verticalAlignment: TextInput.AlignVCenter
                                     echoMode: visibilityIcon.isVisible ? TextInput.Normal : TextInput.Password
                                     selectByMouse: true
                                     
                                     Text {
-                                        text: "Access Key / Password"
-                                        color: modernTheme.textMuted
+                                        text: "Platform Password"
+                                        color: gamingTheme.textSecondary
                                         font.pixelSize: 15
-                                        font.family: modernTheme.fontMain
+                                        font.family: gamingTheme.fontMain
                                         visible: !passwordInput.text && !passwordInput.activeFocus
                                         anchors.verticalCenter: parent.verticalCenter
                                     }
@@ -199,7 +233,7 @@ ApplicationWindow {
                                     id: visibilityIcon
                                     property bool isVisible: false
                                     text: isVisible ? "👁️" : "👁️‍🗨️"
-                                    color: modernTheme.textMuted
+                                    color: gamingTheme.textSecondary
                                     font.pixelSize: 14
                                     Layout.alignment: Qt.AlignVCenter
                                     
@@ -218,26 +252,30 @@ ApplicationWindow {
                     Rectangle {
                         id: loginBtn
                         Layout.fillWidth: true
-                        Layout.preferredHeight: 50
+                        Layout.preferredHeight: 52
                         Layout.topMargin: 10
                         radius: 8
+                        
                         color: {
-                            if (authController.isLoggingIn) return modernTheme.borderSubtle;
-                            if (loginMouse.containsPress) return modernTheme.textMuted;
-                            if (loginMouse.containsMouse) return modernTheme.borderFocus;
-                            return modernTheme.accent;
+                            if (authController.isLoggingIn) return gamingTheme.bgHover;
+                            if (loginMouse.containsPress) return "#005BB5";
+                            if (loginMouse.containsMouse) return "#0084F5";
+                            return gamingTheme.accentPrimary;
                         }
+                        
+                        border.color: loginMouse.containsMouse && !authController.isLoggingIn ? gamingTheme.accentHighlight : "transparent"
+                        border.width: loginMouse.containsMouse && !authController.isLoggingIn ? 1 : 0
                         
                         Behavior on color { ColorAnimation { duration: 150 } }
 
                         Text {
                             anchors.centerIn: parent
-                            text: authController.isLoggingIn ? "AUTHENTICATING..." : "INITIALIZE SESSION"
-                            color: authController.isLoggingIn ? modernTheme.textPrimary : modernTheme.bgApp
-                            font.pixelSize: 14
+                            text: authController.isLoggingIn ? "CONNECTING TO NETWORK..." : "SECURE LOGIN"
+                            color: gamingTheme.textPrimary
+                            font.pixelSize: 15
                             font.bold: true
-                            font.family: modernTheme.fontMain
-                            font.letterSpacing: 1.0
+                            font.family: gamingTheme.fontMain
+                            font.letterSpacing: 1.5
                         }
 
                         MouseArea {
@@ -254,13 +292,13 @@ ApplicationWindow {
                         }
                     }
 
-                    Item { Layout.fillHeight: true } // Spacer pushes footer down
+                    Item { Layout.fillHeight: true } // Pushes footer down
 
                     // FOOTER: SUPPORT ROUTING
                     Rectangle {
                         Layout.fillWidth: true
                         Layout.preferredHeight: 1
-                        color: modernTheme.borderSubtle
+                        color: gamingTheme.borderSubtle
                     }
 
                     RowLayout {
@@ -268,10 +306,10 @@ ApplicationWindow {
                         Layout.preferredHeight: 30
 
                         Text {
-                            text: "System Integrity Verified"
-                            color: modernTheme.textMuted
+                            text: "v5.7.1 Core Active"
+                            color: gamingTheme.textMuted
                             font.pixelSize: 11
-                            font.family: modernTheme.fontMono
+                            font.family: gamingTheme.fontMono
                         }
 
                         Item { Layout.fillWidth: true }
@@ -279,10 +317,10 @@ ApplicationWindow {
                         // Support Routing Button
                         Text {
                             text: "Mnjnef Support"
-                            color: supportMouse.containsMouse ? modernTheme.textPrimary : modernTheme.textSecondary
+                            color: supportMouse.containsMouse ? gamingTheme.accentHighlight : gamingTheme.textSecondary
                             font.pixelSize: 13
                             font.bold: true
-                            font.family: modernTheme.fontMain
+                            font.family: gamingTheme.fontMain
                             
                             Behavior on color { ColorAnimation { duration: 150 } }
 
@@ -293,7 +331,7 @@ ApplicationWindow {
                                 hoverEnabled: true
                                 cursorShape: Qt.PointingHandCursor
                                 onClicked: {
-                                    console.log("[ROUTING] Pushing Support_1_Main.qml onto StackView");
+                                    console.log("[ROUTING] Accessing Mnjnef Support Portal");
                                     mainRouter.push("Support_1_Main.qml");
                                 }
                             }
@@ -302,7 +340,7 @@ ApplicationWindow {
                 }
             }
 
-            // Fake Auth Timer for UI testing
+            // Controllers
             QtObject {
                 id: authController
                 property bool isLoggingIn: false
@@ -314,8 +352,7 @@ ApplicationWindow {
                 repeat: false
                 onTriggered: {
                     authController.isLoggingIn = false;
-                    console.log("[AUTH] Simulating successful login.");
-                    // Add routing to main platform dashboard here later
+                    console.log("[AUTH] Simulating successful login sequence.");
                 }
             }
         }
