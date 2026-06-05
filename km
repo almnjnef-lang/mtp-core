@@ -1,8 +1,1090 @@
-        onRunningChanged: {
-            if (running) {
-                ticks = 0
-                securityPhasesModel.setProperty(4, "status", 1)
-                secEngine.appendLog("INFO", "Requesting final cryptographic seal from Mainframe...")
-                mnjnefSecurityCoreRoot.activeTerminalNode = "CRYPTO_MINT_NODE"
+import QtQuick
+import QtQuick.Controls
+import QtQuick.Layouts
+
+Item {
+    id: mnjnefAntiBotRoot
+    anchors.fill: parent
+    clip: true
+
+    // ==========================================
+    // SYSTEM SIGNALS & PROPERTIES
+    // ==========================================
+    signal captchaResolved(string secureToken, real humanConfidence)
+    signal captchaFailed(string reason, string errorCode)
+    
+    property int currentChallengeIndex: 0 // 0: Awaiting, 1: Spatial, 2: Pattern, 3: Verifying
+    property real humanConfidenceScore: 0.0
+    property bool isSystemLocked: false
+    property string activeSessionId: "REQ-AUTH-PENDING"
+    property int remainingAttempts: 3
+    
+    // Heuristics Tracking
+    property real lastMouseX: 0
+    property real lastMouseY: 0
+    property real mouseSpeed: 0
+    property int totalClicks: 0
+    property var clickTimestamps: []
+
+    // ==========================================
+    // THEME & STYLING CORE
+    // ==========================================
+    QtObject {
+        id: botTheme
+        property color bgBase: "#030712"
+        property color bgPanel: "#0f172a"
+        property color bgDarker: "#020617"
+        
+        property color accentPrimary: "#3b82f6"
+        property color accentGlow: "#60a5fa"
+        property color accentSecondary: "#8b5cf6"
+        
+        property color textWhite: "#f8fafc"
+        property color textMuted: "#64748b"
+        property color textLog: "#38bdf8"
+        
+        property color stateSuccess: "#10b981"
+        property color stateWarning: "#f59e0b"
+        property color stateError: "#ef4444"
+        property color stateErrorBg: "#450a0a"
+        
+        property color borderLight: "#1e293b"
+        property color borderHighlight: "#334155"
+        
+        property string fontMain: "Segoe UI"
+        property string fontCode: "Consolas"
+    }
+
+    // ==========================================
+    // DATA MODELS
+    // ==========================================
+    ListModel { id: telemetryLogModel }
+    ListModel { id: mousePathModel }
+    ListModel { id: patternSequenceModel }
+    ListModel { id: userPatternInputModel }
+
+    // ==========================================
+    // GLOBAL MOUSE HEURISTICS TRACKER
+    // ==========================================
+    MouseArea {
+        id: globalHeuristicsTracker
+        anchors.fill: parent
+        hoverEnabled: true
+        acceptedButtons: Qt.NoButton // Only track, don't consume clicks
+        z: 999 // Put on top but pass through clicks
+        propagateComposedEvents: true
+
+        onPositionChanged: (mouse) => {
+            if (isSystemLocked) return;
+            
+            // Calculate Euclidean distance / Speed
+            let dx = mouse.x - mnjnefAntiBotRoot.lastMouseX;
+            let dy = mouse.y - mnjnefAntiBotRoot.lastMouseY;
+            let dist = Math.sqrt(dx*dx + dy*dy);
+            
+            mnjnefAntiBotRoot.mouseSpeed = dist;
+            mnjnefAntiBotRoot.lastMouseX = mouse.x;
+            mnjnefAntiBotRoot.lastMouseY = mouse.y;
+            
+            // Inject organic confidence (humans don't move in perfectly straight lines at constant speed)
+            if (dist > 0.5 && dist < 50) {
+                mnjnefAntiBotRoot.humanConfidenceScore = Math.min(100.0, mnjnefAntiBotRoot.humanConfidenceScore + 0.15);
+            }
+            
+            // Add point to visual path (limit to 50 points)
+            if (mousePathModel.count > 50) mousePathModel.remove(0, 1);
+            mousePathModel.append({ "px": mouse.x, "py": mouse.y });
+            
+            // Log randomly to terminal
+            if (Math.random() > 0.95) {
+                botController.logTelemetry("MOVE", "Vector[x:" + Math.round(mouse.x) + ", y:" + Math.round(mouse.y) + "] v:" + dist.toFixed(2));
+            }
+            
+            mouse.accepted = false; // Let underlying items handle it
+        }
+        
+        onClicked: (mouse) => {
+            mnjnefAntiBotRoot.totalClicks++;
+            mnjnefAntiBotRoot.clickTimestamps.push(new Date().getTime());
+            
+            // Click cadence analysis
+            if (mnjnefAntiBotRoot.clickTimestamps.length > 3) {
+                mnjnefAntiBotRoot.clickTimestamps.shift();
+                let intervals = [];
+                for(let i=1; i<mnjnefAntiBotRoot.clickTimestamps.length; i++) {
+                    intervals.push(mnjnefAntiBotRoot.clickTimestamps[i] - mnjnefAntiBotRoot.clickTimestamps[i-1]);
+                }
+                // Bots often click with exactly 0 variance
+                if (intervals[0] === intervals[1]) {
+                    mnjnefAntiBotRoot.humanConfidenceScore = Math.max(0.0, mnjnefAntiBotRoot.humanConfidenceScore - 15.0);
+                    botController.logTelemetry("WARN", "Robotic click cadence detected.");
+                } else {
+                    mnjnefAntiBotRoot.humanConfidenceScore = Math.min(100.0, mnjnefAntiBotRoot.humanConfidenceScore + 2.0);
+                }
+            }
+            
+            // Visual click ripple effect
+            let ripple = rippleComponent.createObject(globalHeuristicsTracker, {"x": mouse.x - 15, "y": mouse.y - 15});
+            
+            mouse.accepted = false;
+        }
+    }
+
+    Component {
+        id: rippleComponent
+        Rectangle {
+            width: 30; height: 30; radius: 15
+            color: "transparent"
+            border.color: botTheme.accentPrimary
+            border.width: 2
+            
+            SequentialAnimation on opacity {
+                NumberAnimation { from: 1.0; to: 0.0; duration: 600; easing.type: Easing.OutQuad }
+            }
+            SequentialAnimation on scale {
+                NumberAnimation { from: 0.5; to: 2.5; duration: 600; easing.type: Easing.OutQuad }
+            }
+            Component.onCompleted: {
+                destroyTimer.start()
+            }
+            Timer { id: destroyTimer; interval: 650; onTriggered: parent.destroy() }
+        }
+    }
+
+    // ==========================================
+    // BACKGROUND & CRT EFFECTS
+    // ==========================================
+    Rectangle {
+        anchors.fill: parent
+        color: botTheme.bgBase
+        
+        // Hexagon Grid Pattern
+        Canvas {
+            anchors.fill: parent
+            opacity: 0.05
+            onPaint: {
+                var ctx = getContext("2d");
+                var hexRadius = 20;
+                var hexWidth = Math.sqrt(3) * hexRadius;
+                var hexHeight = 2 * hexRadius;
+                
+                ctx.strokeStyle = botTheme.accentPrimary;
+                ctx.lineWidth = 1;
+                
+                for (var y = 0; y < height + hexHeight; y += hexHeight * 0.75) {
+                    for (var x = 0; x < width + hexWidth; x += hexWidth) {
+                        var xPos = x + ((y / (hexHeight * 0.75)) % 2 === 0 ? 0 : hexWidth / 2);
+                        
+                        ctx.beginPath();
+                        for (var i = 0; i < 6; i++) {
+                            var angle = 2 * Math.PI / 6 * i + Math.PI / 6;
+                            var px = xPos + hexRadius * Math.cos(angle);
+                            var py = y + hexRadius * Math.sin(angle);
+                            if (i === 0) ctx.moveTo(px, py);
+                            else ctx.lineTo(px, py);
+                        }
+                        ctx.closePath();
+                        ctx.stroke();
+                    }
+                }
             }
         }
+        
+        // Scanline overlay
+        Rectangle {
+            anchors.fill: parent
+            color: "transparent"
+            clip: true
+            
+            Rectangle {
+                width: parent.width
+                height: 4
+                color: botTheme.accentPrimary
+                opacity: 0.15
+                
+                SequentialAnimation on y {
+                    loops: Animation.Infinite
+                    running: true
+                    NumberAnimation { from: -10; to: mnjnefAntiBotRoot.height + 10; duration: 4000 }
+                }
+            }
+        }
+    }
+
+    // ==========================================
+    // MAIN LAYOUT
+    // ==========================================
+    ColumnLayout {
+        anchors.fill: parent
+        anchors.margins: 24
+        spacing: 20
+
+        // ------------------------------------------
+        // HEADER: ANTI-BOT STATUS
+        // ------------------------------------------
+        Rectangle {
+            Layout.fillWidth: true
+            Layout.preferredHeight: 70
+            color: botTheme.bgPanel
+            radius: 12
+            border.color: botTheme.borderHighlight
+            border.width: 1
+
+            RowLayout {
+                anchors.fill: parent
+                anchors.margins: 16
+                spacing: 16
+
+                Rectangle {
+                    Layout.preferredWidth: 40
+                    Layout.preferredHeight: 40
+                    radius: 20
+                    color: botTheme.bgDarker
+                    border.color: botTheme.accentPrimary
+                    border.width: 1.5
+                    
+                    Text {
+                        anchors.centerIn: parent
+                        text: "👁️"
+                        font.pixelSize: 18
+                    }
+                    
+                    Rectangle {
+                        anchors.fill: parent
+                        radius: 20
+                        color: "transparent"
+                        border.color: botTheme.accentGlow
+                        border.width: 2
+                        opacity: 0.5
+                        clip: true
+                        RotationAnimation on rotation { loops: Animation.Infinite; from: 0; to: 360; duration: 3000 }
+                    }
+                }
+
+                ColumnLayout {
+                    Layout.fillWidth: true
+                    spacing: 4
+                    
+                    Text {
+                        text: qsTr("MNJNEF TURING PROTOCOL")
+                        color: botTheme.textWhite
+                        font.pixelSize: 16
+                        font.bold: true
+                        font.family: botTheme.fontMain
+                        font.letterSpacing: 1.0
+                    }
+                    
+                    Text {
+                        text: qsTr("Verify biological interactivity to proceed.")
+                        color: botTheme.textMuted
+                        font.pixelSize: 12
+                        font.family: botTheme.fontCode
+                    }
+                }
+                
+                // Human Confidence Gauge
+                ColumnLayout {
+                    Layout.alignment: Qt.AlignRight
+                    spacing: 4
+                    
+                    Text {
+                        text: qsTr("BIOMETRIC SCORE")
+                        color: botTheme.textMuted
+                        font.pixelSize: 10
+                        font.family: botTheme.fontCode
+                        Layout.alignment: Qt.AlignRight
+                    }
+                    
+                    RowLayout {
+                        spacing: 8
+                        
+                        Rectangle {
+                            Layout.preferredWidth: 100
+                            Layout.preferredHeight: 6
+                            color: botTheme.bgDarker
+                            radius: 3
+                            clip: true
+                            
+                            Rectangle {
+                                width: (mnjnefAntiBotRoot.humanConfidenceScore / 100.0) * parent.width
+                                height: parent.height
+                                radius: 3
+                                color: {
+                                    if (mnjnefAntiBotRoot.humanConfidenceScore > 80) return botTheme.stateSuccess;
+                                    if (mnjnefAntiBotRoot.humanConfidenceScore > 40) return botTheme.stateWarning;
+                                    return botTheme.stateError;
+                                }
+                                Behavior on width { NumberAnimation { duration: 300; easing.type: Easing.OutCubic } }
+                                Behavior on color { ColorAnimation { duration: 300 } }
+                            }
+                        }
+                        
+                        Text {
+                            text: Math.round(mnjnefAntiBotRoot.humanConfidenceScore) + "%"
+                            color: botTheme.textWhite
+                            font.pixelSize: 14
+                            font.bold: true
+                            font.family: botTheme.fontCode
+                        }
+                    }
+                }
+            }
+        }
+
+        // ------------------------------------------
+        // MIDDLE SECTION: CHALLENGE & TELEMETRY
+        // ------------------------------------------
+        RowLayout {
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+            spacing: 20
+
+            // LEFT: CHALLENGE ARENA
+            Rectangle {
+                Layout.fillHeight: true
+                Layout.preferredWidth: 450
+                color: botTheme.bgPanel
+                radius: 12
+                border.color: {
+                    if (mnjnefAntiBotRoot.isSystemLocked) return botTheme.stateError;
+                    if (mnjnefAntiBotRoot.currentChallengeIndex === 3) return botTheme.stateSuccess;
+                    return botTheme.borderHighlight;
+                }
+                border.width: mnjnefAntiBotRoot.isSystemLocked ? 2 : 1
+                clip: true
+                
+                Behavior on border.color { ColorAnimation { duration: 250 } }
+
+                // Dynamic Challenge Container
+                Item {
+                    anchors.fill: parent
+                    anchors.margins: 20
+
+                    // CHALLENGE 0: INIT STATE
+                    ColumnLayout {
+                        anchors.centerIn: parent
+                        spacing: 24
+                        visible: mnjnefAntiBotRoot.currentChallengeIndex === 0
+                        
+                        Text {
+                            text: qsTr("AWAITING INITIALIZATION")
+                            color: botTheme.textMuted
+                            font.pixelSize: 18
+                            font.family: botTheme.fontCode
+                            Layout.alignment: Qt.AlignHCenter
+                        }
+                        
+                        Rectangle {
+                            Layout.preferredWidth: 200
+                            Layout.preferredHeight: 48
+                            radius: 8
+                            color: initMouseArea.containsMouse ? botTheme.accentSecondary : botTheme.accentPrimary
+                            Layout.alignment: Qt.AlignHCenter
+                            
+                            Behavior on color { ColorAnimation { duration: 150 } }
+                            
+                            Text {
+                                anchors.centerIn: parent
+                                text: qsTr("INITIATE PROTOCOL")
+                                color: botTheme.textWhite
+                                font.pixelSize: 14
+                                font.bold: true
+                                font.family: botTheme.fontMain
+                            }
+                            
+                            MouseArea {
+                                id: initMouseArea
+                                anchors.fill: parent
+                                hoverEnabled: true
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: botController.startChallengeOne()
+                            }
+                        }
+                    }
+
+                    // CHALLENGE 1: SPATIAL ALIGNMENT (Rotational Slider)
+                    Item {
+                        id: spatialChallengeArea
+                        anchors.fill: parent
+                        visible: mnjnefAntiBotRoot.currentChallengeIndex === 1
+                        
+                        Text {
+                            anchors.top: parent.top
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            text: qsTr("CHALLENGE I: SPATIAL DECRYPTION")
+                            color: botTheme.accentPrimary
+                            font.pixelSize: 14
+                            font.bold: true
+                            font.family: botTheme.fontMain
+                            font.letterSpacing: 2.0
+                        }
+                        
+                        Text {
+                            anchors.top: parent.top
+                            anchors.topMargin: 24
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            text: qsTr("Align the inner security ring to the exact target angle.")
+                            color: botTheme.textMuted
+                            font.pixelSize: 12
+                            font.family: botTheme.fontCode
+                        }
+
+                        // Rendering the Ring Puzzle
+                        Item {
+                            anchors.centerIn: parent
+                            width: 220
+                            height: 220
+                            
+                            // Outer Fixed Ring
+                            Canvas {
+                                anchors.fill: parent
+                                onPaint: {
+                                    var ctx = getContext("2d");
+                                    ctx.clearRect(0, 0, width, height);
+                                    var cx = width/2; var cy = height/2; var r = 100;
+                                    
+                                    ctx.strokeStyle = botTheme.borderHighlight;
+                                    ctx.lineWidth = 12;
+                                    ctx.beginPath();
+                                    ctx.arc(cx, cy, r, 0, 2*Math.PI);
+                                    ctx.stroke();
+                                    
+                                    // Target alignment mark
+                                    ctx.strokeStyle = botTheme.stateWarning;
+                                    ctx.lineWidth = 4;
+                                    ctx.beginPath();
+                                    ctx.arc(cx, cy, r+10, botController.targetAngle - 0.1, botController.targetAngle + 0.1);
+                                    ctx.stroke();
+                                }
+                                Connections {
+                                    target: botController
+                                    function onTargetAngleChanged() { parent.requestPaint() }
+                                }
+                            }
+                            
+                            // Inner Rotatable Ring
+                            Canvas {
+                                id: innerRingCanvas
+                                anchors.fill: parent
+                                rotation: botController.currentAngle * (180/Math.PI)
+                                
+                                onPaint: {
+                                    var ctx = getContext("2d");
+                                    ctx.clearRect(0, 0, width, height);
+                                    var cx = width/2; var cy = height/2; var r = 70;
+                                    
+                                    ctx.strokeStyle = botTheme.accentPrimary;
+                                    ctx.lineWidth = 20;
+                                    ctx.beginPath();
+                                    // Broken ring to show alignment
+                                    ctx.arc(cx, cy, r, 0.2, 2*Math.PI - 0.2);
+                                    ctx.stroke();
+                                    
+                                    // Alignment node
+                                    ctx.fillStyle = botTheme.textWhite;
+                                    ctx.beginPath();
+                                    ctx.arc(cx + r, cy, 6, 0, 2*Math.PI);
+                                    ctx.fill();
+                                }
+                            }
+                            
+                            // Core Hub
+                            Rectangle {
+                                anchors.centerIn: parent
+                                width: 40
+                                height: 40
+                                radius: 20
+                                color: botTheme.bgDarker
+                                border.color: botTheme.accentPrimary
+                                border.width: 2
+                                
+                                Text {
+                                    anchors.centerIn: parent
+                                    text: Math.abs(botController.targetAngle - botController.currentAngle) < 0.15 ? "🔓" : "🔒"
+                                    font.pixelSize: 14
+                                }
+                            }
+                        }
+
+                        // Slider Control
+                        Slider {
+                            id: spatialSlider
+                            anchors.bottom: parent.bottom
+                            anchors.bottomMargin: 20
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            width: 300
+                            from: 0
+                            to: Math.PI * 2
+                            value: 0
+                            
+                            onValueChanged: {
+                                if(mnjnefAntiBotRoot.currentChallengeIndex === 1) {
+                                    botController.currentAngle = value;
+                                    mnjnefAntiBotRoot.humanConfidenceScore = Math.min(100.0, mnjnefAntiBotRoot.humanConfidenceScore + 0.5);
+                                }
+                            }
+                            onPressedChanged: {
+                                if (!pressed && mnjnefAntiBotRoot.currentChallengeIndex === 1) {
+                                    botController.validateSpatialChallenge();
+                                }
+                            }
+                            
+                            background: Rectangle {
+                                x: spatialSlider.leftPadding
+                                y: spatialSlider.topPadding + spatialSlider.availableHeight / 2 - height / 2
+                                implicitWidth: 200
+                                implicitHeight: 6
+                                width: spatialSlider.availableWidth
+                                height: implicitHeight
+                                radius: 3
+                                color: botTheme.bgDarker
+                                border.color: botTheme.borderHighlight
+                                border.width: 1
+
+                                Rectangle {
+                                    width: spatialSlider.visualPosition * parent.width
+                                    height: parent.height
+                                    color: botTheme.accentPrimary
+                                    radius: 3
+                                }
+                            }
+                            handle: Rectangle {
+                                x: spatialSlider.leftPadding + spatialSlider.visualPosition * (spatialSlider.availableWidth - width)
+                                y: spatialSlider.topPadding + spatialSlider.availableHeight / 2 - height / 2
+                                implicitWidth: 24
+                                implicitHeight: 24
+                                radius: 12
+                                color: spatialSlider.pressed ? botTheme.textWhite : botTheme.accentPrimary
+                                border.color: botTheme.textWhite
+                                border.width: 2
+                                
+                                Behavior on color { ColorAnimation { duration: 150 } }
+                            }
+                        }
+                    }
+
+                    // CHALLENGE 2: PATTERN MEMORY NODE
+                    Item {
+                        id: patternChallengeArea
+                        anchors.fill: parent
+                        visible: mnjnefAntiBotRoot.currentChallengeIndex === 2
+                        
+                        Text {
+                            anchors.top: parent.top
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            text: qsTr("CHALLENGE II: NEURAL SEQUENCE")
+                            color: botTheme.accentSecondary
+                            font.pixelSize: 14
+                            font.bold: true
+                            font.family: botTheme.fontMain
+                            font.letterSpacing: 2.0
+                        }
+                        
+                        Text {
+                            anchors.top: parent.top
+                            anchors.topMargin: 24
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            text: qsTr("Repeat the exact cryptographic sequence.")
+                            color: botTheme.textMuted
+                            font.pixelSize: 12
+                            font.family: botTheme.fontCode
+                        }
+
+                        Grid {
+                            anchors.centerIn: parent
+                            columns: 3
+                            spacing: 16
+                            
+                            Repeater {
+                                model: 9
+                                Rectangle {
+                                    width: 80
+                                    height: 80
+                                    radius: 12
+                                    color: {
+                                        if (botController.activeFlashNode === index) return botTheme.accentSecondary;
+                                        if (botController.isNodeClicked(index)) return botTheme.accentPrimary;
+                                        return botTheme.bgDarker;
+                                    }
+                                    border.color: botTheme.borderHighlight
+                                    border.width: 2
+                                    
+                                    Behavior on color { ColorAnimation { duration: 150 } }
+                                    
+                                    Text {
+                                        anchors.centerIn: parent
+                                        text: "0x" + index
+                                        color: botTheme.textMuted
+                                        font.pixelSize: 10
+                                        font.family: botTheme.fontCode
+                                        opacity: 0.5
+                                    }
+                                    
+                                    MouseArea {
+                                        anchors.fill: parent
+                                        hoverEnabled: true
+                                        cursorShape: botController.isPatternInputActive ? Qt.PointingHandCursor : Qt.ForbiddenCursor
+                                        onClicked: {
+                                            if (botController.isPatternInputActive) {
+                                                botController.handleNodeClick(index);
+                                            }
+                                        }
+                                        onEntered: {
+                                            if(botController.isPatternInputActive) parent.border.color = botTheme.accentPrimary
+                                        }
+                                        onExited: {
+                                            parent.border.color = botTheme.borderHighlight
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        
+                        Text {
+                            anchors.bottom: parent.bottom
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            text: botController.isPatternInputActive ? qsTr("YOUR TURN") : qsTr("OBSERVE SEQUENCE")
+                            color: botController.isPatternInputActive ? botTheme.textWhite : botTheme.stateWarning
+                            font.pixelSize: 14
+                            font.bold: true
+                            font.family: botTheme.fontCode
+                            
+                            SequentialAnimation on opacity {
+                                loops: Animation.Infinite
+                                running: botController.isPatternInputActive
+                                NumberAnimation { from: 1.0; to: 0.3; duration: 800 }
+                                NumberAnimation { from: 0.3; to: 1.0; duration: 800 }
+                            }
+                        }
+                    }
+
+                    // SUCCESS OVERLAY
+                    Item {
+                        anchors.fill: parent
+                        visible: mnjnefAntiBotRoot.currentChallengeIndex === 3
+                        
+                        ColumnLayout {
+                            anchors.centerIn: parent
+                            spacing: 16
+                            
+                            Rectangle {
+                                Layout.preferredWidth: 80
+                                Layout.preferredHeight: 80
+                                radius: 40
+                                color: "transparent"
+                                border.color: botTheme.stateSuccess
+                                border.width: 4
+                                Layout.alignment: Qt.AlignHCenter
+                                
+                                Text {
+                                    anchors.centerIn: parent
+                                    text: "✓"
+                                    color: botTheme.stateSuccess
+                                    font.pixelSize: 40
+                                    font.bold: true
+                                }
+                            }
+                            
+                            Text {
+                                text: qsTr("HUMAN VERIFIED")
+                                color: botTheme.stateSuccess
+                                font.pixelSize: 22
+                                font.bold: true
+                                font.family: botTheme.fontMain
+                                font.letterSpacing: 2.0
+                                Layout.alignment: Qt.AlignHCenter
+                            }
+                            
+                            Text {
+                                text: qsTr("Cryptographic seal generated. Proceeding...")
+                                color: botTheme.textWhite
+                                font.pixelSize: 12
+                                font.family: botTheme.fontCode
+                                Layout.alignment: Qt.AlignHCenter
+                            }
+                        }
+                    }
+
+                    // LOCKED / ERROR OVERLAY
+                    Rectangle {
+                        anchors.fill: parent
+                        anchors.margins: -20
+                        color: botTheme.stateErrorBg
+                        visible: mnjnefAntiBotRoot.isSystemLocked
+                        opacity: 0.95
+                        z: 100
+                        
+                        ColumnLayout {
+                            anchors.centerIn: parent
+                            spacing: 16
+                            
+                            Text {
+                                text: "⚠️"
+                                font.pixelSize: 60
+                                Layout.alignment: Qt.AlignHCenter
+                            }
+                            
+                            Text {
+                                text: qsTr("SECURITY LOCKOUT")
+                                color: botTheme.stateError
+                                font.pixelSize: 24
+                                font.bold: true
+                                font.family: botTheme.fontMain
+                                font.letterSpacing: 3.0
+                                Layout.alignment: Qt.AlignHCenter
+                            }
+                            
+                            Text {
+                                text: qsTr("Anomalous automated behavior detected.")
+                                color: botTheme.textWhite
+                                font.pixelSize: 14
+                                font.family: botTheme.fontCode
+                                Layout.alignment: Qt.AlignHCenter
+                            }
+                        }
+                    }
+                }
+            }
+
+            // RIGHT: TELEMETRY & HEURISTICS LOG
+            Rectangle {
+                Layout.fillHeight: true
+                Layout.fillWidth: true
+                color: botTheme.bgPanel
+                radius: 12
+                border.color: botTheme.borderHighlight
+                border.width: 1
+                clip: true
+
+                ColumnLayout {
+                    anchors.fill: parent
+                    anchors.margins: 12
+                    spacing: 12
+
+                    Text {
+                        text: qsTr("LIVE HEURISTICS TELEMETRY")
+                        color: botTheme.textMuted
+                        font.pixelSize: 11
+                        font.bold: true
+                        font.family: botTheme.fontCode
+                        Layout.fillWidth: true
+                    }
+
+                    Rectangle {
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 1
+                        color: botTheme.borderHighlight
+                    }
+
+                    // Real-time Mouse Path Visualizer
+                    Rectangle {
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 120
+                        color: botTheme.bgDarker
+                        border.color: botTheme.borderHighlight
+                        border.width: 1
+                        clip: true
+                        
+                        Text {
+                            anchors.top: parent.top
+                            anchors.left: parent.left
+                            anchors.margins: 6
+                            text: qsTr("VECTOR PATH")
+                            color: botTheme.textMuted
+                            font.pixelSize: 9
+                            font.family: botTheme.fontCode
+                        }
+
+                        Canvas {
+                            id: vectorCanvas
+                            anchors.fill: parent
+                            
+                            onPaint: {
+                                var ctx = getContext("2d");
+                                ctx.clearRect(0, 0, width, height);
+                                
+                                if (mousePathModel.count < 2) return;
+                                
+                                ctx.strokeStyle = botTheme.accentSecondary;
+                                ctx.lineWidth = 1.5;
+                                ctx.beginPath();
+                                
+                                // Scale factor to fit the mini-map
+                                var scaleX = width / mnjnefAntiBotRoot.width;
+                                var scaleY = height / mnjnefAntiBotRoot.height;
+                                
+                                for (var i = 0; i < mousePathModel.count; i++) {
+                                    var pt = mousePathModel.get(i);
+                                    if (i === 0) ctx.moveTo(pt.px * scaleX, pt.py * scaleY);
+                                    else ctx.lineTo(pt.px * scaleX, pt.py * scaleY);
+                                }
+                                ctx.stroke();
+                            }
+                            
+                            Timer {
+                                interval: 50
+                                running: true
+                                repeat: true
+                                onRunningChanged: { if (running) { } } // Fix applied
+                                onTriggered: vectorCanvas.requestPaint()
+                            }
+                        }
+                    }
+
+                    // Terminal Log output
+                    ListView {
+                        id: heuristicsLogView
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+                        model: telemetryLogModel
+                        spacing: 4
+                        clip: true
+                        
+                        onCountChanged: {
+                            Qt.callLater(function() { heuristicsLogView.positionViewAtEnd() })
+                        }
+                        
+                        delegate: RowLayout {
+                            width: ListView.view.width
+                            spacing: 6
+                            
+                            Text {
+                                text: "[" + timestamp + "]"
+                                color: botTheme.textMuted
+                                font.pixelSize: 10
+                                font.family: botTheme.fontCode
+                                Layout.alignment: Qt.AlignTop
+                            }
+                            Text {
+                                text: logType
+                                color: {
+                                    if (logType === "WARN") return botTheme.stateWarning;
+                                    if (logType === "SYS") return botTheme.accentPrimary;
+                                    if (logType === "PASS") return botTheme.stateSuccess;
+                                    return botTheme.accentSecondary;
+                                }
+                                font.pixelSize: 10
+                                font.bold: true
+                                font.family: botTheme.fontCode
+                                Layout.alignment: Qt.AlignTop
+                                Layout.preferredWidth: 35
+                            }
+                            Text {
+                                text: logText
+                                color: botTheme.textWhite
+                                font.pixelSize: 10
+                                font.family: botTheme.fontCode
+                                Layout.fillWidth: true
+                                wrapMode: Text.WrapAnywhere
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // ==========================================
+    // CAPTCHA LOGIC CONTROLLER
+    // ==========================================
+    QtObject {
+        id: botController
+        
+        // Spatial Challenge Data
+        property real targetAngle: 0.0
+        property real currentAngle: 0.0
+        
+        // Pattern Challenge Data
+        property var sequence: []
+        property var userInputs: []
+        property int activeFlashNode: -1
+        property bool isPatternInputActive: false
+        
+        function logTelemetry(type, msg) {
+            let d = new Date()
+            let timeStr = d.getSeconds().toString().padStart(2, '0') + "." + d.getMilliseconds().toString().padStart(3, '0')
+            telemetryLogModel.append({"timestamp": timeStr, "logType": type, "logText": msg})
+            
+            // Limit log size to prevent memory leak
+            if (telemetryLogModel.count > 100) telemetryLogModel.remove(0, 1)
+        }
+        
+        function startChallengeOne() {
+            logTelemetry("SYS", "Initializing Spatial Decryption Engine...");
+            mnjnefAntiBotRoot.humanConfidenceScore = 15.0;
+            
+            // Generate random target angle
+            targetAngle = (Math.random() * Math.PI * 1.5) + 0.5;
+            currentAngle = 0.0;
+            spatialSlider.value = 0.0;
+            
+            mnjnefAntiBotRoot.currentChallengeIndex = 1;
+            logTelemetry("SYS", "Target entropy generated. Awaiting input.");
+        }
+        
+        function validateSpatialChallenge() {
+            let diff = Math.abs(targetAngle - currentAngle);
+            if (diff < 0.15) {
+                logTelemetry("PASS", "Spatial vector aligned. Variance: " + diff.toFixed(3));
+                mnjnefAntiBotRoot.humanConfidenceScore += 35.0;
+                
+                // Proceed to next challenge
+                Qt.callLater(startChallengeTwo);
+            } else {
+                handleFailure("Spatial misalignment. Variance: " + diff.toFixed(3));
+            }
+        }
+        
+        function startChallengeTwo() {
+            mnjnefAntiBotRoot.currentChallengeIndex = 2;
+            logTelemetry("SYS", "Loading Neural Sequence grid...");
+            
+            sequence = [];
+            userInputs = [];
+            isPatternInputActive = false;
+            
+            // Generate sequence of 4 nodes
+            for(let i=0; i<4; i++) {
+                sequence.push(Math.floor(Math.random() * 9));
+            }
+            
+            logTelemetry("SYS", "Sequence injected. Initiating playback...");
+            patternPlaybackTimer.start();
+        }
+        
+        function isNodeClicked(idx) {
+            return userInputs.indexOf(idx) !== -1;
+        }
+        
+        function handleNodeClick(idx) {
+            if (!isPatternInputActive) return;
+            
+            userInputs.push(idx);
+            logTelemetry("MOVE", "Node 0x" + idx + " intercepted.");
+            
+            // Re-bind to force UI update
+            let temp = userInputs;
+            userInputs = [];
+            userInputs = temp;
+            
+            // Check against sequence
+            let currentIndex = userInputs.length - 1;
+            if (userInputs[currentIndex] !== sequence[currentIndex]) {
+                handleFailure("Neural sequence mismatch at index " + currentIndex);
+                return;
+            }
+            
+            if (userInputs.length === sequence.length) {
+                logTelemetry("PASS", "Neural sequence perfectly matched.");
+                mnjnefAntiBotRoot.humanConfidenceScore += 40.0;
+                finalizeAuthentication();
+            }
+        }
+        
+        function handleFailure(reason) {
+            logTelemetry("WARN", "Validation Error: " + reason);
+            mnjnefAntiBotRoot.remainingAttempts--;
+            
+            if (mnjnefAntiBotRoot.remainingAttempts <= 0 || mnjnefAntiBotRoot.humanConfidenceScore < 10.0) {
+                logTelemetry("WARN", "CRITICAL: Multiple failures or zero human signature.");
+                triggerLockout();
+            } else {
+                logTelemetry("SYS", "Retrying... Attempts left: " + mnjnefAntiBotRoot.remainingAttempts);
+                // Reset to challenge 1
+                startChallengeOne();
+            }
+        }
+        
+        function triggerLockout() {
+            mnjnefAntiBotRoot.isSystemLocked = true;
+            logTelemetry("WARN", "SYSTEM LOCKED. Disconnecting socket.");
+            
+            lockoutTimer.start();
+        }
+        
+        function finalizeAuthentication() {
+            mnjnefAntiBotRoot.currentChallengeIndex = 3; // Success state
+            logTelemetry("SYS", "Finalizing biometric signature...");
+            
+            let finalScore = mnjnefAntiBotRoot.humanConfidenceScore.toFixed(1);
+            logTelemetry("PASS", "Human confidence confirmed at " + finalScore + "%");
+            
+            authDelayTimer.start();
+        }
+    }
+
+    // ==========================================
+    // STATE TIMERS
+    // ==========================================
+    
+    // Timer to play back the pattern sequence
+    Timer {
+        id: patternPlaybackTimer
+        interval: 600
+        repeat: true
+        property int step: -1
+        
+        onRunningChanged: {
+            if (running) {
+                step = -1;
+            }
+        }
+        onTriggered: {
+            step++;
+            if (step >= botController.sequence.length) {
+                botController.activeFlashNode = -1;
+                botController.isPatternInputActive = true;
+                botController.logTelemetry("SYS", "Awaiting user neural input.");
+                stop();
+                return;
+            }
+            
+            botController.activeFlashNode = botController.sequence[step];
+            botController.logTelemetry("SYS", "Flashing node index: " + step);
+            
+            // Turn off flash after a short duration
+            nodeOffTimer.start();
+        }
+    }
+    
+    Timer {
+        id: nodeOffTimer
+        interval: 300
+        repeat: false
+        onRunningChanged: { if(running){} }
+        onTriggered: {
+            botController.activeFlashNode = -1;
+        }
+    }
+    
+    Timer {
+        id: authDelayTimer
+        interval: 2000
+        repeat: false
+        onRunningChanged: { if(running){} }
+        onTriggered: {
+            // Generate secure mock token
+            let chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+            let tkn = "MNJ-TURING-";
+            for(let i=0; i<12; i++) tkn += chars.charAt(Math.floor(Math.random() * chars.length));
+            
+            mnjnefAntiBotRoot.captchaResolved(tkn, mnjnefAntiBotRoot.humanConfidenceScore);
+        }
+    }
+    
+    Timer {
+        id: lockoutTimer
+        interval: 3000
+        repeat: false
+        onRunningChanged: { if(running){} }
+        onTriggered: {
+            mnjnefAntiBotRoot.captchaFailed("Bot-like behavior detected. Score: " + mnjnefAntiBotRoot.humanConfidenceScore, "ERR_TURING_FAIL");
+        }
+    }
+
+    // Initialize Telemetry on start
+    Component.onCompleted: {
+        botController.logTelemetry("SYS", "Bot-Mitigation protocol loaded.");
+        botController.logTelemetry("SYS", "Awaiting user initialization.");
+    }
+}
