@@ -1,8 +1,8 @@
         onRunningChanged: {
             if (running) {
                 ticks = 0
-                securityPhasesModel.setProperty(2, "status", 1)
-                secEngine.appendLog("WARNING", "Activating Deep Packet Inspection (DPI)...")
-                mnjnefSecurityCoreRoot.activeTerminalNode = "DPI_INSPECTOR_V9"
+                securityPhasesModel.setProperty(3, "status", 1)
+                secEngine.appendLog("INFO", "Scanning local memory space for hook injections...")
+                mnjnefSecurityCoreRoot.activeTerminalNode = "MEM_SCANNER_RING0"
             }
         }
