@@ -1,21 +1,77 @@
-import QtQuick
-import QtQuick.Controls
-
-ApplicationWindow {
-    id: mainWindow
-    width: 1280
-    height: 720
-    visible: true
-    title: "Mnjnef Platform"
-    color: "#0B1B42" // Premium gaming blue background
-
-    // Brand Name Component
-    Text {
-        text: "Mnjnef"
-        color: "#FFFFFF" // Pure white color for the brand
-        font.pixelSize: 42
-        font.bold: true
-        font.family: "Segoe UI"
-        anchors.centerIn: parent // Centers the text precisely in the window
+    // Blue fabric background animation moving to the left
+    Item {
+        anchors.fill: parent
+        z: -1
+        Rectangle {
+            width: parent.width * 2
+            height: parent.height
+            gradient: Gradient {
+                orientation: Gradient.Horizontal
+                GradientStop { position: 0.0; color: "#0B1B42" }
+                GradientStop { position: 0.25; color: "#112A61" }
+                GradientStop { position: 0.5; color: "#081430" }
+                GradientStop { position: 0.75; color: "#112A61" }
+                GradientStop { position: 1.0; color: "#0B1B42" }
+            }
+            NumberAnimation on x {
+                from: 0
+                to: -parent.width / 2
+                duration: 20000
+                loops: Animation.Infinite
+            }
+        }
     }
-}
+
+    // Left side balloons (vertical layout)
+    Column {
+        anchors.left: parent.left
+        anchors.leftMargin: 40
+        anchors.verticalCenter: parent.verticalCenter
+        spacing: 50
+        Repeater {
+            model: ["#FF3366", "#00E5FF", "#FFD700"]
+            Item {
+                width: 60; height: 85
+                Rectangle {
+                    width: 60; height: 80; radius: 30
+                    gradient: Gradient {
+                        GradientStop { position: 0.0; color: "#FFFFFF" }
+                        GradientStop { position: 0.15; color: modelData }
+                        GradientStop { position: 1.0; color: Qt.darker(modelData, 1.5) }
+                    }
+                }
+                Rectangle {
+                    width: 12; height: 12; rotation: 45
+                    color: Qt.darker(modelData, 1.2)
+                    anchors.bottom: parent.bottom; anchors.horizontalCenter: parent.horizontalCenter
+                }
+            }
+        }
+    }
+
+    // Right side balloons (vertical layout)
+    Column {
+        anchors.right: parent.right
+        anchors.rightMargin: 40
+        anchors.verticalCenter: parent.verticalCenter
+        spacing: 50
+        Repeater {
+            model: ["#00FF00", "#FF8C00", "#9D00FF"]
+            Item {
+                width: 60; height: 85
+                Rectangle {
+                    width: 60; height: 80; radius: 30
+                    gradient: Gradient {
+                        GradientStop { position: 0.0; color: "#FFFFFF" }
+                        GradientStop { position: 0.15; color: modelData }
+                        GradientStop { position: 1.0; color: Qt.darker(modelData, 1.5) }
+                    }
+                }
+                Rectangle {
+                    width: 12; height: 12; rotation: 45
+                    color: Qt.darker(modelData, 1.2)
+                    anchors.bottom: parent.bottom; anchors.horizontalCenter: parent.horizontalCenter
+                }
+            }
+        }
+    }
