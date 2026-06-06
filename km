@@ -1,50 +1,488 @@
-cmake_minimum_required(VERSION 3.16)
+import QtQuick
+import QtQuick.Controls
+import QtQuick.Layouts
+import QtMultimedia 
 
-project(Mnjnef VERSION 1.0 LANGUAGES CXX)
+ApplicationWindow {
+    id: mainWindow
+    width: 1280
+    height: 720
+    visible: true
+    title: "Mnjnef - Deep Ocean Gateway"
+    
+    // ==========================================
+    // 1. DEEP OCEAN AUDIO SYSTEM
+    // ==========================================
+    MediaPlayer {
+        id: oceanAmbientSound
+        // ضع هنا مسار ملف الصوت الخاص بك بدون حقوق ملكية
+        source: "" 
+        loops: MediaPlayer.Infinite
+        audioOutput: AudioOutput {
+            volume: 0.6 
+        }
+    }
+    
+    Component.onCompleted: {
+        if (oceanAmbientSound.source !== "") {
+            oceanAmbientSound.play();
+        }
+    }
 
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_AUTOMOC ON)
+    // ==========================================
+    // 2. OCEAN BACKGROUND GRADIENT
+    // ==========================================
+    Rectangle {
+        id: oceanBackground
+        anchors.fill: parent
+        gradient: Gradient {
+            GradientStop { position: 0.0; color: "#001D3D" } 
+            GradientStop { position: 0.4; color: "#001024" } 
+            GradientStop { position: 0.8; color: "#000714" } 
+            GradientStop { position: 1.0; color: "#00030A" } 
+        }
+    }
 
-# Find Qt6 core components including Multimedia for the deep ocean audio
-find_package(Qt6 REQUIRED COMPONENTS Quick Multimedia)
+    // ==========================================
+    // 3. UNDERWATER LIGHT RAYS (SUN SHAFTS)
+    // ==========================================
+    Item {
+        anchors.fill: parent
+        opacity: 0.15
+        
+        Repeater {
+            model: 5
+            Rectangle {
+                width: 200 + (Math.random() * 200)
+                // تم التصحيح هنا: استخدام mainWindow بدلاً من parent
+                height: mainWindow.height * 1.5
+                color: "#FFFFFF"
+                // تم التصحيح هنا: استخدام mainWindow بدلاً من parent
+                x: mainWindow.width * (index * 0.25) - 200
+                y: -mainWindow.height * 0.2
+                rotation: 30 + (Math.random() * 10)
+                transformOrigin: Item.Top
+                
+                gradient: Gradient {
+                    GradientStop { position: 0.0; color: "#FFFFFF" }
+                    GradientStop { position: 1.0; color: "transparent" }
+                }
+                
+                SequentialAnimation on opacity {
+                    loops: Animation.Infinite
+                    NumberAnimation { from: 0.05; to: 0.2; duration: 4000 + (index * 1000); easing.type: Easing.InOutSine }
+                    NumberAnimation { from: 0.2; to: 0.05; duration: 4000 + (index * 1000); easing.type: Easing.InOutSine }
+                }
+            }
+        }
+    }
 
-qt_standard_project_setup(REQUIRES 6.5)
+    // ==========================================
+    // 4. SEABED & SAND
+    // ==========================================
+    Item {
+        id: seabed
+        width: mainWindow.width
+        height: 120
+        anchors.bottom: parent.bottom
+        
+        Rectangle {
+            anchors.fill: parent
+            gradient: Gradient {
+                GradientStop { position: 0.0; color: "transparent" }
+                GradientStop { position: 0.2; color: "#0B151C" } 
+                GradientStop { position: 1.0; color: "#020508" } 
+            }
+        }
+        
+        // Sand Dunes (Curved Overlays)
+        Rectangle {
+            // تم التصحيح هنا: استخدام mainWindow بدلاً من parent لتفادي أخطاء الأبعاد
+            width: mainWindow.width * 1.5
+            height: 150
+            radius: 1000
+            color: "#081017"
+            anchors.bottom: parent.bottom
+            anchors.bottomMargin: -50
+            anchors.horizontalCenter: parent.horizontalCenter
+        }
+    }
 
-# 1. Executable configuration with core C++ backend files
-qt_add_executable(appMnjnef
-    main.cpp
-    authmanager.h
-    authmanager.cpp
-)
+    // ==========================================
+    // 5. CORALS & SEAWEED (ANIMATED)
+    // ==========================================
+    component Seaweed: Item {
+        property color weedColor: "#004D40"
+        property int weedHeight: 100
+        property int swayDuration: 3000
+        
+        width: 10
+        height: weedHeight
+        transformOrigin: Item.Bottom
+        
+        Rectangle {
+            anchors.fill: parent
+            radius: 5
+            color: weedColor
+            opacity: 0.7
+        }
+        
+        SequentialAnimation on rotation {
+            loops: Animation.Infinite
+            NumberAnimation { from: -10; to: 10; duration: swayDuration; easing.type: Easing.InOutSine }
+            NumberAnimation { from: 10; to: -10; duration: swayDuration; easing.type: Easing.InOutSine }
+        }
+    }
 
-# 2. QML Module configuration compiling all platform screens securely
-qt_add_qml_module(appMnjnef
-    URI MnjnefCore
-    VERSION 1.0
-    QML_FILES
-        Main.qml
-        ContactUs.qml
-        Support_1_Main.qml
-        Support_2_MasterEngine.qml
-        Support_3_UIComponents.qml
-        Support_4_SecurityCore.qml
-        Support_5_AntiBotCaptcha.qml
-        Support_6_Guidelines.qml
-        Support_7_OTPAuth.qml
-        Support_8_TicketForm.qml
-        Support_9_TicketTracker.qml
-        Support_10_ResolutionFeedback.qml 
-        Support_11_TranslationModule.qml
-)
+    Seaweed { anchors.bottom: parent.bottom; anchors.left: parent.left; anchors.leftMargin: 100; weedHeight: 120; swayDuration: 3500; weedColor: "#00332A" }
+    Seaweed { anchors.bottom: parent.bottom; anchors.left: parent.left; anchors.leftMargin: 115; weedHeight: 80; swayDuration: 2800; weedColor: "#004D40" }
+    Seaweed { anchors.bottom: parent.bottom; anchors.right: parent.right; anchors.rightMargin: 150; weedHeight: 150; swayDuration: 4200; weedColor: "#00261C" }
+    Seaweed { anchors.bottom: parent.bottom; anchors.right: parent.right; anchors.rightMargin: 130; weedHeight: 90; swayDuration: 3100; weedColor: "#004033" }
 
-# 3. Suppress Windows Console & ensure clean executable build
-set_target_properties(appMnjnef PROPERTIES
-    WIN32_EXECUTABLE TRUE
-)
+    // ==========================================
+    // 6. SHELLS ON THE SEABED
+    // ==========================================
+    component Shell: Rectangle {
+        width: 20
+        height: 12
+        radius: 6
+        color: "#E0E0E0"
+        opacity: 0.6
+        border.color: "#9E9E9E"
+        border.width: 1
+    }
 
-# 4. Link runtime libraries to the main executable
-target_link_libraries(appMnjnef PRIVATE
-    Qt6::Quick
-    Qt6::Multimedia
-)
+    Shell { anchors.bottom: parent.bottom; anchors.bottomMargin: 15; anchors.left: parent.left; anchors.leftMargin: 250; rotation: 15 }
+    Shell { anchors.bottom: parent.bottom; anchors.bottomMargin: 8; anchors.right: parent.right; anchors.rightMargin: 300; rotation: -20; color: "#FFD54F" }
+    Shell { anchors.bottom: parent.bottom; anchors.bottomMargin: 25; anchors.left: parent.left; anchors.leftMargin: 400; rotation: 45; color: "#FFCC80" }
+
+    // ==========================================
+    // 7. DYNAMIC BUBBLE SYSTEM
+    // ==========================================
+    Item {
+        anchors.fill: parent
+        
+        Repeater {
+            model: 20 
+            
+            Rectangle {
+                property real startX: Math.random() * mainWindow.width
+                property real animDuration: 5000 + (Math.random() * 10000)
+                property real bubbleSize: 4 + (Math.random() * 12)
+                
+                width: bubbleSize
+                height: bubbleSize
+                radius: bubbleSize / 2
+                color: "transparent"
+                border.color: "#40FFFFFF"
+                border.width: 1
+                x: startX
+                y: mainWindow.height
+                
+                Rectangle {
+                    width: parent.width * 0.3
+                    height: parent.height * 0.3
+                    radius: width / 2
+                    color: "#80FFFFFF"
+                    anchors.top: parent.top
+                    anchors.topMargin: 1
+                    anchors.left: parent.left
+                    anchors.leftMargin: 1
+                }
+                
+                NumberAnimation on y {
+                    from: mainWindow.height
+                    to: -50
+                    duration: animDuration
+                    loops: Animation.Infinite
+                }
+                
+                SequentialAnimation on x {
+                    loops: Animation.Infinite
+                    NumberAnimation { from: startX; to: startX + 20; duration: 1500; easing.type: Easing.InOutSine }
+                    NumberAnimation { from: startX + 20; to: startX - 20; duration: 3000; easing.type: Easing.InOutSine }
+                    NumberAnimation { from: startX - 20; to: startX; duration: 1500; easing.type: Easing.InOutSine }
+                }
+            }
+        }
+    }
+
+    // ==========================================
+    // 8. ANIMATED FISH ENTITIES
+    // ==========================================
+    component OceanFish: Item {
+        property color fishColor: "#FF5722"
+        property int fishSize: 40
+        property int swimDuration: 20000
+        property int startY: 300
+        property bool movingRight: true
+        
+        width: fishSize
+        height: fishSize / 2
+        y: startY
+        
+        transform: Scale { xScale: movingRight ? -1 : 1; origin.x: fishSize/2; origin.y: fishSize/4 }
+
+        Rectangle {
+            width: parent.width * 0.7
+            height: parent.height
+            radius: height / 2
+            color: fishColor
+            anchors.right: parent.right
+        }
+        
+        Rectangle {
+            width: parent.width * 0.4
+            height: parent.height * 0.8
+            color: fishColor
+            radius: 3
+            anchors.left: parent.left
+            anchors.verticalCenter: parent.verticalCenter
+            transformOrigin: Item.Right
+            
+            SequentialAnimation on rotation {
+                loops: Animation.Infinite
+                NumberAnimation { from: -15; to: 15; duration: 200; easing.type: Easing.InOutQuad }
+                NumberAnimation { from: 15; to: -15; duration: 200; easing.type: Easing.InOutQuad }
+            }
+        }
+        
+        Rectangle {
+            width: 4
+            height: 4
+            radius: 2
+            color: "#000000"
+            anchors.right: parent.right
+            anchors.rightMargin: parent.width * 0.15
+            anchors.top: parent.top
+            anchors.topMargin: parent.height * 0.25
+        }
+        
+        NumberAnimation on x {
+            from: movingRight ? -200 : mainWindow.width + 200
+            to: movingRight ? mainWindow.width + 200 : -200
+            duration: swimDuration
+            loops: Animation.Infinite
+        }
+        
+        SequentialAnimation on y {
+            loops: Animation.Infinite
+            NumberAnimation { from: startY; to: startY - 30; duration: 4000; easing.type: Easing.InOutSine }
+            NumberAnimation { from: startY - 30; to: startY; duration: 4000; easing.type: Easing.InOutSine }
+        }
+    }
+
+    OceanFish { fishColor: "#FF9800"; fishSize: 35; swimDuration: 25000; startY: 150; movingRight: true }
+    OceanFish { fishColor: "#00BCD4"; fishSize: 25; swimDuration: 30000; startY: 450; movingRight: false }
+    OceanFish { fishColor: "#E91E63"; fishSize: 45; swimDuration: 40000; startY: 250; movingRight: false }
+    OceanFish { fishColor: "#9C27B0"; fishSize: 20; swimDuration: 22000; startY: 550; movingRight: true }
+    OceanFish { fishColor: "#607D8B"; fishSize: 60; swimDuration: 55000; startY: 600; movingRight: true } 
+
+    // ==========================================
+    // 9. MNJNEF GLASSMORPHISM LOGIN UI
+    // ==========================================
+    Rectangle {
+        id: loginPanel
+        width: 480
+        height: 520
+        anchors.centerIn: parent
+        radius: 16
+        
+        color: "#99000A1A"
+        border.color: "#30FFFFFF"
+        border.width: 1
+        
+        ColumnLayout {
+            anchors.fill: parent
+            anchors.margins: 40
+            spacing: 20
+
+            ColumnLayout {
+                Layout.fillWidth: true
+                spacing: 5
+                
+                Text {
+                    text: "Mnjnef"
+                    color: "#FFFFFF"
+                    font.pixelSize: 42
+                    font.bold: true
+                    font.family: "Segoe UI"
+                    font.letterSpacing: 2.0
+                    Layout.alignment: Qt.AlignHCenter
+                }
+                
+                Text {
+                    text: "Join the gaming worlds"
+                    color: "#A0B0C0"
+                    font.pixelSize: 14
+                    font.family: "Segoe UI"
+                    Layout.alignment: Qt.AlignHCenter
+                }
+            }
+
+            Item { Layout.preferredHeight: 10 } 
+
+            ColumnLayout {
+                Layout.fillWidth: true
+                spacing: 16
+
+                Rectangle {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 50
+                    radius: 8
+                    color: "#4000152A"
+                    border.color: usernameInput.activeFocus ? "#00E5FF" : "#40FFFFFF"
+                    border.width: usernameInput.activeFocus ? 2 : 1
+                    
+                    TextInput {
+                        id: usernameInput
+                        anchors.fill: parent
+                        anchors.margins: 15
+                        color: "#FFFFFF"
+                        font.pixelSize: 15
+                        font.family: "Segoe UI"
+                        verticalAlignment: TextInput.AlignVCenter
+                        
+                        Text {
+                            text: "Username"
+                            color: "#607D8B"
+                            font.pixelSize: 15
+                            font.family: "Segoe UI"
+                            visible: !usernameInput.text && !usernameInput.activeFocus
+                            anchors.verticalCenter: parent.verticalCenter
+                        }
+                    }
+                }
+
+                Rectangle {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 50
+                    radius: 8
+                    color: "#4000152A"
+                    border.color: emailInput.activeFocus ? "#00E5FF" : "#40FFFFFF"
+                    border.width: emailInput.activeFocus ? 2 : 1
+                    
+                    TextInput {
+                        id: emailInput
+                        anchors.fill: parent
+                        anchors.margins: 15
+                        color: "#FFFFFF"
+                        font.pixelSize: 15
+                        font.family: "Segoe UI"
+                        verticalAlignment: TextInput.AlignVCenter
+                        
+                        Text {
+                            text: "Email"
+                            color: "#607D8B"
+                            font.pixelSize: 15
+                            font.family: "Segoe UI"
+                            visible: !emailInput.text && !emailInput.activeFocus
+                            anchors.verticalCenter: parent.verticalCenter
+                        }
+                    }
+                }
+
+                Rectangle {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 50
+                    radius: 8
+                    color: "#4000152A"
+                    border.color: passInput.activeFocus ? "#00E5FF" : "#40FFFFFF"
+                    border.width: passInput.activeFocus ? 2 : 1
+                    
+                    TextInput {
+                        id: passInput
+                        anchors.fill: parent
+                        anchors.margins: 15
+                        color: "#FFFFFF"
+                        font.pixelSize: 15
+                        font.family: "Segoe UI"
+                        verticalAlignment: TextInput.AlignVCenter
+                        echoMode: TextInput.Password
+                        
+                        Text {
+                            text: "Password"
+                            color: "#607D8B"
+                            font.pixelSize: 15
+                            font.family: "Segoe UI"
+                            visible: !passInput.text && !passInput.activeFocus
+                            anchors.verticalCenter: parent.verticalCenter
+                        }
+                    }
+                }
+            }
+
+            Rectangle {
+                Layout.fillWidth: true
+                Layout.preferredHeight: 50
+                Layout.topMargin: 10
+                radius: 8
+                color: loginMouse.containsMouse ? "#0091EA" : "#0078D7"
+                
+                Behavior on color { ColorAnimation { duration: 200 } }
+
+                Text {
+                    anchors.centerIn: parent
+                    text: "LOGIN"
+                    color: "#FFFFFF"
+                    font.pixelSize: 15
+                    font.bold: true
+                    font.family: "Segoe UI"
+                    font.letterSpacing: 2.0
+                }
+
+                MouseArea {
+                    id: loginMouse
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: {
+                        console.log("Login Initiated...");
+                    }
+                }
+            }
+
+            Item { Layout.fillHeight: true } 
+
+            RowLayout {
+                Layout.fillWidth: true
+                
+                Text {
+                    text: "Mnjnef Support"
+                    color: supportMouse.containsMouse ? "#FFFFFF" : "#90A4AE"
+                    font.pixelSize: 12
+                    font.family: "Segoe UI"
+                    
+                    Behavior on color { ColorAnimation { duration: 150 } }
+                    
+                    MouseArea {
+                        id: supportMouse
+                        anchors.fill: parent
+                        anchors.margins: -5
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                    }
+                }
+                
+                Item { Layout.fillWidth: true } 
+                
+                Text {
+                    text: "Privacy Policy"
+                    color: privacyMouse.containsMouse ? "#FFFFFF" : "#90A4AE"
+                    font.pixelSize: 12
+                    font.family: "Segoe UI"
+                    
+                    Behavior on color { ColorAnimation { duration: 150 } }
+                    
+                    MouseArea {
+                        id: privacyMouse
+                        anchors.fill: parent
+                        anchors.margins: -5
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                    }
+                }
+            }
+        }
+    }
+}
