@@ -1,56 +1,508 @@
+import QtQuick
+import QtQuick.Controls
+import QtQuick.Layouts
+import QtMultimedia // Required for the deep ocean audio
+
+ApplicationWindow {
+    id: mainWindow
+    width: 1280
+    height: 720
+    visible: true
+    title: "Mnjnef - Deep Ocean Gateway"
+    
     // ==========================================
-    // 1. Fabric Wave Background (Moving Right to Left)
+    // 1. DEEP OCEAN AUDIO SYSTEM
+    // ==========================================
+    MediaPlayer {
+        id: oceanAmbientSound
+        // Replace this path with your actual no-copyright deep ocean sound file
+        // Example: source: "file:///C:/Mnjnef/sounds/deep_ocean.wav"
+        source: "" 
+        loops: MediaPlayer.Infinite
+        audioOutput: AudioOutput {
+            volume: 0.6 // Deep ambient volume
+        }
+    }
+    
+    Component.onCompleted: {
+        // Play sound on startup if source is set
+        if (oceanAmbientSound.source !== "") {
+            oceanAmbientSound.play();
+        }
+    }
+
+    // ==========================================
+    // 2. OCEAN BACKGROUND GRADIENT
+    // ==========================================
+    Rectangle {
+        id: oceanBackground
+        anchors.fill: parent
+        gradient: Gradient {
+            GradientStop { position: 0.0; color: "#001D3D" } // Near surface (Dark Blue)
+            GradientStop { position: 0.4; color: "#001024" } // Mid depth
+            GradientStop { position: 0.8; color: "#000714" } // Deep water
+            GradientStop { position: 1.0; color: "#00030A" } // Abyss
+        }
+    }
+
+    // ==========================================
+    // 3. UNDERWATER LIGHT RAYS (SUN SHAFTS)
     // ==========================================
     Item {
         anchors.fill: parent
-        z: -1
-        clip: true
-
-        // Base Deep Midnight Blue
-        Rectangle {
-            anchors.fill: parent
-            color: "#050B14"
-        }
-
-        // Fabric Layer 1: Dark Silk Wave
-        Rectangle {
-            width: parent.width * 2
-            height: parent.height
-            gradient: Gradient {
-                orientation: Gradient.Horizontal
-                GradientStop { position: 0.0; color: "#050B14" }
-                GradientStop { position: 0.25; color: "#0F234D" }
-                GradientStop { position: 0.5; color: "#183570" }
-                GradientStop { position: 0.75; color: "#0F234D" }
-                GradientStop { position: 1.0; color: "#050B14" }
-            }
-
-            NumberAnimation on x {
-                from: 0
-                to: -parent.width
-                duration: 25000
-                loops: Animation.Infinite
-            }
-        }
-
-        // Fabric Layer 2: Overlay Smooth Wave for Fold Depth
-        Rectangle {
-            width: parent.width * 2
-            height: parent.height
-            opacity: 0.4
-            gradient: Gradient {
-                orientation: Gradient.Horizontal
-                GradientStop { position: 0.0; color: "transparent" }
-                GradientStop { position: 0.35; color: "#1C3D80" }
-                GradientStop { position: 0.7; color: "#0B1A3A" }
-                GradientStop { position: 1.0; color: "transparent" }
-            }
-
-            NumberAnimation on x {
-                from: parent.width
-                to: -parent.width
-                duration: 35000
-                loops: Animation.Infinite
+        opacity: 0.15
+        
+        Repeater {
+            model: 5
+            Rectangle {
+                width: 200 + (Math.random() * 200)
+                height: parent.height * 1.5
+                color: "#FFFFFF"
+                x: parent.width * (index * 0.25) - 200
+                y: -parent.height * 0.2
+                rotation: 30 + (Math.random() * 10)
+                transformOrigin: Item.Top
+                
+                gradient: Gradient {
+                    GradientStop { position: 0.0; color: "#FFFFFF" }
+                    GradientStop { position: 1.0; color: "transparent" }
+                }
+                
+                SequentialAnimation on opacity {
+                    loops: Animation.Infinite
+                    NumberAnimation { from: 0.05; to: 0.2; duration: 4000 + (index * 1000); easing.type: Easing.InOutSine }
+                    NumberAnimation { from: 0.2; to: 0.05; duration: 4000 + (index * 1000); easing.type: Easing.InOutSine }
+                }
             }
         }
     }
+
+    // ==========================================
+    // 4. SEABED & SAND
+    // ==========================================
+    Item {
+        id: seabed
+        width: parent.width
+        height: 120
+        anchors.bottom: parent.bottom
+        
+        Rectangle {
+            anchors.fill: parent
+            gradient: Gradient {
+                GradientStop { position: 0.0; color: "transparent" }
+                GradientStop { position: 0.2; color: "#0B151C" } // Dark sand top
+                GradientStop { position: 1.0; color: "#020508" } // Deep trench bottom
+            }
+        }
+        
+        // Sand Dunes (Curved Overlays)
+        Rectangle {
+            width: parent.width * 1.5
+            height: 150
+            radius: 1000
+            color: "#081017"
+            anchors.bottom: parent.bottom
+            anchors.bottomMargin: -50
+            anchors.horizontalCenter: parent.horizontalCenter
+        }
+    }
+
+    // ==========================================
+    // 5. CORALS & SEAWEED (ANIMATED)
+    // ==========================================
+    component Seaweed: Item {
+        property color weedColor: "#004D40"
+        property int weedHeight: 100
+        property int swayDuration: 3000
+        
+        width: 10
+        height: weedHeight
+        transformOrigin: Item.Bottom
+        
+        Rectangle {
+            anchors.fill: parent
+            radius: 5
+            color: weedColor
+            opacity: 0.7
+        }
+        
+        SequentialAnimation on rotation {
+            loops: Animation.Infinite
+            NumberAnimation { from: -10; to: 10; duration: swayDuration; easing.type: Easing.InOutSine }
+            NumberAnimation { from: 10; to: -10; duration: swayDuration; easing.type: Easing.InOutSine }
+        }
+    }
+
+    // Planting Seaweed on the seabed
+    Seaweed { anchors.bottom: parent.bottom; anchors.left: parent.left; anchors.leftMargin: 100; weedHeight: 120; swayDuration: 3500; weedColor: "#00332A" }
+    Seaweed { anchors.bottom: parent.bottom; anchors.left: parent.left; anchors.leftMargin: 115; weedHeight: 80; swayDuration: 2800; weedColor: "#004D40" }
+    Seaweed { anchors.bottom: parent.bottom; anchors.right: parent.right; anchors.rightMargin: 150; weedHeight: 150; swayDuration: 4200; weedColor: "#00261C" }
+    Seaweed { anchors.bottom: parent.bottom; anchors.right: parent.right; anchors.rightMargin: 130; weedHeight: 90; swayDuration: 3100; weedColor: "#004033" }
+
+    // ==========================================
+    // 6. SHELLS ON THE SEABED
+    // ==========================================
+    component Shell: Rectangle {
+        width: 20
+        height: 12
+        radius: 6
+        color: "#E0E0E0"
+        opacity: 0.6
+        border.color: "#9E9E9E"
+        border.width: 1
+    }
+
+    Shell { anchors.bottom: parent.bottom; anchors.bottomMargin: 15; anchors.left: parent.left; anchors.leftMargin: 250; rotation: 15 }
+    Shell { anchors.bottom: parent.bottom; anchors.bottomMargin: 8; anchors.right: parent.right; anchors.rightMargin: 300; rotation: -20; color: "#FFD54F" }
+    Shell { anchors.bottom: parent.bottom; anchors.bottomMargin: 25; anchors.left: parent.left; anchors.leftMargin: 400; rotation: 45; color: "#FFCC80" }
+
+    // ==========================================
+    // 7. DYNAMIC BUBBLE SYSTEM
+    // ==========================================
+    Item {
+        anchors.fill: parent
+        
+        Repeater {
+            model: 20 // Number of bubbles
+            
+            Rectangle {
+                property real startX: Math.random() * mainWindow.width
+                property real animDuration: 5000 + (Math.random() * 10000)
+                property real bubbleSize: 4 + (Math.random() * 12)
+                
+                width: bubbleSize
+                height: bubbleSize
+                radius: bubbleSize / 2
+                color: "transparent"
+                border.color: "#40FFFFFF"
+                border.width: 1
+                x: startX
+                y: mainWindow.height
+                
+                // Add an inner highlight for realism
+                Rectangle {
+                    width: parent.width * 0.3
+                    height: parent.height * 0.3
+                    radius: width / 2
+                    color: "#80FFFFFF"
+                    anchors.top: parent.top
+                    anchors.topMargin: 1
+                    anchors.left: parent.left
+                    anchors.leftMargin: 1
+                }
+                
+                // Float upwards
+                NumberAnimation on y {
+                    from: mainWindow.height
+                    to: -50
+                    duration: animDuration
+                    loops: Animation.Infinite
+                }
+                
+                // Wiggle left and right while floating
+                SequentialAnimation on x {
+                    loops: Animation.Infinite
+                    NumberAnimation { from: startX; to: startX + 20; duration: 1500; easing.type: Easing.InOutSine }
+                    NumberAnimation { from: startX + 20; to: startX - 20; duration: 3000; easing.type: Easing.InOutSine }
+                    NumberAnimation { from: startX - 20; to: startX; duration: 1500; easing.type: Easing.InOutSine }
+                }
+            }
+        }
+    }
+
+    // ==========================================
+    // 8. ANIMATED FISH ENTITIES
+    // ==========================================
+    component OceanFish: Item {
+        property color fishColor: "#FF5722"
+        property int fishSize: 40
+        property int swimDuration: 20000
+        property int startY: 300
+        property bool movingRight: true
+        
+        width: fishSize
+        height: fishSize / 2
+        y: startY
+        
+        // Flip fish if moving left
+        transform: Scale { xScale: movingRight ? -1 : 1; origin.x: fishSize/2; origin.y: fishSize/4 }
+
+        // Fish Body
+        Rectangle {
+            width: parent.width * 0.7
+            height: parent.height
+            radius: height / 2
+            color: fishColor
+            anchors.right: parent.right
+        }
+        
+        // Fish Tail (Animated)
+        Rectangle {
+            width: parent.width * 0.4
+            height: parent.height * 0.8
+            color: fishColor
+            radius: 3
+            anchors.left: parent.left
+            anchors.verticalCenter: parent.verticalCenter
+            transformOrigin: Item.Right
+            
+            SequentialAnimation on rotation {
+                loops: Animation.Infinite
+                NumberAnimation { from: -15; to: 15; duration: 200; easing.type: Easing.InOutQuad }
+                NumberAnimation { from: 15; to: -15; duration: 200; easing.type: Easing.InOutQuad }
+            }
+        }
+        
+        // Eye
+        Rectangle {
+            width: 4
+            height: 4
+            radius: 2
+            color: "#000000"
+            anchors.right: parent.right
+            anchors.rightMargin: parent.width * 0.15
+            anchors.top: parent.top
+            anchors.topMargin: parent.height * 0.25
+        }
+        
+        // Crossing the screen animation
+        NumberAnimation on x {
+            from: movingRight ? -200 : mainWindow.width + 200
+            to: movingRight ? mainWindow.width + 200 : -200
+            duration: swimDuration
+            loops: Animation.Infinite
+        }
+        
+        // Slight up and down swimming motion
+        SequentialAnimation on y {
+            loops: Animation.Infinite
+            NumberAnimation { from: startY; to: startY - 30; duration: 4000; easing.type: Easing.InOutSine }
+            NumberAnimation { from: startY - 30; to: startY; duration: 4000; easing.type: Easing.InOutSine }
+        }
+    }
+
+    // Deploying fishes into the ocean
+    OceanFish { fishColor: "#FF9800"; fishSize: 35; swimDuration: 25000; startY: 150; movingRight: true }
+    OceanFish { fishColor: "#00BCD4"; fishSize: 25; swimDuration: 30000; startY: 450; movingRight: false }
+    OceanFish { fishColor: "#E91E63"; fishSize: 45; swimDuration: 40000; startY: 250; movingRight: false }
+    OceanFish { fishColor: "#9C27B0"; fishSize: 20; swimDuration: 22000; startY: 550; movingRight: true }
+    OceanFish { fishColor: "#607D8B"; fishSize: 60; swimDuration: 55000; startY: 600; movingRight: true } // Large slow deep fish
+
+    // ==========================================
+    // 9. MNJNEF GLASSMORPHISM LOGIN UI
+    // ==========================================
+    Rectangle {
+        id: loginPanel
+        width: 480
+        height: 520
+        anchors.centerIn: parent
+        radius: 16
+        
+        // Glassmorphism effect: Semi-transparent dark blue
+        color: "#99000A1A"
+        border.color: "#30FFFFFF"
+        border.width: 1
+        
+        ColumnLayout {
+            anchors.fill: parent
+            anchors.margins: 40
+            spacing: 20
+
+            // Title Area
+            ColumnLayout {
+                Layout.fillWidth: true
+                spacing: 5
+                
+                Text {
+                    text: "Mnjnef"
+                    color: "#FFFFFF"
+                    font.pixelSize: 42
+                    font.bold: true
+                    font.family: "Segoe UI"
+                    font.letterSpacing: 2.0
+                    Layout.alignment: Qt.AlignHCenter
+                }
+                
+                Text {
+                    text: "Join the gaming worlds"
+                    color: "#A0B0C0"
+                    font.pixelSize: 14
+                    font.family: "Segoe UI"
+                    Layout.alignment: Qt.AlignHCenter
+                }
+            }
+
+            Item { Layout.preferredHeight: 10 } // Spacer
+
+            // Inputs Area
+            ColumnLayout {
+                Layout.fillWidth: true
+                spacing: 16
+
+                // Username
+                Rectangle {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 50
+                    radius: 8
+                    color: "#4000152A"
+                    border.color: usernameInput.activeFocus ? "#00E5FF" : "#40FFFFFF"
+                    border.width: usernameInput.activeFocus ? 2 : 1
+                    
+                    TextInput {
+                        id: usernameInput
+                        anchors.fill: parent
+                        anchors.margins: 15
+                        color: "#FFFFFF"
+                        font.pixelSize: 15
+                        font.family: "Segoe UI"
+                        verticalAlignment: TextInput.AlignVCenter
+                        
+                        Text {
+                            text: "Username"
+                            color: "#607D8B"
+                            font.pixelSize: 15
+                            font.family: "Segoe UI"
+                            visible: !usernameInput.text && !usernameInput.activeFocus
+                            anchors.verticalCenter: parent.verticalCenter
+                        }
+                    }
+                }
+
+                // Email
+                Rectangle {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 50
+                    radius: 8
+                    color: "#4000152A"
+                    border.color: emailInput.activeFocus ? "#00E5FF" : "#40FFFFFF"
+                    border.width: emailInput.activeFocus ? 2 : 1
+                    
+                    TextInput {
+                        id: emailInput
+                        anchors.fill: parent
+                        anchors.margins: 15
+                        color: "#FFFFFF"
+                        font.pixelSize: 15
+                        font.family: "Segoe UI"
+                        verticalAlignment: TextInput.AlignVCenter
+                        
+                        Text {
+                            text: "Email"
+                            color: "#607D8B"
+                            font.pixelSize: 15
+                            font.family: "Segoe UI"
+                            visible: !emailInput.text && !emailInput.activeFocus
+                            anchors.verticalCenter: parent.verticalCenter
+                        }
+                    }
+                }
+
+                // Password
+                Rectangle {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 50
+                    radius: 8
+                    color: "#4000152A"
+                    border.color: passInput.activeFocus ? "#00E5FF" : "#40FFFFFF"
+                    border.width: passInput.activeFocus ? 2 : 1
+                    
+                    TextInput {
+                        id: passInput
+                        anchors.fill: parent
+                        anchors.margins: 15
+                        color: "#FFFFFF"
+                        font.pixelSize: 15
+                        font.family: "Segoe UI"
+                        verticalAlignment: TextInput.AlignVCenter
+                        echoMode: TextInput.Password
+                        
+                        Text {
+                            text: "Password"
+                            color: "#607D8B"
+                            font.pixelSize: 15
+                            font.family: "Segoe UI"
+                            visible: !passInput.text && !passInput.activeFocus
+                            anchors.verticalCenter: parent.verticalCenter
+                        }
+                    }
+                }
+            }
+
+            // Login Button
+            Rectangle {
+                Layout.fillWidth: true
+                Layout.preferredHeight: 50
+                Layout.topMargin: 10
+                radius: 8
+                color: loginMouse.containsMouse ? "#0091EA" : "#0078D7"
+                
+                Behavior on color { ColorAnimation { duration: 200 } }
+
+                Text {
+                    anchors.centerIn: parent
+                    text: "LOGIN"
+                    color: "#FFFFFF"
+                    font.pixelSize: 15
+                    font.bold: true
+                    font.family: "Segoe UI"
+                    font.letterSpacing: 2.0
+                }
+
+                MouseArea {
+                    id: loginMouse
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: {
+                        console.log("Login Initiated...");
+                    }
+                }
+            }
+
+            Item { Layout.fillHeight: true } // Pushes links to the bottom
+
+            // Bottom Links (Support & Privacy)
+            RowLayout {
+                Layout.fillWidth: true
+                
+                // Mnjnef Support Link
+                Text {
+                    text: "Mnjnef Support"
+                    color: supportMouse.containsMouse ? "#FFFFFF" : "#90A4AE"
+                    font.pixelSize: 12
+                    font.family: "Segoe UI"
+                    
+                    Behavior on color { ColorAnimation { duration: 150 } }
+                    
+                    MouseArea {
+                        id: supportMouse
+                        anchors.fill: parent
+                        anchors.margins: -5
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                    }
+                }
+                
+                Item { Layout.fillWidth: true } // Spacer between links
+                
+                // Privacy Policy Link
+                Text {
+                    text: "Privacy Policy"
+                    color: privacyMouse.containsMouse ? "#FFFFFF" : "#90A4AE"
+                    font.pixelSize: 12
+                    font.family: "Segoe UI"
+                    
+                    Behavior on color { ColorAnimation { duration: 150 } }
+                    
+                    MouseArea {
+                        id: privacyMouse
+                        anchors.fill: parent
+                        anchors.margins: -5
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                    }
+                }
+            }
+        }
+    }
+}
