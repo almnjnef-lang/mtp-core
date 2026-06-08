@@ -1,1 +1,7 @@
-git commit -m "First Setup for Mnjnef"
+baseURL = 'https://mnjnef.com/'
+languageCode = 'en-us'
+title = 'Mnjnef'
+theme = 'PaperMod'
+
+[params]
+hideFooter = true
