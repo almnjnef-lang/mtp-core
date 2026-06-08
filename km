@@ -1,3 +1,8 @@
-git add hugo.toml
-git commit -m "Hide footer and update base URL"
-git push
+baseURL = 'https://mnjnef.com/'
+languageCode = 'en-us'
+title = 'Mnjnef'
+theme = 'PaperMod'
+
+[params]
+hideFooter = true
+description = 'Mnjnef - A comprehensive global news network. Delivering breaking news, international events, and in-depth coverage around the clock.'
