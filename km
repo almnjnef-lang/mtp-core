@@ -1,1 +1,1 @@
-echo "theme = 'PaperMod'" >> hugo.toml
+hugo new content/posts/first-news.md
