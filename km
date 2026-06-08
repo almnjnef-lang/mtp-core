@@ -1,3 +1,92 @@
-git add .
-git commit -m "Delete old short articles to force AI rewriting"
-git push
+import os
+import re
+import time
+from datetime import datetime
+from email.utils import parsedate_to_datetime
+import feedparser
+from newspaper import Article
+from google import genai
+
+# Setup Gemini AI Client (New 2026 Standard)
+API_KEY = os.environ.get("GEMINI_API_KEY")
+client = None
+if API_KEY:
+    try:
+        client = genai.Client(api_key=API_KEY)
+    except Exception as e:
+        print(f"Error initializing client: {e}")
+else:
+    print("Warning: GEMINI_API_KEY not found. Skipping AI rewrite.")
+
+# News source
+RSS_URL = "http://feeds.bbci.co.uk/news/world/rss.xml" 
+OUTPUT_DIR = "content/posts"
+
+if not os.path.exists(OUTPUT_DIR):
+    os.makedirs(OUTPUT_DIR)
+
+feed = feedparser.parse(RSS_URL)
+
+for entry in feed.entries:
+    title = entry.title
+    link = entry.link
+    
+    try:
+        pubDate = entry.published
+        dt = parsedate_to_datetime(pubDate)
+        hugo_date = dt.strftime("%Y-%m-%dT%H:%M:%S%z")
+    except:
+        hugo_date = datetime.now().astimezone().isoformat()
+
+    safe_title = re.sub(r'[^a-z0-9]+', '-', title.lower()).strip('-')
+    file_path = os.path.join(OUTPUT_DIR, f"{safe_title}.md")
+
+    if not os.path.exists(file_path):
+        try:
+            # 1. Scrape Full Original Text
+            article = Article(link)
+            article.download()
+            article.parse()
+            full_text = article.text
+            top_image = article.top_image
+            
+            if len(full_text) < 100:
+                full_text = entry.description
+
+            # 2. AI Journalist Rewrite (Using new google-genai package)
+            final_content = full_text
+            if client:
+                prompt = f"""
+                Act as a senior international journalist and expert news analyst. 
+                Rewrite the following news article to be unique, highly engaging, and authoritative in English. 
+                DO NOT copy-paste the original text. Create a catchy new headline, a strong opening paragraph, and well-structured body paragraphs.
+                
+                Original Article:
+                {full_text}
+                """
+                response = client.models.generate_content(
+                    model='gemini-1.5-flash',
+                    contents=prompt
+                )
+                final_content = response.text
+                time.sleep(2)
+
+            clean_title = title.replace('"', "'")
+            
+            # 3. Create the Hugo Post
+            content = f"---\n"
+            content += f"title: \"{clean_title}\"\n"
+            content += f"date: {hugo_date}\n"
+            content += f"draft: false\n"
+            if top_image:
+                content += f"cover:\n  image: \"{top_image}\"\n"
+            content += f"---\n\n"
+            content += f"{final_content}\n\n"
+            content += f"---\n*Original Source: [BBC News]({link})*\n"
+
+            with open(file_path, "w", encoding="utf-8") as f:
+                f.write(content)
+                
+            print(f"Successfully processed and rewritten: {title}")
+        except Exception as e:
+            print(f"Failed to process {link}: {e}")
