@@ -1,1 +1,3 @@
-git pull --rebase
+git add .
+git commit -m "Delete old short articles to force AI rewriting"
+git push
