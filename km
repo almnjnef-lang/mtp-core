@@ -1,3 +1,50 @@
-git add hugo.toml
-git commit -m "Set language to English and update global description"
-git push
+import urllib.request
+import xml.etree.ElementTree as ET
+import os
+import re
+from datetime import datetime
+from email.utils import parsedate_to_datetime
+
+# News source (BBC World News in English)
+RSS_URL = "http://feeds.bbci.co.uk/news/world/rss.xml" 
+OUTPUT_DIR = "content/posts"
+
+# Create posts directory if it does not exist
+if not os.path.exists(OUTPUT_DIR):
+    os.makedirs(OUTPUT_DIR)
+
+# Fetch news data
+req = urllib.request.Request(RSS_URL, headers={'User-Agent': 'Mozilla/5.0'})
+try:
+    xml_data = urllib.request.urlopen(req).read()
+    root = ET.fromstring(xml_data)
+
+    # Process the latest news and convert to articles
+    for item in root.findall('./channel/item'):
+        title = item.find('title').text
+        link = item.find('link').text
+        pubDate = item.find('pubDate').text
+        desc_elem = item.find('description')
+        description = desc_elem.text if desc_elem is not None else ""
+
+        # Create a safe file name
+        safe_title = re.sub(r'[^a-z0-9]+', '-', title.lower()).strip('-')
+        file_path = os.path.join(OUTPUT_DIR, f"{safe_title}.md")
+
+        # Check if article is new
+        if not os.path.exists(file_path):
+            try:
+                dt = parsedate_to_datetime(pubDate)
+                hugo_date = dt.strftime("%Y-%m-%dT%H:%M:%S%z")
+            except:
+                hugo_date = datetime.now().astimezone().isoformat()
+
+            clean_title = title.replace('"', "'")
+            
+            # Markdown content format
+            content = f"---\ntitle: \"{clean_title}\"\ndate: {hugo_date}\ndraft: false\n---\n\n{description}\n\n[Read the full article here]({link})\n"
+
+            with open(file_path, "w", encoding="utf-8") as f:
+                f.write(content)
+except Exception as e:
+    print("Error:", e)
