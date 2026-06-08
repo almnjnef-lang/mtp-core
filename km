@@ -1,7 +1,3 @@
-baseURL = 'https://mnjnef.com/'
-languageCode = 'en-us'
-title = 'Mnjnef'
-theme = 'PaperMod'
-
-[params]
-hideFooter = true
+git add hugo.toml
+git commit -m "Hide footer and update base URL"
+git push
