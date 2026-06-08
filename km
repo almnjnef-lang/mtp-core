@@ -50,7 +50,7 @@ for entry in feed.entries:
             if len(full_text) < 100:
                 full_text = entry.description
 
-            # 2. AI Journalist Rewrite (No copy-pasting)
+            # 2. AI Journalist Rewrite
             final_content = full_text
             if API_KEY:
                 prompt = f"""
