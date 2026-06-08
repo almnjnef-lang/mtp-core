@@ -1,1 +1,1 @@
-git submodule add https://github.com/adityatelange/hugo-PaperMod.git themes/PaperMod
+echo "theme = 'PaperMod'" >> hugo.toml
