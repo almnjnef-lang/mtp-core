@@ -1,1 +1,7 @@
-rm -rf /var/www/html/* && cp -r public/* /var/www/html/
+cd /root/mnjnef_site
+mkdir -p content/posts
+cp -r /root/content/posts/* content/posts/ 2>/dev/null
+hugo
+rm -rf /var/www/html/*
+cp -r public/* /var/www/html/
+chmod -R 755 /var/www/html/
