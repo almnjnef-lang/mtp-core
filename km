@@ -1,1 +1,1 @@
-python3 /root/mnjnef_factory.py
+rm /root/mnjnef_site/mnjnef_mega_registry.db
