@@ -1,6 +1,1 @@
-hash -r
-cd /root/mnjnef_site
-hugo
-rm -rf /var/www/html/*
-cp -r public/* /var/www/html/
-chmod -R 755 /var/www/html/
+nano /root/mnjnef_factory.py
