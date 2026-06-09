@@ -1,1 +1,21 @@
-systemctl enable nginx
+# 1. حذف جميع الأخبار القديمة والسياسية
+rm -rf /root/mnjnef_site/content/posts/*
+
+# 2. إعداد ملف الموقع لإزالة الحقوق وتغيير الاسم إلى Mnjnef
+cat <<EOF > /root/mnjnef_site/hugo.toml
+baseURL = 'https://mnjnef.com/'
+languageCode = 'en-us'
+title = 'Mnjnef - Global Discoveries'
+theme = 'PaperMod'
+
+[params]
+hideHugoCredits = true
+defaultTheme = "auto"
+EOF
+
+# 3. بناء الموقع من جديد ورفعه للواجهة
+cd /root/mnjnef_site
+hugo --minify
+rm -rf /var/www/html/*
+cp -r public/* /var/www/html/
+chmod -R 755 /var/www/html/
