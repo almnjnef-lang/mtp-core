@@ -1,1 +1,688 @@
-nano /root/mnjnef_factory.py
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+==============================================================================
+Mnjnef Empire: Advanced Global Automated News Factory (V3.0)
+==============================================================================
+Description:
+    A fully autonomous, industrial-grade news aggregation, AI-rewriting, 
+    and publishing engine. Designed for the Mnjnef network.
+    
+Features:
+    - 100+ Global RSS Feeds categorized into 15+ niches.
+    - Persistent SQLite Database to track published articles (no duplicates).
+    - Advanced Mistral AI Integration with exponential backoff & retry logic.
+    - Robust Web Scraping (newspaper3k) with image extraction and validation.
+    - Automated Hugo Static Site Generation and Nginx Deployment.
+    - Comprehensive Logging, Health Checks, and Graceful Shutdown handling.
+==============================================================================
+"""
+
+import os
+import sys
+import time
+import random
+import requests
+import re
+import sqlite3
+import logging
+import signal
+from datetime import datetime
+from typing import Dict, List, Optional, Tuple, Any
+import feedparser
+from newspaper import Article, ArticleException
+
+# ==============================================================================
+# ⚙️ SYSTEM CONFIGURATION
+# ==============================================================================
+class MnjnefConfig:
+    """Central configuration hub for the Mnjnef automated engine."""
+    
+    # --- API Credentials ---
+    # MUST UPDATE THIS BEFORE RUNNING
+    API_KEY: str = "ضع_مفتاحك_السري_هنا"
+    API_URL: str = "https://api.mistral.ai/v1/chat/completions"
+    MODEL: str = "open-mistral-nemo"
+    
+    # --- Directory Paths ---
+    BASE_DIR: str = "/root/mnjnef_site"
+    POSTS_DIR: str = os.path.join(BASE_DIR, "content/posts")
+    HTML_DIR: str = "/var/www/html/"
+    DB_PATH: str = os.path.join(BASE_DIR, "mnjnef_registry.db")
+    LOG_FILE: str = os.path.join(BASE_DIR, "mnjnef_engine.log")
+    
+    # --- Timing & Delays (Seconds) ---
+    MIN_WAIT_SECONDS: int = 120
+    MAX_WAIT_SECONDS: int = 300
+    MAX_RETRIES: int = 4
+    BASE_RETRY_DELAY: int = 5
+    
+    # --- Content Constraints ---
+    MIN_ARTICLE_LENGTH: int = 150
+    MAX_AI_TOKENS: int = 2500
+    AI_TEMPERATURE: float = 0.75
+    
+    # --- System Settings ---
+    ENABLE_IMAGE_EXTRACTION: bool = True
+    AUTO_DEPLOY: bool = True
+
+# ==============================================================================
+# 📝 LOGGING SETUP
+# ==============================================================================
+def setup_logger() -> logging.Logger:
+    """Configures industrial-grade logging to both console and file."""
+    logger = logging.getLogger("MnjnefEngine")
+    logger.setLevel(logging.DEBUG)
+    
+    formatter = logging.Formatter(
+        fmt="%(asctime)s | %(levelname)-8s | %(module)-12s | %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S"
+    )
+    
+    # Console Handler
+    ch = logging.StreamHandler(sys.stdout)
+    ch.setLevel(logging.INFO)
+    ch.setFormatter(formatter)
+    
+    # File Handler
+    try:
+        fh = logging.FileHandler(MnjnefConfig.LOG_FILE, encoding='utf-8')
+        fh.setLevel(logging.DEBUG)
+        fh.setFormatter(formatter)
+        logger.addHandler(fh)
+    except Exception as e:
+        print(f"Warning: Could not set up file logger: {e}")
+        
+    logger.addHandler(ch)
+    return logger
+
+logger = setup_logger()
+
+# ==============================================================================
+# 💾 DATABASE MANAGER (STATE PERSISTENCE)
+# ==============================================================================
+class DatabaseManager:
+    """Manages SQLite database to prevent duplicate article publishing."""
+    
+    def __init__(self, db_path: str):
+        self.db_path = db_path
+        self._init_db()
+        
+    def _get_connection(self) -> sqlite3.Connection:
+        """Establishes a connection to the SQLite database."""
+        return sqlite3.connect(self.db_path)
+        
+    def _init_db(self) -> None:
+        """Initializes the database schema if it doesn't exist."""
+        try:
+            with self._get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS published_articles (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        original_url TEXT UNIQUE NOT NULL,
+                        title TEXT NOT NULL,
+                        category TEXT NOT NULL,
+                        published_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    )
+                """)
+                cursor.execute("""
+                    CREATE INDEX IF NOT EXISTS idx_url ON published_articles(original_url)
+                """)
+                conn.commit()
+            logger.debug("Database initialized successfully.")
+        except sqlite3.Error as e:
+            logger.error(f"Database initialization failed: {e}")
+            sys.exit(1)
+
+    def is_processed(self, url: str) -> bool:
+        """Checks if a URL has already been processed by the engine."""
+        try:
+            with self._get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute("SELECT 1 FROM published_articles WHERE original_url = ?", (url,))
+                return cursor.fetchone() is not None
+        except sqlite3.Error as e:
+            logger.error(f"Error checking processed status: {e}")
+            return False
+
+    def mark_processed(self, url: str, title: str, category: str) -> bool:
+        """Marks an article as processed in the database."""
+        try:
+            with self._get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute(
+                    "INSERT INTO published_articles (original_url, title, category) VALUES (?, ?, ?)",
+                    (url, title, category)
+                )
+                conn.commit()
+            return True
+        except sqlite3.IntegrityError:
+            logger.warning(f"URL already marked as processed: {url}")
+            return False
+        except sqlite3.Error as e:
+            logger.error(f"Error marking article as processed: {e}")
+            return False
+
+# ==============================================================================
+# 🌐 GLOBAL RSS DATABASE (100+ SOURCES)
+# ==============================================================================
+class FeedDatabase:
+    """Contains 100+ elite global news sources categorized perfectly."""
+    
+    SOURCES: Dict[str, List[str]] = {
+        "World_News": [
+            "http://feeds.bbci.co.uk/news/world/rss.xml",
+            "http://rss.cnn.com/rss/edition_world.rss",
+            "https://rss.nytimes.com/services/xml/rss/nyt/World.xml",
+            "https://www.aljazeera.com/xml/rss/all.xml",
+            "http://feeds.reuters.com/Reuters/worldNews",
+            "https://www.theguardian.com/world/rss",
+            "https://www.telegraph.co.uk/world-news/rss.xml",
+            "https://www.independent.co.uk/news/world/rss",
+            "https://www.scmp.com/rss/91/feed",
+            "https://feeds.npr.org/1004/rss.xml",
+            "https://www.dw.com/en/top-stories/s-9097?maca=en-rss-en-all-1573-rdf",
+            "https://www.france24.com/en/rss",
+            "https://news.yahoo.com/rss/world",
+            "https://www.rt.com/rss/news/",
+            "https://www.cbc.ca/cmlink/rss-world"
+        ],
+        "Technology": [
+            "https://techcrunch.com/feed/",
+            "https://www.theverge.com/rss/index.xml",
+            "https://www.wired.com/feed/rss",
+            "http://feeds.arstechnica.com/arstechnica/index",
+            "https://www.engadget.com/rss.xml",
+            "https://gizmodo.com/rss",
+            "https://thenextweb.com/feed",
+            "https://www.zdnet.com/news/rss.xml",
+            "https://www.cnet.com/rss/news/",
+            "https://venturebeat.com/feed/",
+            "https://mashable.com/feed/",
+            "https://www.techradar.com/rss",
+            "https://readwrite.com/feed/",
+            "https://siliconangle.com/feed/",
+            "https://www.digitaltrends.com/feed/"
+        ],
+        "Business_Finance": [
+            "https://search.cnbc.com/rs/search/combinedcms/view.xml?profile=12000000&id=10000115",
+            "https://feeds.a.dj.com/rss/RSSMarketsMain.xml",
+            "https://www.economist.com/finance-and-economics/rss.xml",
+            "http://feeds.marketwatch.com/marketwatch/topstories/",
+            "https://www.ft.com/?format=rss",
+            "https://fortune.com/feed/",
+            "https://www.forbes.com/business/feed/",
+            "https://www.investopedia.com/feedbuilder/feed/getfeed?feedName=rss_headline",
+            "https://www.ibtimes.com/business/rss",
+            "https://www.entrepreneur.com/latest.rss",
+            "https://www.bloomberg.com/feed/podcast/surveillance.xml",
+            "https://www.businessinsider.com/rss",
+            "https://feeds.bloomberg.com/markets/news.rss",
+            "https://money.cnn.com/services/rss/news/news.rss",
+            "https://hbr.org/rss/articles"
+        ],
+        "Science": [
+            "https://rss.nytimes.com/services/xml/rss/nyt/Science.xml",
+            "https://www.sciencedaily.com/rss/all.xml",
+            "https://www.nature.com/nature.rss",
+            "http://rss.sciam.com/ScientificAmerican-Global",
+            "https://www.popsci.com/feed/",
+            "https://www.space.com/home/feed/site.xml",
+            "https://phys.org/rss-feed/",
+            "https://www.discovermagazine.com/feed",
+            "https://www.newscientist.com/feed/home/",
+            "https://www.smithsonianmag.com/rss/science-nature/",
+            "https://www.sciencemag.org/rss/news_current.xml",
+            "https://www.livescience.com/home/feed/site.xml",
+            "https://www.quantamagazine.org/feed/",
+            "https://earthsky.org/feed/",
+            "https://cosmosmagazine.com/feed/"
+        ],
+        "Health_Medicine": [
+            "https://feeds.aarp.org/aarpe/health",
+            "https://www.webmd.com/rss/public/rss-news",
+            "https://medlineplus.gov/feeds/news_en.xml",
+            "https://www.health.com/feed",
+            "https://www.mayoclinic.org/rss/all-news",
+            "https://www.nih.gov/news-events/news-releases/rss.xml",
+            "https://tools.cdc.gov/api/v2/resources/media/316308.rss",
+            "https://www.who.int/rss/feeds/news/en",
+            "https://www.medicalnewstoday.com/feed",
+            "https://www.psychologytoday.com/us/front/feed",
+            "https://www.statnews.com/feed/",
+            "https://khn.org/feed/",
+            "https://www.healthline.com/rss",
+            "https://www.menshealth.com/rss",
+            "https://www.womenshealthmag.com/rss"
+        ],
+        "Gaming": [
+            "https://www.polygon.com/rss/index.xml",
+            "https://www.ign.com/rss/articles/feed",
+            "https://www.gamespot.com/feeds/mashup/",
+            "https://kotaku.com/rss",
+            "https://www.pcgamer.com/rss/",
+            "https://www.eurogamer.net/?format=rss",
+            "https://www.destructoid.com/feed/",
+            "https://www.rockpapershotgun.com/feed",
+            "https://www.nintendolife.com/feeds/latest",
+            "https://www.pushsquare.com/feeds/latest",
+            "https://www.gematsu.com/feed",
+            "https://nichegamer.com/feed/",
+            "https://www.gamesradar.com/feed/article/",
+            "https://www.gameinformer.com/news.xml",
+            "https://massivelyop.com/feed/"
+        ],
+        "Entertainment_Arts": [
+            "http://rss.cnn.com/rss/edition_entertainment.rss",
+            "https://variety.com/feed/",
+            "https://www.hollywoodreporter.com/feed/",
+            "https://deadline.com/feed/",
+            "https://ew.com/feed/",
+            "https://www.rollingstone.com/feed/",
+            "https://pitchfork.com/rss/news/",
+            "https://www.eonline.com/syndication/feeds/rssfeeds/topstories.xml",
+            "https://www.indiewire.com/feed/",
+            "https://www.vulture.com/feed.xml"
+        ],
+        "Sports": [
+            "http://rss.cnn.com/rss/edition_sport.rss",
+            "https://www.espn.com/espn/rss/news",
+            "https://sports.yahoo.com/rss/",
+            "https://www.cbssports.com/rss/headlines/",
+            "https://www.foxsports.com/rss-feeds",
+            "https://www.skysports.com/rss/12040",
+            "https://www.nbcsports.com/rss",
+            "https://bleacherreport.com/articles/feed",
+            "https://talksport.com/feed/",
+            "https://deadspin.com/rss"
+        ],
+        "Automotive": [
+            "https://www.autoblog.com/rss.xml",
+            "https://www.motortrend.com/feed/",
+            "https://www.caranddriver.com/rss",
+            "https://www.roadandtrack.com/rss",
+            "https://jalopnik.com/rss",
+            "https://www.topgear.com/rss.xml",
+            "https://www.motor1.com/rss/",
+            "https://insideevs.com/rss/",
+            "https://www.carthrottle.com/rss",
+            "https://www.thedrive.com/feed/"
+        ],
+        "Politics": [
+            "https://www.politico.com/rss/politics08.xml",
+            "https://thehill.com/feed/",
+            "https://www.rollcall.com/feed/",
+            "https://www.washingtonexaminer.com/feed/",
+            "https://www.nationalreview.com/feed/",
+            "https://www.huffpost.com/section/politics/feed",
+            "https://www.salon.com/feed/",
+            "https://www.motherjones.com/feed/",
+            "https://newrepublic.com/rss.xml",
+            "https://theintercept.com/feed/?lang=en"
+        ]
+    }
+
+    @classmethod
+    def get_random_source(cls) -> Tuple[str, str]:
+        """Returns a random category and feed URL from the database."""
+        category = random.choice(list(cls.SOURCES.keys()))
+        feed_url = random.choice(cls.SOURCES[category])
+        return category, feed_url
+
+# ==============================================================================
+# 🧠 MISTRAL AI ENGINE (TEXT REWRITING)
+# ==============================================================================
+class AIEngine:
+    """Handles communication with Mistral AI with robust error handling."""
+    
+    def __init__(self, api_key: str):
+        self.api_key = api_key
+        self.headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {self.api_key}"
+        }
+
+    def _craft_prompt(self, category: str, text: str) -> str:
+        """Constructs a strict, highly professional journalism prompt."""
+        return (
+            f"Act as an elite, Pulitzer-winning Editor-in-Chief for the premium global news network 'Mnjnef'. "
+            f"Your objective is to rewrite the following {category.replace('_', ' ')} news report into a completely original, "
+            f"highly engaging, and comprehensive article in fluent English.\n\n"
+            "STRICT MANDATORY RULES:\n"
+            "1. Output exactly one compelling headline at the very top, prefixed with 'TITLE: '.\n"
+            "2. Under the title, output the full article body.\n"
+            "3. Do NOT copy original sentences. Rephrase everything using a sophisticated journalistic tone.\n"
+            "4. Organize the text logically with professional Markdown subheadings (##).\n"
+            "5. NO introductory conversational filler (e.g., 'Here is the article'). NO concluding remarks.\n"
+            "6. Output ONLY the title line and the article text.\n\n"
+            f"--- ORIGINAL TEXT ---\n{text}\n--- END ORIGINAL TEXT ---"
+        )
+
+    def rewrite_content(self, category: str, text: str) -> Optional[Dict[str, str]]:
+        """Sends data to AI and parses the headline and body."""
+        prompt = self._craft_prompt(category, text)
+        payload = {
+            "model": MnjnefConfig.MODEL,
+            "messages": [{"role": "user", "content": prompt}],
+            "temperature": MnjnefConfig.AI_TEMPERATURE,
+            "max_tokens": MnjnefConfig.MAX_AI_TOKENS
+        }
+
+        for attempt in range(MnjnefConfig.MAX_RETRIES):
+            try:
+                logger.debug(f"AI Request Attempt {attempt + 1}/{MnjnefConfig.MAX_RETRIES}")
+                response = requests.post(MnjnefConfig.API_URL, headers=self.headers, json=payload, timeout=90)
+                
+                if response.status_code == 200:
+                    raw_content = response.json()['choices'][0]['message']['content'].strip()
+                    return self._parse_ai_response(raw_content)
+                elif response.status_code == 429:
+                    logger.warning("Rate limit exceeded (429). Backing off heavily.")
+                    time.sleep(MnjnefConfig.BASE_RETRY_DELAY * (attempt + 2) * 2)
+                else:
+                    logger.error(f"AI API Error {response.status_code}: {response.text}")
+                    
+            except requests.exceptions.RequestException as e:
+                logger.error(f"Network error communicating with AI: {e}")
+            
+            if attempt < MnjnefConfig.MAX_RETRIES - 1:
+                sleep_time = MnjnefConfig.BASE_RETRY_DELAY * (2 ** attempt)
+                logger.info(f"Retrying AI request in {sleep_time} seconds...")
+                time.sleep(sleep_time)
+                
+        logger.error("AI Generation completely failed after all retries.")
+        return None
+
+    def _parse_ai_response(self, raw_text: str) -> Dict[str, str]:
+        """Separates the AI-generated TITLE from the BODY text."""
+        lines = raw_text.split('\n')
+        title = "Mnjnef Exclusive Report"
+        body_lines = []
+        
+        for i, line in enumerate(lines):
+            if line.upper().startswith("TITLE:"):
+                title = line[6:].replace('"', '').strip()
+            elif i == 0 and len(line) < 150 and not line.startswith('#'):
+                title = line.replace('"', '').strip()
+            else:
+                body_lines.append(line)
+                
+        body = '\n'.join(body_lines).strip()
+        
+        # Fallback cleanup if title extraction missed
+        if title.startswith("#"):
+            title = title.replace("#", "").strip()
+            
+        return {"title": title, "body": body}
+
+# ==============================================================================
+# 🕷️ CONTENT SCRAPER (DATA EXTRACTION)
+# ==============================================================================
+class ContentScraper:
+    """Advanced crawler to extract raw text and hero images from URLs."""
+    
+    @staticmethod
+    def slugify(text: str) -> str:
+        """Converts text into a safe URL slug."""
+        text = text.lower()
+        text = re.sub(r'[^a-z0-9]+', '-', text).strip('-')
+        return text if text else f"article-{int(time.time())}"
+
+    @staticmethod
+    def extract_article(url: str, fallback_summary: str) -> Tuple[str, str]:
+        """Uses newspaper3k to extract the main content and top image."""
+        full_text = ""
+        image_url = ""
+        
+        try:
+            logger.debug(f"Attempting to scrape content from: {url}")
+            article = Article(url, keep_article_html=False, browser_user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64)")
+            article.download()
+            article.parse()
+            
+            extracted_text = article.text.strip()
+            if len(extracted_text) > MnjnefConfig.MIN_ARTICLE_LENGTH:
+                full_text = extracted_text
+            else:
+                logger.warning("Extracted text too short, falling back to RSS summary.")
+                full_text = fallback_summary
+                
+            if MnjnefConfig.ENABLE_IMAGE_EXTRACTION and article.top_image:
+                image_url = article.top_image
+                
+        except ArticleException as e:
+            logger.error(f"Article Download/Parse Error: {e}")
+            full_text = fallback_summary
+        except Exception as e:
+            logger.error(f"Unexpected Scraping Error: {e}")
+            full_text = fallback_summary
+            
+        # Clean fallback summary if it contains HTML
+        if full_text == fallback_summary:
+            full_text = re.sub(r'<[^>]+>', '', full_text)
+            
+        return full_text, image_url
+
+# ==============================================================================
+# 🏗️ HUGO & NGINX AUTOMATION (DEPLOYMENT)
+# ==============================================================================
+class HugoDeployer:
+    """Handles Markdown creation, Hugo building, and Nginx synchronization."""
+    
+    def __init__(self):
+        if not os.path.exists(MnjnefConfig.POSTS_DIR):
+            try:
+                os.makedirs(MnjnefConfig.POSTS_DIR)
+                logger.info(f"Created posts directory: {MnjnefConfig.POSTS_DIR}")
+            except OSError as e:
+                logger.critical(f"Cannot create directory {MnjnefConfig.POSTS_DIR}: {e}")
+                sys.exit(1)
+
+    def write_markdown(self, category: str, title: str, body: str, image_url: str) -> bool:
+        """Constructs the Hugo-compatible Markdown file with YAML Frontmatter."""
+        slug = ContentScraper.slugify(title)
+        filepath = os.path.join(MnjnefConfig.POSTS_DIR, f"{slug}.md")
+        
+        if os.path.exists(filepath):
+            # Append timestamp to avoid overwriting different articles with same slug
+            filepath = os.path.join(MnjnefConfig.POSTS_DIR, f"{slug}-{int(time.time())}.md")
+
+        hugo_date = datetime.now().astimezone().isoformat()
+        safe_title = title.replace('"', "'")
+        clean_cat = category.replace('_', ' ')
+        
+        frontmatter = [
+            "---",
+            f"title: \"{safe_title}\"",
+            f"date: {hugo_date}",
+            "draft: false",
+            f"author: \"Mnjnef Engine\"",
+            f"categories: [\"{clean_cat}\"]",
+            f"tags: [\"Mnjnef\", \"Global News\", \"{clean_cat}\"]"
+        ]
+        
+        if image_url:
+            frontmatter.extend([
+                "cover:",
+                f"  image: \"{image_url}\"",
+                "  alt: \"Mnjnef Cover Image\"",
+                "  relative: false"
+            ])
+            
+        frontmatter.extend(["---", "", body])
+        
+        try:
+            with open(filepath, "w", encoding="utf-8") as f:
+                f.write("\n".join(frontmatter))
+            logger.info(f"Markdown successfully written: {filepath}")
+            return True
+        except IOError as e:
+            logger.error(f"Failed to write Markdown file: {e}")
+            return False
+
+    def build_and_deploy(self) -> None:
+        """Executes system commands to compile Hugo and move to Nginx."""
+        if not MnjnefConfig.AUTO_DEPLOY:
+            logger.info("Auto-deploy is disabled. Skipping build.")
+            return
+            
+        logger.info("Initiating Hugo Site Build & Nginx Deployment...")
+        try:
+            # Command chain: cd -> build -> clean nginx -> copy -> permissions
+            cmd = (
+                f"cd {MnjnefConfig.BASE_DIR} && "
+                f"hugo --minify > /dev/null 2>&1 && "
+                f"rm -rf {MnjnefConfig.HTML_DIR}* && "
+                f"cp -r public/* {MnjnefConfig.HTML_DIR} && "
+                f"chmod -R 755 {MnjnefConfig.HTML_DIR}"
+            )
+            exit_code = os.system(cmd)
+            
+            if exit_code == 0:
+                logger.info("✅ Mnjnef Empire successfully deployed to live server.")
+            else:
+                logger.error(f"Deployment failed with system exit code: {exit_code}")
+        except Exception as e:
+            logger.error(f"Critical error during deployment: {e}")
+
+# ==============================================================================
+# 🏭 THE CENTRAL FACTORY ENGINE
+# ==============================================================================
+class MnjnefEngine:
+    """The master controller coordinating Scraper, AI, DB, and Deployment."""
+    
+    def __init__(self):
+        self._print_banner()
+        self.db = DatabaseManager(MnjnefConfig.DB_PATH)
+        self.scraper = ContentScraper()
+        self.ai = AIEngine(MnjnefConfig.API_KEY)
+        self.hugo = HugoDeployer()
+        self.is_running = True
+        
+        # Setup graceful shutdown
+        signal.signal(signal.SIGINT, self.shutdown_handler)
+        signal.signal(signal.SIGTERM, self.shutdown_handler)
+
+    def _print_banner(self):
+        """Displays the ASCII branding for the console."""
+        banner = """
+        ███╗   ███╗███╗   ██╗██╗███╗   ██╗███████╗███████╗
+        ████╗ ████║████╗  ██║██║████╗  ██║██╔════╝██╔════╝
+        ██╔████╔██║██╔██╗ ██║██║██╔██╗ ██║█████╗  █████╗  
+        ██║╚██╔╝██║██║╚██╗██║██║██║╚██╗██║██╔══╝  ██╔══╝  
+        ██║ ╚═╝ ██║██║ ╚████║██║██║ ╚████║███████╗██║     
+        ╚═╝     ╚═╝╚═╝  ╚═══╝╚═╝╚═╝  ╚═══╝╚══════╝╚═╝     
+        ==================================================
+           ADVANCED GLOBAL AUTOMATED NEWS FACTORY V3.0
+           INITIALIZING SYSTEMS...
+        ==================================================
+        """
+        print(banner)
+
+    def shutdown_handler(self, signum, frame):
+        """Ensures safe termination of the loop on Ctrl+C."""
+        logger.info("\n🛑 Shutdown signal received. Powering down Mnjnef Engine safely...")
+        self.is_running = False
+
+    def check_system_health(self) -> bool:
+        """Verifies environment variables and critical paths."""
+        if MnjnefConfig.API_KEY == "ضع_مفتاحك_السري_هنا" or not MnjnefConfig.API_KEY:
+            logger.critical("MISTRAL API KEY IS MISSING. Engine halting.")
+            return False
+        if not os.path.exists(MnjnefConfig.BASE_DIR):
+            logger.critical(f"Hugo base directory not found: {MnjnefConfig.BASE_DIR}")
+            return False
+        return True
+
+    def process_single_cycle(self):
+        """Executes one complete lifecycle of fetching, generating, and publishing."""
+        category, feed_url = FeedDatabase.get_random_source()
+        logger.info(f"Targeting Matrix: [{category}] -> {feed_url}")
+        
+        try:
+            feed = feedparser.parse(feed_url)
+            if not feed.entries:
+                logger.warning("Feed returned zero entries. Source might be down.")
+                return
+
+            # Grab the latest article from the feed
+            latest_entry = feed.entries[0]
+            original_title = latest_entry.title
+            link = latest_entry.link
+            description = getattr(latest_entry, 'description', '')
+            
+            # Check Database to prevent duplicates
+            if self.db.is_processed(link):
+                logger.info(f"Article already exists in Mnjnef Database: {original_title[:50]}...")
+                return
+
+            logger.info(f"Extracting Raw Data: {original_title}")
+            full_text, image_url = self.scraper.extract_article(link, description)
+            
+            if len(full_text) < 50:
+                logger.warning("Raw data insufficient for AI generation. Aborting cycle.")
+                return
+
+            logger.info("Transmitting to Mistral AI Core for rewriting...")
+            ai_result = self.ai.rewrite_content(category, full_text)
+            
+            if not ai_result:
+                logger.error("AI Core returned empty response.")
+                return
+
+            final_title = ai_result['title']
+            final_body = ai_result['body']
+            
+            logger.info(f"AI Generation Complete. New Title: {final_title}")
+            
+            # Write to disk
+            saved = self.hugo.write_markdown(
+                category=category,
+                title=final_title,
+                body=final_body,
+                image_url=image_url
+            )
+            
+            if saved:
+                # Update Database
+                self.db.mark_processed(link, final_title, category)
+                # Deploy
+                self.hugo.build_and_deploy()
+
+        except Exception as e:
+            logger.error(f"Critical anomaly during processing cycle: {e}")
+
+    def run_forever(self):
+        """The infinite loop keeping the Mnjnef Empire alive."""
+        if not self.check_system_health():
+            sys.exit(1)
+            
+        logger.info("Mnjnef Engine is online and entering autonomous mode.")
+        
+        while self.is_running:
+            self.process_single_cycle()
+            
+            if not self.is_running:
+                break
+                
+            # Tactical Standby
+            sleep_duration = random.randint(MnjnefConfig.MIN_WAIT_SECONDS, MnjnefConfig.MAX_WAIT_SECONDS)
+            logger.info(f"Tactical Standby: Engine cooling down for {sleep_duration} seconds...\n")
+            
+            # Sleep in chunks to allow immediate response to Ctrl+C
+            for _ in range(sleep_duration):
+                if not self.is_running:
+                    break
+                time.sleep(1)
+
+# ==============================================================================
+# 🔥 ENTRY POINT
+# ==============================================================================
+if __name__ == "__main__":
+    try:
+        engine = MnjnefEngine()
+        engine.run_forever()
+    except Exception as fatal_e:
+        print(f"FATAL SYSTEM CRASH: {fatal_e}")
+        sys.exit(1)
