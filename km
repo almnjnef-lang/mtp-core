@@ -1,3 +1,4 @@
+hash -r
 cd /root/mnjnef_site
 hugo
 rm -rf /var/www/html/*
