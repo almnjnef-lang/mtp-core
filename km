@@ -1,1 +1,1 @@
-python3 mnjnef_factory.py
+apt install hugo nginx -y
