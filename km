@@ -1,1 +1,1 @@
-hugo new site mnjnef_site
+cd mnjnef_site && git clone https://github.com/adityatelange/hugo-PaperMod themes/PaperMod --depth=1
