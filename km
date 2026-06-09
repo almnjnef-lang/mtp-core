@@ -1,1 +1,256 @@
-tail -n 20 /root/mnjnef_factory.log
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+=========================================================================================
+Mnjnef Autonomous Enterprise Engine V15.2 - Critical Syntax Fix
+=========================================================================================
+"""
+
+import os
+import sys
+import time
+import random
+import requests
+import re
+import sqlite3
+import logging
+import signal
+import urllib.parse
+from datetime import datetime
+from typing import Dict, Optional, Tuple
+import feedparser
+from newspaper import Article
+from bs4 import BeautifulSoup
+
+try:
+    from mnjnef_feeds import MNJNEF_SOURCES
+except ImportError:
+    print("CRITICAL ERROR: mnjnef_feeds.py not found.")
+    sys.exit(1)
+
+class MnjnefConfig:
+    API_KEY: str = "ضع_مفتاحك_السري_هنا"
+    API_URL: str = "https://api.mistral.ai/v1/chat/completions"
+    MODEL: str = "open-mistral-nemo"
+    AI_TEMPERATURE: float = 0.20  
+    MAX_AI_TOKENS: int = 4000
+    BASE_DIR: str = "/root/mnjnef_site"
+    POSTS_DIR: str = os.path.join(BASE_DIR, "content/posts")
+    IMG_DIR: str = os.path.join(BASE_DIR, "static/images")
+    HTML_DIR: str = "/var/www/html/"
+    DB_PATH: str = os.path.join(BASE_DIR, "mnjnef_mega_registry.db")
+    MIN_WAIT_SECONDS: int = 120
+    MAX_WAIT_SECONDS: int = 300
+    MAX_RETRIES: int = 4
+    REQUEST_TIMEOUT: int = 45
+
+def setup_logger():
+    logger = logging.getLogger("MnjnefEngine")
+    logger.setLevel(logging.INFO)
+    if logger.hasHandlers(): logger.handlers.clear()
+    ch = logging.StreamHandler(sys.stdout)
+    ch.setFormatter(logging.Formatter("%(asctime)s | %(levelname)s | %(message)s", "%Y-%m-%d %H:%M:%S"))
+    logger.addHandler(ch)
+    return logger
+
+logger = setup_logger()
+
+class DatabaseManager:
+    def __init__(self, db_path: str):
+        self.db_path = db_path
+        self._init_db()
+    def _get_connection(self): return sqlite3.connect(self.db_path, timeout=30)
+    def _init_db(self):
+        try:
+            with self._get_connection() as conn:
+                conn.cursor().execute("""
+                    CREATE TABLE IF NOT EXISTS pure_articles (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT, original_url TEXT UNIQUE NOT NULL,
+                        published_title TEXT NOT NULL, category TEXT NOT NULL, published_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    )
+                """)
+                conn.commit()
+        except sqlite3.Error as e: logger.error(f"DB Init Error: {e}")
+    def is_processed(self, url: str) -> bool:
+        try:
+            with self._get_connection() as conn:
+                return conn.cursor().execute("SELECT 1 FROM pure_articles WHERE original_url = ?", (url,)).fetchone() is not None
+        except sqlite3.Error: return False
+    def save_record(self, url: str, title: str, category: str):
+        try:
+            with self._get_connection() as conn:
+                conn.cursor().execute("INSERT INTO pure_articles (original_url, published_title, category) VALUES (?, ?, ?)", (url, title, category))
+                conn.commit()
+        except Exception: pass
+
+class ImageEngine:
+    @staticmethod
+    def download_image(ai_image_prompt: str, timestamp_id: int) -> str:
+        os.makedirs(MnjnefConfig.IMG_DIR, exist_ok=True)
+        img_name = f"cover_{timestamp_id}.jpg"
+        img_path = os.path.join(MnjnefConfig.IMG_DIR, img_name)
+        
+        clean_prompt = ai_image_prompt.strip().replace('\n', ' ')
+        if not clean_prompt: clean_prompt = "Abstract highly professional modern technology background"
+        
+        logger.info(f"🎨 Generating image based on prompt: {clean_prompt[:40]}...")
+        encoded_prompt = urllib.parse.quote(clean_prompt)
+        url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=1200&height=800&nologo=true&seed={random.randint(1, 9999999)}"
+
+        try:
+            resp = requests.get(url, timeout=MnjnefConfig.REQUEST_TIMEOUT)
+            if resp.status_code == 200 and len(resp.content) > 10000:
+                with open(img_path, 'wb') as f: f.write(resp.content)
+                return f"/images/{img_name}"
+        except Exception: pass
+        
+        try:
+            resp = requests.get(f"https://picsum.photos/seed/{timestamp_id}/1200/800", timeout=30)
+            if resp.status_code == 200:
+                with open(img_path, 'wb') as f: f.write(resp.content)
+                return f"/images/{img_name}"
+        except Exception: pass
+        return ""
+
+class MistralAIEngine:
+    def __init__(self, api_key: str):
+        self.headers = {"Content-Type": "application/json", "Authorization": f"Bearer {api_key}"}
+
+    def process_article(self, text: str) -> Optional[Dict[str, str]]:
+        prompt = (
+            "أنت صحفي استقصائي في منصة 'Mnjnef'. أعد صياغة هذا النص باللغة العربية.\n"
+            "قواعد: لا سياسة، لا تخترع معلومات غير موجودة، كن دقيقاً جداً.\n\n"
+            "يجب أن يكون ردك محصوراً فقط داخل هذه الوسوم البرمجية بدقة متناهية:\n"
+            "<TITLE>\nاكتب العنوان هنا\n</TITLE>\n\n"
+            "<IMAGE_PROMPT>\nWrite a realistic English image prompt here\n</IMAGE_PROMPT>\n\n"
+            "<CONTENT>\nاكتب المقال العربي هنا مع عناوين فرعية\n</CONTENT>"
+        )
+        payload = {"model": MnjnefConfig.MODEL, "messages": [{"role": "system", "content": prompt}, {"role": "user", "content": text}], "temperature": MnjnefConfig.AI_TEMPERATURE, "max_tokens": MnjnefConfig.MAX_AI_TOKENS}
+        
+        for _ in range(MnjnefConfig.MAX_RETRIES):
+            try:
+                resp = requests.post(MnjnefConfig.API_URL, headers=self.headers, json=payload, timeout=120)
+                if resp.status_code == 200:
+                    raw_text = resp.json()['choices'][0]['message']['content'].strip()
+                    t_match = re.search(r'<TITLE>(.*?)</TITLE>', raw_text, re.DOTALL | re.IGNORECASE)
+                    i_match = re.search(r'<IMAGE_PROMPT>(.*?)</IMAGE_PROMPT>', raw_text, re.DOTALL | re.IGNORECASE)
+                    c_match = re.search(r'<CONTENT>(.*?)</CONTENT>', raw_text, re.DOTALL | re.IGNORECASE)
+                    
+                    if t_match and i_match and c_match:
+                        return {"title": t_match.group(1).strip().replace('"', '').replace('*', ''), "image_prompt": i_match.group(1).strip(), "body": c_match.group(1).strip()}
+                    else:
+                        logger.error("AI output missed XML tags.")
+                        return None
+            except Exception as e: logger.warning(f"AI Request error: {e}")
+            time.sleep(5)
+        return None
+
+class SEOEngine:
+    STOP_WORDS = {'في', 'من', 'على', 'إلى', 'أن', 'عن', 'مع', 'هذا', 'هذه', 'التي', 'الذي', 'تم', 'كان'}
+    @classmethod
+    def generate_metadata(cls, title: str, text: str) -> Tuple[str, str]:
+        words = re.findall(r'\b[\w]{4,}\b', text)
+        word_counts = {}
+        for w in words:
+            if w not in cls.STOP_WORDS and not w.isnumeric(): word_counts[w] = word_counts.get(w, 0) + 1
+        sorted_words = sorted(word_counts.items(), key=lambda x: x[1], reverse=True)
+        keywords = ", ".join([w for w, c in sorted_words[:6]])
+        clean_text = re.sub(r'#+', '', text).replace('\n', ' ').strip()
+        meta_desc = clean_text[:150] + "..." if len(clean_text) > 150 else clean_text
+        return keywords, meta_desc
+
+class HugoDeployer:
+    def write_markdown(self, category: str, data: Dict[str, str], image_url: str, timestamp_id: int) -> bool:
+        safe_title_slug = re.sub(r'[^\w\s-]', '', data['title']).strip().lower()
+        slug = f"{re.sub(r'[-\s]+', '-', safe_title_slug)[:50]}-{timestamp_id}" or f"post-{timestamp_id}"
+        filepath = os.path.join(MnjnefConfig.POSTS_DIR, f"{slug}.md")
+        
+        # التنظيف الآمن لعلامات التنصيص لتجنب انهيار الكود (SyntaxError)
+        safe_title = data['title'].replace('"', "'")
+        keywords_str, meta_desc = SEOEngine.generate_metadata(data['title'], data['body'])
+        safe_desc = meta_desc.replace('"', "")
+        
+        tags_list = ["منجنيف", category.replace('_', ' ')] + [k.strip() for k in keywords_str.split(',') if k.strip()]
+        tags_formatted = '", "'.join(tags_list)
+        
+        frontmatter = [
+            "---", 
+            f"title: \"{safe_title}\"", 
+            f"date: \"{datetime.now().astimezone().isoformat()}\"", 
+            "draft: false",
+            "author: \"افتتاحية Mnjnef\"", 
+            f"description: \"{safe_desc}\"",
+            f"categories: [\"{category.replace('_', ' ')}\"]", 
+            f"tags: [\"{tags_formatted}\"]",
+            "cover:", 
+            f"  image: \"{image_url}\"", 
+            "  relative: false", 
+            "---", 
+            "", 
+            data['body']
+        ]
+        try:
+            with open(filepath, "w", encoding="utf-8") as f: f.write("\n".join(frontmatter))
+            return True
+        except Exception: return False
+
+    def deploy(self):
+        os.system(f"cd {MnjnefConfig.BASE_DIR} && hugo --minify > /dev/null 2>&1 && rm -rf {MnjnefConfig.HTML_DIR}* && cp -r public/* {MnjnefConfig.HTML_DIR} && chmod -R 755 {MnjnefConfig.HTML_DIR}")
+
+class MnjnefTitanEngine:
+    def __init__(self):
+        self.db = DatabaseManager(MnjnefConfig.DB_PATH)
+        self.ai = MistralAIEngine(MnjnefConfig.API_KEY)
+        self.hugo = HugoDeployer()
+        self.is_running = True
+        signal.signal(signal.SIGINT, self.shutdown); signal.signal(signal.SIGTERM, self.shutdown)
+
+    def shutdown(self, signum, frame): self.is_running = False
+
+    def fetch_and_parse_feed(self) -> Optional[Tuple[str, str, str, str]]:
+        category = random.choice(list(MNJNEF_SOURCES.keys()))
+        try:
+            feed = feedparser.parse(random.choice(MNJNEF_SOURCES[category]))
+            if not feed.entries: return None
+            entry = feed.entries[0]
+            if self.db.is_processed(entry.link): return None
+            
+            logger.info(f"📥 Scraping: {entry.title[:60]}...")
+            art = Article(entry.link, keep_article_html=False); art.download(); art.parse()
+            text = art.text.strip()
+            if len(text) < 150: text = BeautifulSoup(getattr(entry, 'description', ''), "html.parser").get_text().strip()
+            if len(text) < 100: return None
+            return category, entry.link, entry.title, text
+        except Exception: return None
+
+    def cycle(self):
+        feed_data = self.fetch_and_parse_feed()
+        if not feed_data: return
+        
+        ai_data = self.ai.process_article(feed_data[3])
+        if not ai_data: return
+        
+        timestamp_id = int(time.time())
+        img_local_path = ImageEngine.download_image(ai_data['image_prompt'], timestamp_id)
+        
+        if self.hugo.write_markdown(feed_data[0], ai_data, img_local_path, timestamp_id):
+            self.db.save_record(feed_data[1], ai_data['title'], feed_data[0])
+            self.hugo.deploy()
+            logger.info(f"✅ SUCCESSFULLY PUBLISHED: {ai_data['title']}")
+
+    def run(self):
+        if not MnjnefConfig.API_KEY or MnjnefConfig.API_KEY == "ضع_مفتاحك_السري_هنا": return
+        logger.info("🚀 MNJNEF ULTIMATE ENGINE IS LIVE (V15.2 - Syntax Fixed)")
+        while self.is_running:
+            self.cycle()
+            if not self.is_running: break
+            sleep_duration = random.randint(MnjnefConfig.MIN_WAIT_SECONDS, MnjnefConfig.MAX_WAIT_SECONDS)
+            logger.info(f"💤 Shield Active: Waiting {sleep_duration} seconds...")
+            for _ in range(sleep_duration):
+                if not self.is_running: break
+                time.sleep(1)
+
+if __name__ == "__main__":
+    os.makedirs(MnjnefConfig.POSTS_DIR, exist_ok=True)
+    os.makedirs(MnjnefConfig.IMG_DIR, exist_ok=True)
+    MnjnefTitanEngine().run()
