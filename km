@@ -1,1 +1,12 @@
-nohup python3 /root/mnjnef_factory.py > /root/mnjnef_factory.log 2>&1 &
+# 1. حذف جميع ملفات المقالات القديمة والمشوهة
+rm -rf /root/mnjnef_site/content/posts/*
+
+# 2. حذف أي صور قديمة عشوائية أو مكسورة
+rm -rf /root/mnjnef_site/static/images/*
+
+# 3. إعادة بناء الموقع فوراً وتحديث المجلد الرئيسي لكي تختفي من المتصفح
+cd /root/mnjnef_site
+hugo --minify
+rm -rf /var/www/html/*
+cp -r public/* /var/www/html/
+chmod -R 755 /var/www/html/
