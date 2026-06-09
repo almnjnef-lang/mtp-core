@@ -1,1 +1,1 @@
-nohup python3 /root/mnjnef_factory.py > /root/mnjnef_factory.log 2>&1 &
+cat /root/mnjnef_factory.log
