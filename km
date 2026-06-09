@@ -1,1 +1,1 @@
-ufw allow 'Nginx Full'
+systemctl enable nginx
