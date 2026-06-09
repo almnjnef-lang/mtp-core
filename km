@@ -1,7 +1,4 @@
-cd /root/mnjnef_site
-mkdir -p content/posts
-cp -r /root/content/posts/* content/posts/ 2>/dev/null
-hugo
-rm -rf /var/www/html/*
-cp -r public/* /var/www/html/
-chmod -R 755 /var/www/html/
+apt remove hugo -y
+HUGO_VER=$(curl -s https://api.github.com/repos/gohugoio/hugo/releases/latest | grep tag_name | cut -d '"' -f4 | sed 's/v//')
+wget https://github.com/gohugoio/hugo/releases/download/v${HUGO_VER}/hugo_extended_${HUGO_VER}_linux-amd64.deb -O hugo.deb
+dpkg -i hugo.deb
