@@ -1,263 +1,102 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-==============================================================================
-Mnjnef Ultimate Engine V8.0 - The Non-Political Enterprise
-==============================================================================
-Description:
-    Fully autonomous 24/7 engine. Strictly NON-POLITICAL.
-    Intervals: 120s to 300s (2 to 5 minutes).
-    Features: AI Rewriting, Copyright-Free Images, SEO, Hugo/Nginx Automation.
-==============================================================================
-"""
+    # ==========================================
+    # 🍎 HEALTH, WELLNESS & NUTRITION
+    # ==========================================
+    "Health_and_Wellness": [
+        "https://feeds.aarp.org/aarpe/health", "https://www.webmd.com/rss/public/rss-news",
+        "https://medlineplus.gov/feeds/news_en.xml", "https://www.health.com/feed",
+        "https://www.mayoclinic.org/rss/all-news", "https://www.nih.gov/news-events/news-releases/rss.xml",
+        "https://www.medicalnewstoday.com/feed", "https://www.psychologytoday.com/us/front/feed",
+        "https://khn.org/feed/", "https://www.healthline.com/rss",
+        "https://www.menshealth.com/rss", "https://www.womenshealthmag.com/rss",
+        "https://nutritionfacts.org/feed/", "https://www.eatingwell.com/rss",
+        "https://smittenkitchen.com/feed/", "https://minimalistbaker.com/feed/",
+        "https://www.mindbodygreen.com/rss", "https://experiencelife.com/feed/"
+    ],
 
-import os
-import sys
-import time
-import random
-import requests
-import re
-import sqlite3
-import logging
-import signal
-import traceback
-from datetime import datetime
-from typing import Dict, Optional, Tuple, List
-import feedparser
-from newspaper import Article
-from bs4 import BeautifulSoup
+    # ==========================================
+    # 🚗 AUTOMOTIVE, ENGINEERING & CARS
+    # ==========================================
+    "Automotive_and_Engineering": [
+        "https://www.autoblog.com/rss.xml", "https://www.motortrend.com/feed/",
+        "https://www.caranddriver.com/rss", "https://www.roadandtrack.com/rss",
+        "https://jalopnik.com/rss", "https://www.topgear.com/rss.xml",
+        "https://www.motor1.com/rss/", "https://insideevs.com/rss/",
+        "https://www.carthrottle.com/rss", "https://www.thedrive.com/feed/",
+        "https://www.enginetechnologyinternational.com/feed", "https://www.automotiveworld.com/feed/"
+    ],
 
-# استيراد مستودع المصادر الضخم
-from mnjnef_feeds import MNJNEF_SOURCES
+    # ==========================================
+    # ✈️ TRAVEL, ADVENTURE & EXPLORATION
+    # ==========================================
+    "Travel_and_Adventure": [
+        "https://www.lonelyplanet.com/news/feed", "https://www.cntraveler.com/feed/rss",
+        "https://www.travelandleisure.com/feed", "https://thepointsguy.com/feed/",
+        "https://www.nationalgeographic.com/travel/rss", "https://skift.com/feed/",
+        "https://matadornetwork.com/feed/", "https://www.afar.com/feed",
+        "https://www.atlasobscura.com/feeds/latest", "https://www.outsideonline.com/feed/",
+        "https://www.nomadicmatt.com/travel-blog/feed/", "https://expertvagabond.com/feed/",
+        "https://theblondeabroad.com/feed/", "https://www.adventurouskate.com/feed/"
+    ],
 
-class MnjnefConfig:
-    API_KEY: str = "ضع_مفتاحك_السري_هنا"
-    PEXELS_API_KEY: str = "" 
-    
-    API_URL: str = "https://api.mistral.ai/v1/chat/completions"
-    MODEL: str = "open-mistral-nemo"
-    AI_TEMPERATURE: float = 0.70
-    MAX_AI_TOKENS: int = 3500
-    
-    BASE_DIR: str = "/root/mnjnef_site"
-    POSTS_DIR: str = os.path.join(BASE_DIR, "content/posts")
-    HTML_DIR: str = "/var/www/html/"
-    DB_PATH: str = os.path.join(BASE_DIR, "mnjnef_mega_registry.db")
-    LOG_FILE: str = os.path.join(BASE_DIR, "mnjnef_engine.log")
-    
-    # توقيت صارم: بين دقيقتين و 5 دقائق
-    MIN_WAIT_SECONDS: int = 120
-    MAX_WAIT_SECONDS: int = 300
-    MAX_RETRIES: int = 4
+    # ==========================================
+    # 📸 PHOTOGRAPHY, DESIGN & ART
+    # ==========================================
+    "Photography_and_Design": [
+        "https://petapixel.com/feed/", "https://www.dpreview.com/feeds/news.xml",
+        "https://fstoppers.com/feed", "https://www.creativebloq.com/feed",
+        "https://www.designboom.com/feed/", "https://www.dezeen.com/feed/",
+        "https://www.archdaily.com/rss", "https://www.thisiscolossal.com/feed/",
+        "https://mymodernmet.com/feed/", "https://www.booooooom.com/feed/",
+        "https://juxtapoz.com/news/?format=feed", "https://www.creativeboom.com/feed/"
+    ],
 
-def setup_logger():
-    logger = logging.getLogger("MnjnefEngine")
-    logger.setLevel(logging.INFO)
-    ch = logging.StreamHandler(sys.stdout)
-    ch.setFormatter(logging.Formatter("%(asctime)s | %(levelname)s | %(message)s", "%Y-%m-%d %H:%M:%S"))
-    logger.addHandler(ch)
-    return logger
+    # ==========================================
+    # 🍳 FOOD, CULINARY & RECIPES
+    # ==========================================
+    "Food_and_Culinary": [
+        "https://www.eater.com/rss/index.xml", "https://www.foodandwine.com/feed",
+        "https://www.bonappetit.com/feed/rss", "https://www.seriouseats.com/feed",
+        "https://www.thekitchn.com/feed", "https://food52.com/blog.rss",
+        "https://www.epicurious.com/feed/rss", "https://www.tastingtable.com/feed",
+        "https://www.saveur.com/feed/", "https://www.grubstreet.com/feed.xml"
+    ],
 
-logger = setup_logger()
+    # ==========================================
+    # 🎵 MUSIC, AUDIO & ENTERTAINMENT (NON-POLITICAL)
+    # ==========================================
+    "Music_and_Audio": [
+        "https://pitchfork.com/rss/news/", "https://www.rollingstone.com/music/feed/",
+        "https://www.nme.com/news/music/feed", "https://consequence.net/feed/",
+        "https://www.billboard.com/feed/", "https://mixmag.net/feed",
+        "https://www.soundonsound.com/news/feed", "https://www.musicradar.com/rss"
+    ],
 
-class DatabaseManager:
-    def __init__(self, db_path: str):
-        self.db_path = db_path
-        self._init_db()
-        
-    def _get_connection(self): 
-        return sqlite3.connect(self.db_path, timeout=30)
-        
-    def _init_db(self):
-        with self._get_connection() as conn:
-            conn.cursor().execute("""
-                CREATE TABLE IF NOT EXISTS pure_articles (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT, 
-                    original_url TEXT UNIQUE NOT NULL,
-                    published_title TEXT NOT NULL, 
-                    category TEXT NOT NULL,
-                    published_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                )
-            """)
-            conn.commit()
-            
-    def is_processed(self, url: str) -> bool:
-        with self._get_connection() as conn:
-            return conn.cursor().execute("SELECT 1 FROM pure_articles WHERE original_url = ?", (url,)).fetchone() is not None
-            
-    def save_record(self, url: str, title: str, category: str):
-        with self._get_connection() as conn:
-            try: 
-                conn.cursor().execute("INSERT INTO pure_articles (original_url, published_title, category) VALUES (?, ?, ?)", (url, title, category))
-                conn.commit()
-            except sqlite3.IntegrityError: 
-                pass
+    # ==========================================
+    # 🐾 PETS, ANIMALS & VETERINARY
+    # ==========================================
+    "Pets_and_Animals": [
+        "https://www.thesprucepets.com/rss", "https://www.petmd.com/rss",
+        "https://www.vetstreet.com/rss", "https://moderndogmagazine.com/feed",
+        "https://moderncat.com/feed", "https://www.dogster.com/feed",
+        "https://www.catster.com/feed", "https://thebark.com/feed"
+    ],
 
-class FreeImageBank:
-    """محرك صور مجانية 100% لتجنب حقوق الطبع والنشر"""
-    @staticmethod
-    def fetch_image(category: str, title: str) -> str:
-        query = category.replace("_", " ").split()[0]
-        
-        if MnjnefConfig.PEXELS_API_KEY:
-            try:
-                url = f"https://api.pexels.com/v1/search?query={query}&per_page=10"
-                resp = requests.get(url, headers={"Authorization": MnjnefConfig.PEXELS_API_KEY}, timeout=10)
-                if resp.status_code == 200 and resp.json().get('photos'):
-                    return random.choice(resp.json()['photos'])['src']['large']
-            except Exception: pass
-            
-        try:
-            resp = requests.head(f"https://source.unsplash.com/1200x800/?{query}", allow_redirects=True, timeout=5)
-            if resp.status_code == 200: return resp.url
-        except Exception: pass
-        
-        return f"https://loremflickr.com/1200/800/{query.replace(' ', '')},news/all"
+    # ==========================================
+    # 🏡 REAL ESTATE, HOME & ARCHITECTURE
+    # ==========================================
+    "RealEstate_and_Home": [
+        "https://www.inman.com/feed/", "https://therealdeal.com/feed/",
+        "https://www.housingwire.com/feed/", "https://www.curbed.com/feed.xml",
+        "https://www.architecturaldigest.com/feed/rss", "https://www.dwell.com/feed",
+        "https://www.housebeautiful.com/rss", "https://www.elledecor.com/rss"
+    ],
 
-class AIEngine:
-    def __init__(self, api_key: str):
-        self.api_key = api_key
-        self.headers = {"Content-Type": "application/json", "Authorization": f"Bearer {self.api_key}"}
-
-    def rewrite_content(self, category: str, text: str) -> Optional[Dict[str, str]]:
-        prompt = (
-            f"You are the elite Editor-in-Chief for 'Mnjnef'. Rewrite this {category.replace('_', ' ')} text into a highly professional, comprehensive article in premium English.\n\n"
-            f"CRITICAL RULE: STRICTLY NO POLITICS. If the text contains political nuances, reframe it entirely to focus on educational, technological, scientific, or human-interest aspects.\n\n"
-            f"FORMAT RULES:\n"
-            f"1. FIRST LINE MUST BE EXACTLY: 'TITLE: [Your Engaging Headline]'\n"
-            f"2. Below it, write the full body with Markdown subheadings (##).\n"
-            f"3. Output ONLY the title and the article body. No conversational filler."
-        )
-        
-        payload = {
-            "model": MnjnefConfig.MODEL, 
-            "messages": [{"role": "user", "content": prompt}, {"role": "user", "content": text}], 
-            "temperature": MnjnefConfig.AI_TEMPERATURE,
-            "max_tokens": MnjnefConfig.MAX_AI_TOKENS
-        }
-        
-        for attempt in range(MnjnefConfig.MAX_RETRIES):
-            try:
-                resp = requests.post(MnjnefConfig.API_URL, headers=self.headers, json=payload, timeout=120)
-                if resp.status_code == 200:
-                    raw = resp.json()['choices'][0]['message']['content'].strip()
-                    lines = raw.split('\n')
-                    title = "Mnjnef Discoveries"
-                    body_lines = []
-                    for i, l in enumerate(lines):
-                        if l.strip().upper().startswith("TITLE:"): 
-                            title = l.strip()[6:].replace('"', '').strip()
-                        elif i == 0 and not l.strip().startswith('#'): 
-                            title = l.strip().replace('"', '').strip()
-                        else: 
-                            body_lines.append(l)
-                    return {"title": title.replace("#", "").strip(), "body": '\n'.join(body_lines).strip()}
-                elif resp.status_code == 429: 
-                    time.sleep(15)
-            except Exception as e: 
-                logger.warning(f"AI API Error: {e}")
-            time.sleep(5)
-        return None
-
-class SEOEngine:
-    STOP_WORDS = {'the', 'is', 'in', 'and', 'to', 'a', 'of', 'for', 'on', 'with', 'as', 'by', 'at', 'an', 'be', 'this', 'that', 'from'}
-    @classmethod
-    def extract_keywords(cls, text: str) -> str:
-        words = re.findall(r'\b[a-zA-Z]{5,}\b', text.lower())
-        word_counts = {}
-        for w in words:
-            if w not in cls.STOP_WORDS: word_counts[w] = word_counts.get(w, 0) + 1
-        sorted_words = sorted(word_counts.items(), key=lambda x: x[1], reverse=True)
-        return ", ".join([w for w, c in sorted_words[:5]])
-
-class HugoDeployer:
-    def write_markdown(self, category: str, title: str, body: str, image_url: str) -> bool:
-        slug = re.sub(r'[^a-z0-9]+', '-', title.lower()).strip('-') or f"post-{int(time.time())}"
-        filepath = os.path.join(MnjnefConfig.POSTS_DIR, f"{slug}.md")
-        if os.path.exists(filepath): filepath = os.path.join(MnjnefConfig.POSTS_DIR, f"{slug}-{int(time.time())}.md")
-        
-        hugo_date = datetime.now().astimezone().isoformat()
-        clean_cat = category.replace('_', ' ')
-        keywords = SEOEngine.extract_keywords(title + " " + body)
-        
-        frontmatter = [
-            "---", f"title: \"{title.replace('\"', \"'\")}\"", f"date: {hugo_date}", "draft: false",
-            f"author: \"Mnjnef Editorial\"", f"categories: [\"{clean_cat}\"]", 
-            f"tags: [\"Mnjnef\", \"{clean_cat}\", {chr(34) + keywords.replace(', ', chr(34)+', '+chr(34)) + chr(34)}]",
-            "cover:", f"  image: \"{image_url}\"", "  relative: false", "---", "", body
-        ]
-        try:
-            with open(filepath, "w", encoding="utf-8") as f: f.write("\n".join(frontmatter))
-            return True
-        except Exception as e: 
-            logger.error(f"Write Error: {e}")
-            return False
-
-    def deploy(self):
-        cmd = f"cd {MnjnefConfig.BASE_DIR} && hugo --minify > /dev/null 2>&1 && rm -rf {MnjnefConfig.HTML_DIR}* && cp -r public/* {MnjnefConfig.HTML_DIR} && chmod -R 755 {MnjnefConfig.HTML_DIR}"
-        os.system(cmd)
-
-class MnjnefTitanEngine:
-    def __init__(self):
-        self.db = DatabaseManager(MnjnefConfig.DB_PATH)
-        self.ai = AIEngine(MnjnefConfig.API_KEY)
-        self.hugo = HugoDeployer()
-        self.is_running = True
-        signal.signal(signal.SIGINT, self.shutdown)
-        signal.signal(signal.SIGTERM, self.shutdown)
-
-    def shutdown(self, signum, frame):
-        logger.info("Shutting down Mnjnef Engine...")
-        self.is_running = False
-
-    def cycle(self):
-        category = random.choice(list(MNJNEF_SOURCES.keys()))
-        feed_url = random.choice(MNJNEF_SOURCES[category])
-        
-        try:
-            feed = feedparser.parse(feed_url)
-            if not feed.entries: return
-            entry = feed.entries[0]
-            if self.db.is_processed(entry.link): return
-            
-            logger.info(f"Scraping: {entry.title[:40]}...")
-            art = Article(entry.link, keep_article_html=False)
-            art.download(); art.parse()
-            txt = art.text.strip() if len(art.text.strip()) > 150 else BeautifulSoup(getattr(entry, 'description', ''), "html.parser").get_text()
-            
-            if len(txt) < 50: return
-            
-            logger.info("AI Rewriting...")
-            ai_data = self.ai.rewrite_content(category, txt)
-            if not ai_data: return
-            
-            img = FreeImageBank.fetch_image(category, ai_data['title'])
-            
-            if self.hugo.write_markdown(category, ai_data['title'], ai_data['body'], img):
-                self.db.save_record(entry.link, ai_data['title'], category)
-                self.hugo.deploy()
-                logger.info(f"✅ Published: {ai_data['title']}")
-                
-        except Exception as e: 
-            pass
-
-    def run(self):
-        if not MnjnefConfig.API_KEY or MnjnefConfig.API_KEY == "ضع_مفتاحك_السري_هنا":
-            logger.error("API Key missing!")
-            return
-            
-        logger.info("🚀 Mnjnef Ultimate Engine is LIVE (24/7 Mode).")
-        while self.is_running:
-            self.cycle()
-            if not self.is_running: break
-            
-            # توقيت النشر العشوائي الإلزامي (دقيقتين إلى 5 دقائق)
-            sleep_duration = random.randint(MnjnefConfig.MIN_WAIT_SECONDS, MnjnefConfig.MAX_WAIT_SECONDS)
-            logger.info(f"💤 Waiting {sleep_duration} seconds...")
-            for _ in range(sleep_duration):
-                if not self.is_running: break
-                time.sleep(1)
-
-if __name__ == "__main__":
-    os.makedirs(MnjnefConfig.POSTS_DIR, exist_ok=True)
-    MnjnefTitanEngine().run()
+    # ==========================================
+    # 💪 FITNESS, GYM & BODYBUILDING
+    # ==========================================
+    "Fitness_and_Bodybuilding": [
+        "https://www.bodybuilding.com/rss/articles", "https://www.muscleandfitness.com/feed/",
+        "https://barbend.com/feed/", "https://breakingmuscle.com/feed/",
+        "https://www.t-nation.com/feed/", "https://www.mensjournal.com/health-fitness/feed",
+        "https://www.shape.com/fitness/feed", "https://www.fitnessblender.com/rss"
+    ]
