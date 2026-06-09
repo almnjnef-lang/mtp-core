@@ -2,465 +2,262 @@
 # -*- coding: utf-8 -*-
 """
 ==============================================================================
-Mnjnef Mega Feeds Database - (The Pure Knowledge Vault)
+Mnjnef Ultimate Engine V8.0 - The Non-Political Enterprise
 ==============================================================================
 Description:
-    This file acts as the ultimate decoupled database for the Mnjnef Engine.
-    Strictly Non-Political. Focuses on Tech, Science, Business, Sports, 
-    Culture, History, Education, and DIY.
-    
-    Total Lines: > 600
-    Architecture: Modular Dictionary for O(1) Category Lookups.
+    Fully autonomous 24/7 engine. Strictly NON-POLITICAL.
+    Intervals: 120s to 300s (2 to 5 minutes).
+    Features: AI Rewriting, Copyright-Free Images, SEO, Hugo/Nginx Automation.
 ==============================================================================
 """
 
-MNJNEF_SOURCES = {
-    # ==========================================
-    # 💻 TECHNOLOGY, GADGETS & HARDWARE
-    # ==========================================
-    "Technology_General": [
-        "https://techcrunch.com/feed/",
-        "https://www.theverge.com/rss/index.xml",
-        "https://www.wired.com/feed/rss",
-        "http://feeds.arstechnica.com/arstechnica/index",
-        "https://www.engadget.com/rss.xml",
-        "https://gizmodo.com/rss",
-        "https://thenextweb.com/feed",
-        "https://www.zdnet.com/news/rss.xml",
-        "https://www.cnet.com/rss/news/",
-        "https://venturebeat.com/feed/",
-        "https://mashable.com/feed/",
-        "https://www.techradar.com/rss",
-        "https://readwrite.com/feed/",
-        "https://siliconangle.com/feed/",
-        "https://www.digitaltrends.com/feed/",
-        "https://www.slashgear.com/feed/",
-        "https://www.makeuseof.com/feed/",
-        "https://www.howtogeek.com/feed/",
-        "https://www.androidauthority.com/feed/",
-        "https://www.xda-developers.com/feed/",
-        "https://9to5mac.com/feed/",
-        "https://9to5google.com/feed/",
-        "https://www.macrumors.com/macrumors.xml",
-        "https://appleinsider.com/rss/news",
-        "https://www.windowscentral.com/rss",
-        "https://www.pcworld.com/feed",
-        "https://www.tomshardware.com/feeds/all",
-        "https://www.anandtech.com/rss",
-        "https://www.techspot.com/backend.xml",
-        "https://wccftech.com/feed/",
-        "https://www.extremetech.com/feed",
-        "https://www.hardwarezone.com.sg/rss",
-        "https://www.techrepublic.com/rssfeeds/articles/",
-        "https://www.itpro.com/feeds/all",
-        "https://www.geekwire.com/feed/",
-        "https://gigaom.com/feed/",
-        "https://www.computerworld.com/index.rss",
-        "https://www.networkworld.com/index.rss",
-        "https://www.cio.com/index.rss",
-        "https://www.infoworld.com/index.rss",
-        "https://www.macworld.com/index.rss",
-        "https://www.techadvisor.com/feed/",
-        "https://www.techworm.net/feed",
-        "https://fossbytes.com/feed/",
-        "https://www.neowin.net/news/rss/",
-        "https://betanews.com/feed/",
-        "https://www.hexus.net/rss/",
-        "https://www.kitguru.net/feed/",
-        "https://www.guru3d.com/news.xml",
-        "https://www.tweaktown.com/rss.xml"
-    ],
+import os
+import sys
+import time
+import random
+import requests
+import re
+import sqlite3
+import logging
+import signal
+import traceback
+from datetime import datetime
+from typing import Dict, Optional, Tuple, List
+import feedparser
+from newspaper import Article
+from bs4 import BeautifulSoup
 
-    # ==========================================
-    # 🤖 ARTIFICIAL INTELLIGENCE & DATA SCIENCE
-    # ==========================================
-    "AI_and_Machine_Learning": [
-        "https://www.artificialintelligence-news.com/feed/",
-        "https://towardsdatascience.com/feed",
-        "https://www.kdnuggets.com/feed",
-        "https://analyticsindiamag.com/feed/",
-        "https://machinelearningmastery.com/feed/",
-        "https://www.datanami.com/feed/",
-        "https://aitopics.org/search/rss",
-        "https://www.marktechpost.com/feed/",
-        "https://bdtechtalks.com/feed/",
-        "https://singularityhub.com/feed/",
-        "https://openai.com/blog/rss.xml",
-        "https://deepmind.com/blog/feed/basic/",
-        "https://bair.berkeley.edu/blog/feed.xml",
-        "https://blog.google/technology/ai/rss/",
-        "https://blogs.microsoft.com/ai/feed/",
-        "https://aws.amazon.com/blogs/machine-learning/feed/",
-        "https://developer.nvidia.com/blog/feed/",
-        "https://www.infoq.com/ai-ml/news/rss/",
-        "https://www.datasciencecentral.com/feed/",
-        "https://smartdatacollective.com/feed/",
-        "https://insidebigdata.com/feed/",
-        "https://www.analyticsvidhya.com/feed/",
-        "https://spectrum.ieee.org/rss/artificial-intelligence.xml",
-        "https://www.unite.ai/feed/",
-        "https://aibusiness.com/rss",
-        "https://becominghuman.ai/feed",
-        "https://chatbotsmagazine.com/feed",
-        "https://chatbotslife.com/feed",
-        "https://www.cognilytica.com/feed/",
-        "https://emerj.com/feed/",
-        "https://www.kdnuggets.com/feed",
-        "https://opendatascience.com/feed/",
-        "https://www.topbots.com/feed/",
-        "https://lexfridman.com/feed/",
-        "https://distill.pub/rss.xml",
-        "https://blog.clarifai.com/rss.xml",
-        "https://blog.algorithmia.com/feed/",
-        "https://machinelearnings.co/feed",
-        "https://www.analyticsinsight.net/feed/",
-        "https://www.kdnuggets.com/feed"
-    ],
+# استيراد مستودع المصادر الضخم
+from mnjnef_feeds import MNJNEF_SOURCES
 
-    # ==========================================
-    # 🛡️ CYBERSECURITY & PRIVACY
-    # ==========================================
-    "Cybersecurity": [
-        "https://krebsonsecurity.com/feed/",
-        "https://www.darkreading.com/rss.xml",
-        "https://threatpost.com/feed/",
-        "https://www.bleepingcomputer.com/feed/",
-        "https://www.schneier.com/blog/atom.xml",
-        "https://thehackernews.com/feeds/posts/default",
-        "https://www.securityweek.com/rss",
-        "https://nakedsecurity.sophos.com/feed/",
-        "https://www.csoonline.com/feed",
-        "https://www.infosecurity-magazine.com/rss/news/",
-        "https://www.cyberscoop.com/feed/",
-        "https://www.helpnetsecurity.com/feed/",
-        "https://portswigger.net/daily-swig/rss",
-        "https://www.cyberdefensemagazine.com/feed/",
-        "https://securityaffairs.co/wordpress/feed",
-        "https://grahamcluley.com/feed/",
-        "https://www.tripwire.com/state-of-security/feed",
-        "https://blog.malwarebytes.com/feed/",
-        "https://securelist.com/feed/",
-        "https://research.checkpoint.com/feed/",
-        "https://unit42.paloaltonetworks.com/feed/",
-        "https://www.crowdstrike.com/blog/feed/",
-        "https://www.fireeye.com/blog/threat-research/_jcr_content.feed",
-        "https://blogs.cisco.com/security/feed",
-        "https://www.fortinet.com/blog/threat-research/rss",
-        "https://thestateofsecurity.com/feed/",
-        "https://www.scmagazine.com/rss",
-        "https://cybersecurity.att.com/site/blog-all-rss",
-        "https://www.cyberark.com/blog/feed/",
-        "https://www.varonis.com/blog/feed/"
-    ],
+class MnjnefConfig:
+    API_KEY: str = "ضع_مفتاحك_السري_هنا"
+    PEXELS_API_KEY: str = "" 
+    
+    API_URL: str = "https://api.mistral.ai/v1/chat/completions"
+    MODEL: str = "open-mistral-nemo"
+    AI_TEMPERATURE: float = 0.70
+    MAX_AI_TOKENS: int = 3500
+    
+    BASE_DIR: str = "/root/mnjnef_site"
+    POSTS_DIR: str = os.path.join(BASE_DIR, "content/posts")
+    HTML_DIR: str = "/var/www/html/"
+    DB_PATH: str = os.path.join(BASE_DIR, "mnjnef_mega_registry.db")
+    LOG_FILE: str = os.path.join(BASE_DIR, "mnjnef_engine.log")
+    
+    # توقيت صارم: بين دقيقتين و 5 دقائق
+    MIN_WAIT_SECONDS: int = 120
+    MAX_WAIT_SECONDS: int = 300
+    MAX_RETRIES: int = 4
 
-    # ==========================================
-    # 🚀 STARTUPS, BUSINESS & ENTREPRENEURSHIP
-    # ==========================================
-    "Business_and_Startups": [
-        "https://www.entrepreneur.com/latest.rss",
-        "https://www.inc.com/rss",
-        "https://www.fastcompany.com/latest/rss",
-        "https://www.forbes.com/entrepreneurs/feed/",
-        "https://startupnation.com/feed/",
-        "https://smallbiztrends.com/feed",
-        "https://www.smecompass.com/feed/",
-        "https://www.business2community.com/feed",
-        "https://killerstartups.com/feed/",
-        "https://startuplessonslearned.com/feed/",
-        "https://mixergy.com/feed/",
-        "https://bothsidesofthetable.com/feed",
-        "https://foundrmag.com/feed/",
-        "https://under30ceo.com/feed/",
-        "https://www.youngupstarts.com/feed/",
-        "https://www.springwise.com/feed/",
-        "https://trendhunter.com/rss",
-        "https://www.psfk.com/feed",
-        "https://innovationexcellence.com/feed/",
-        "https://www.strategy-business.com/rss",
-        "https://hbr.org/rss/articles",
-        "https://sloanreview.mit.edu/feed/",
-        "https://knowledge.wharton.upenn.edu/feed/",
-        "https://ideamensch.com/feed/",
-        "https://microconf.com/feed/",
-        "https://search.cnbc.com/rs/search/combinedcms/view.xml?profile=12000000&id=10000115",
-        "https://feeds.a.dj.com/rss/RSSMarketsMain.xml",
-        "https://www.economist.com/business/rss.xml",
-        "http://feeds.marketwatch.com/marketwatch/topstories/",
-        "https://fortune.com/feed/",
-        "https://www.ibtimes.com/business/rss",
-        "https://www.businessinsider.com/rss",
-        "https://feeds.bloomberg.com/markets/news.rss"
-    ],
+def setup_logger():
+    logger = logging.getLogger("MnjnefEngine")
+    logger.setLevel(logging.INFO)
+    ch = logging.StreamHandler(sys.stdout)
+    ch.setFormatter(logging.Formatter("%(asctime)s | %(levelname)s | %(message)s", "%Y-%m-%d %H:%M:%S"))
+    logger.addHandler(ch)
+    return logger
 
-    # ==========================================
-    # 🔭 SCIENCE, SPACE & PHYSICS
-    # ==========================================
-    "Science_and_Space": [
-        "https://www.space.com/home/feed/site.xml",
-        "https://spacenews.com/feed/",
-        "https://www.nasa.gov/rss/dyn/breaking_news.rss",
-        "https://spaceflightnow.com/feed/",
-        "https://www.universetoday.com/feed/",
-        "https://skyandtelescope.org/feed/",
-        "https://astronomy.com/rss",
-        "https://earthsky.org/feed/",
-        "https://www.planetary.org/rss",
-        "https://phys.org/rss-feed/",
-        "https://www.quantamagazine.org/feed/",
-        "https://cerncourier.com/feed/",
-        "https://physicsworld.com/feed/",
-        "https://scitechdaily.com/feed/",
-        "https://www.livescience.com/home/feed/site.xml",
-        "https://www.discovermagazine.com/feed",
-        "https://www.newscientist.com/feed/home/",
-        "https://www.smithsonianmag.com/rss/science-nature/",
-        "https://www.sciencemag.org/rss/news_current.xml",
-        "https://www.sciencedaily.com/rss/space_time.xml",
-        "https://www.nature.com/nature.rss",
-        "http://rss.sciam.com/ScientificAmerican-Global",
-        "https://www.popsci.com/feed/",
-        "https://cosmosmagazine.com/feed/",
-        "https://nautil.us/feed/",
-        "https://www.symmetrymagazine.org/feed",
-        "https://www.astronomy.com/rss/news",
-        "https://www.esa.int/rssfeed/Our_Activities/Space_Science",
-        "https://skyandtelescope.org/astronomy-news/feed/",
-        "https://www.centauri-dreams.org/feed/"
-    ],
+logger = setup_logger()
 
-    # ==========================================
-    # 🌿 NATURE, ENVIRONMENT & BIOLOGY
-    # ==========================================
-    "Nature_and_Biology": [
-        "https://www.nationalgeographic.com/science/rss",
-        "https://www.sciencedaily.com/rss/plants_animals.xml",
-        "https://news.mongabay.com/feed/",
-        "https://www.treehugger.com/feeds/all",
-        "https://earthobservatory.nasa.gov/feeds/earth-observatory.rss",
-        "https://www.bbc.com/news/science_and_environment/rss.xml",
-        "https://www.environmentalleader.com/feed/",
-        "https://www.greenbiz.com/rss.xml",
-        "https://grist.org/feed/",
-        "https://inhabitat.com/feed/",
-        "https://www.ecowatch.com/feed/",
-        "https://www.nature.org/en-us/newsroom/rss/",
-        "https://wwf.panda.org/wwf_news/rss.cfm",
-        "https://www.wildlifebact.com/feed/",
-        "https://www.conservation.org/rss",
-        "https://oceanconservancy.org/feed/",
-        "https://www.marineinsight.com/feed/",
-        "https://www.audubon.org/rss.xml",
-        "https://www.birdlife.org/feed/",
-        "https://www.botanical.org/feed",
-        "https://www.eurekalert.org/rss/biology.xml",
-        "https://biology-news.net/index.rdf",
-        "https://www.biologynews.net/rss",
-        "https://phys.org/rss-feed/biology-news/",
-        "https://www.cell.com/cell/inpress.rss",
-        "https://www.sciencenews.org/topic/life/feed",
-        "https://www.smithsonianmag.com/rss/science-nature/",
-        "https://www.hakaimagazine.com/feed/",
-        "https://earther.gizmodo.com/rss",
-        "https://news.climate.columbia.edu/feed/"
-    ],
+class DatabaseManager:
+    def __init__(self, db_path: str):
+        self.db_path = db_path
+        self._init_db()
+        
+    def _get_connection(self): 
+        return sqlite3.connect(self.db_path, timeout=30)
+        
+    def _init_db(self):
+        with self._get_connection() as conn:
+            conn.cursor().execute("""
+                CREATE TABLE IF NOT EXISTS pure_articles (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT, 
+                    original_url TEXT UNIQUE NOT NULL,
+                    published_title TEXT NOT NULL, 
+                    category TEXT NOT NULL,
+                    published_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+            conn.commit()
+            
+    def is_processed(self, url: str) -> bool:
+        with self._get_connection() as conn:
+            return conn.cursor().execute("SELECT 1 FROM pure_articles WHERE original_url = ?", (url,)).fetchone() is not None
+            
+    def save_record(self, url: str, title: str, category: str):
+        with self._get_connection() as conn:
+            try: 
+                conn.cursor().execute("INSERT INTO pure_articles (original_url, published_title, category) VALUES (?, ?, ?)", (url, title, category))
+                conn.commit()
+            except sqlite3.IntegrityError: 
+                pass
 
-    # ==========================================
-    # ⚽ GLOBAL SPORTS, ATHLETICS & ESPORTS
-    # ==========================================
-    "Sports_and_Athletics": [
-        "https://www.espn.com/espn/rss/news",
-        "https://sports.yahoo.com/rss/",
-        "https://www.cbssports.com/rss/headlines/",
-        "https://www.foxsports.com/rss-feeds",
-        "https://www.nbcsports.com/rss",
-        "https://bleacherreport.com/articles/feed",
-        "https://deadspin.com/rss",
-        "https://www.sbnation.com/rss/current.xml",
-        "https://theathletic.com/feed/",
-        "https://www.sportingnews.com/us/rss.xml",
-        "https://www.si.com/rss/si_topstories.rss",
-        "https://nba.com/rss/nba_rss.xml",
-        "https://nhl.com/rss/news.xml",
-        "https://mlb.com/rss/news.xml",
-        "https://pgatour.com/rss/news.xml",
-        "https://www.atptour.com/en/media/rss",
-        "https://www.wtatennis.com/rss/news",
-        "https://www.formula1.com/content/fom-website/en/latest/all.xml",
-        "https://www.motorsport.com/rss/news/",
-        "https://www.autosport.com/rss/news/",
-        "https://www.cyclingnews.com/rss.xml",
-        "https://www.runnersworld.com/rss",
-        "https://www.boxing247.com/feed",
-        "https://www.skysports.com/rss/12040",
-        "https://www.goal.com/feeds/en/news",
-        "https://www.fourfourtwo.com/rss.xml",
-        "https://worldsoccertalk.com/feed/",
-        "https://www.football365.com/feed",
-        "https://talksport.com/football/feed/",
-        "https://www.caughtoffside.com/feed/",
-        "https://www.polygon.com/rss/index.xml",
-        "https://www.ign.com/rss/articles/feed",
-        "https://www.gamespot.com/feeds/mashup/",
-        "https://kotaku.com/rss",
-        "https://www.pcgamer.com/rss/",
-        "https://www.eurogamer.net/?format=rss",
-        "https://www.destructoid.com/feed/",
-        "https://www.rockpapershotgun.com/feed",
-        "https://www.nintendolife.com/feeds/latest",
-        "https://www.pushsquare.com/feeds/latest"
-    ],
+class FreeImageBank:
+    """محرك صور مجانية 100% لتجنب حقوق الطبع والنشر"""
+    @staticmethod
+    def fetch_image(category: str, title: str) -> str:
+        query = category.replace("_", " ").split()[0]
+        
+        if MnjnefConfig.PEXELS_API_KEY:
+            try:
+                url = f"https://api.pexels.com/v1/search?query={query}&per_page=10"
+                resp = requests.get(url, headers={"Authorization": MnjnefConfig.PEXELS_API_KEY}, timeout=10)
+                if resp.status_code == 200 and resp.json().get('photos'):
+                    return random.choice(resp.json()['photos'])['src']['large']
+            except Exception: pass
+            
+        try:
+            resp = requests.head(f"https://source.unsplash.com/1200x800/?{query}", allow_redirects=True, timeout=5)
+            if resp.status_code == 200: return resp.url
+        except Exception: pass
+        
+        return f"https://loremflickr.com/1200/800/{query.replace(' ', '')},news/all"
 
-    # ==========================================
-    # 📚 EDUCATION, E-LEARNING & ACADEMIA
-    # ==========================================
-    "Education_and_Learning": [
-        "https://www.edutopia.org/rss.xml",
-        "https://www.openeducationnews.org/feed/",
-        "https://www.elearninglearning.com/feed/",
-        "https://www.openculture.com/feed",
-        "https://www.classcentral.com/report/feed/",
-        "https://www.coursera.org/blog/feed/",
-        "https://www.edx.org/blog/feed",
-        "https://www.khanacademy.org/feed",
-        "https://www.academiccourses.com/rss",
-        "https://www.insidehighered.com/rss/feed/insights",
-        "https://www.chronicle.com/page/rss",
-        "https://www.timeshighereducation.com/rss",
-        "https://www.geteducated.com/feed/",
-        "https://www.teachthought.com/feed/",
-        "https://www.cultofpedagogy.com/feed/",
-        "https://www.emergingedtech.com/feed/",
-        "https://www.eschoolnews.com/feed/",
-        "https://www.educationdive.com/feed/rss/",
-        "https://www.thejournal.com/rss-feeds/",
-        "https://www.cambridge.org/elt/blog/feed/",
-        "https://www.oxfordowl.co.uk/feed",
-        "https://www.britishcouncil.org/blog/rss",
-        "https://www.edsurge.com/articles_rss",
-        "https://www.scholastic.com/teachers/articles/teaching-content/feed/",
-        "https://theeducatorsroom.com/feed/",
-        "https://www.kqed.org/mindshift/feed",
-        "https://www.educationworld.com/rss.xml",
-        "https://www.facultyfocus.com/feed/",
-        "https://www.edweek.org/feed/",
-        "https://elearningindustry.com/feed"
-    ],
+class AIEngine:
+    def __init__(self, api_key: str):
+        self.api_key = api_key
+        self.headers = {"Content-Type": "application/json", "Authorization": f"Bearer {self.api_key}"}
 
-    # ==========================================
-    # 🏛️ HISTORY, ARCHAEOLOGY & ANTHROPOLOGY
-    # ==========================================
-    "History_and_Archaeology": [
-        "https://www.history.com/news/feed",
-        "https://www.archaeology.org/rss.xml",
-        "https://www.historyextra.com/feed/",
-        "https://www.historynet.com/feed/",
-        "https://www.smithsonianmag.com/rss/history/",
-        "https://www.ancient-origins.net/feed",
-        "https://www.historic-uk.com/feed/",
-        "https://historicaltextarchive.com/rss.xml",
-        "https://historynewsnetwork.org/rss.xml",
-        "https://www.medievalists.net/feed/",
-        "https://www.pastemagazine.com/history/feed",
-        "https://blog.britishmuseum.org/feed/",
-        "https://thehistoryofrome.typepad.com/history_of_rome/rss.xml",
-        "https://www.worldhistory.org/rss/",
-        "https://heritageaction.wordpress.com/feed/",
-        "https://www.thehistoryblog.com/feed",
-        "https://historyofyesterday.com/feed/",
-        "https://www.civilwar.org/rss.xml",
-        "https://www.egyptindependent.com/feed/",
-        "https://www.biblicalarchaeology.org/feed/",
-        "https://www.heritagedaily.com/feed",
-        "https://www.historytoday.com/feed",
-        "https://www.awesomestories.com/rss",
-        "https://www.eyewitnesstohistory.com/rss.xml",
-        "https://www.vintag.es/feeds/posts/default",
-        "https://www.medieval.eu/feed/",
-        "https://www.livescience.com/history/feed",
-        "https://www.militaryhistoryonline.com/rss",
-        "https://www.historytoday.com/feed",
-        "https://www.historyhit.com/feed/"
-    ],
+    def rewrite_content(self, category: str, text: str) -> Optional[Dict[str, str]]:
+        prompt = (
+            f"You are the elite Editor-in-Chief for 'Mnjnef'. Rewrite this {category.replace('_', ' ')} text into a highly professional, comprehensive article in premium English.\n\n"
+            f"CRITICAL RULE: STRICTLY NO POLITICS. If the text contains political nuances, reframe it entirely to focus on educational, technological, scientific, or human-interest aspects.\n\n"
+            f"FORMAT RULES:\n"
+            f"1. FIRST LINE MUST BE EXACTLY: 'TITLE: [Your Engaging Headline]'\n"
+            f"2. Below it, write the full body with Markdown subheadings (##).\n"
+            f"3. Output ONLY the title and the article body. No conversational filler."
+        )
+        
+        payload = {
+            "model": MnjnefConfig.MODEL, 
+            "messages": [{"role": "user", "content": prompt}, {"role": "user", "content": text}], 
+            "temperature": MnjnefConfig.AI_TEMPERATURE,
+            "max_tokens": MnjnefConfig.MAX_AI_TOKENS
+        }
+        
+        for attempt in range(MnjnefConfig.MAX_RETRIES):
+            try:
+                resp = requests.post(MnjnefConfig.API_URL, headers=self.headers, json=payload, timeout=120)
+                if resp.status_code == 200:
+                    raw = resp.json()['choices'][0]['message']['content'].strip()
+                    lines = raw.split('\n')
+                    title = "Mnjnef Discoveries"
+                    body_lines = []
+                    for i, l in enumerate(lines):
+                        if l.strip().upper().startswith("TITLE:"): 
+                            title = l.strip()[6:].replace('"', '').strip()
+                        elif i == 0 and not l.strip().startswith('#'): 
+                            title = l.strip().replace('"', '').strip()
+                        else: 
+                            body_lines.append(l)
+                    return {"title": title.replace("#", "").strip(), "body": '\n'.join(body_lines).strip()}
+                elif resp.status_code == 429: 
+                    time.sleep(15)
+            except Exception as e: 
+                logger.warning(f"AI API Error: {e}")
+            time.sleep(5)
+        return None
 
-    # ==========================================
-    # 🎨 CULTURE, LITERATURE & LANGUAGES
-    # ==========================================
-    "Culture_and_Literature": [
-        "https://www.lithub.com/feed/",
-        "https://bookriot.com/feed/",
-        "https://www.theparisreview.org/blog/feed/",
-        "https://electricliterature.com/feed/",
-        "https://www.poetryfoundation.org/feed/",
-        "https://www.themillions.com/feed",
-        "https://www.goodreads.com/blog/rss",
-        "https://www.artnews.com/feed/",
-        "https://hyperallergic.com/feed/",
-        "https://www.artforum.com/rss",
-        "https://www.artsy.net/rss",
-        "https://www.designboom.com/feed/",
-        "https://www.dezeen.com/feed/",
-        "https://www.archdaily.com/rss",
-        "https://www.thisiscolossal.com/feed/",
-        "https://mymodernmet.com/feed/",
-        "https://www.booooooom.com/feed/",
-        "https://juxtapoz.com/news/?format=feed",
-        "https://www.creativeboom.com/feed/",
-        "https://www.itsnicethat.com/feeds/rss",
-        "https://www.brainpickings.org/feed/",
-        "https://aeon.co/feed.rss",
-        "https://www.omniglot.com/blog/feed/",
-        "https://languagelog.ldc.upenn.edu/nll/?feed=rss2",
-        "https://www.fluentin3months.com/feed/",
-        "https://blog.duolingo.com/rss/",
-        "https://www.babbel.com/en/magazine/rss.xml",
-        "https://www.transparent.com/language-news/feed/",
-        "https://blog.rosettastone.com/feed/",
-        "https://www.thelinguist.com/feed/"
-    ],
+class SEOEngine:
+    STOP_WORDS = {'the', 'is', 'in', 'and', 'to', 'a', 'of', 'for', 'on', 'with', 'as', 'by', 'at', 'an', 'be', 'this', 'that', 'from'}
+    @classmethod
+    def extract_keywords(cls, text: str) -> str:
+        words = re.findall(r'\b[a-zA-Z]{5,}\b', text.lower())
+        word_counts = {}
+        for w in words:
+            if w not in cls.STOP_WORDS: word_counts[w] = word_counts.get(w, 0) + 1
+        sorted_words = sorted(word_counts.items(), key=lambda x: x[1], reverse=True)
+        return ", ".join([w for w, c in sorted_words[:5]])
 
-    # ==========================================
-    # 🛠️ PROBLEM SOLVING, DIY & MAINTENANCE
-    # ==========================================
-    "DIY_and_Maintenance": [
-        "https://lifehacker.com/rss",
-        "https://zenhabits.net/feed/",
-        "https://www.theminimalists.com/feed/",
-        "https://tinybuddha.com/feed/",
-        "https://markmanson.net/feed",
-        "https://jamesclear.com/feed",
-        "https://tim.blog/feed/",
-        "https://fs.blog/feed/",
-        "https://www.scotthyoung.com/blog/feed/",
-        "https://www.calnewport.com/blog/feed/",
-        "https://experiencelife.com/feed/",
-        "https://www.artofmanliness.com/feed/",
-        "https://www.mindbodygreen.com/rss",
-        "https://www.apartmenttherapy.com/main/rss",
-        "https://www.thespruce.com/rss",
-        "https://www.realsimple.com/rss",
-        "https://www.goodhousekeeping.com/rss",
-        "https://www.familyhandyman.com/feed/",
-        "https://www.bobvila.com/feed",
-        "https://www.thisoldhouse.com/feed",
-        "https://www.instructables.com/rss/",
-        "https://hackaday.com/feed/",
-        "https://www.diynetwork.com/rss",
-        "https://www.hometalk.com/rss",
-        "https://www.ifixit.com/News/feed",
-        "https://makezine.com/feed/",
-        "https://www.popularmechanics.com/rss",
-        "https://www.woodmagazine.com/rss",
-        "https://www.finewoodworking.com/feed",
-        "https://www.doityourself.com/rss",
-        "https://www.thefamilyhandyman.com/feed/",
-        "https://www.todayshomeowner.com/feed/",
-        "https://www.houselogic.com/feed/",
-        "https://www.remodeling.hw.net/rss",
-        "https://www.contractormag.com/rss",
-        "https://www.achrnews.com/rss",
-        "https://www.ecmweb.com/rss",
-        "https://www.plumbermag.com/rss",
-        "https://www.cnet.com/rss/smart-home/",
-        "https://www.techhive.com/feed"
-    ]
-}
+class HugoDeployer:
+    def write_markdown(self, category: str, title: str, body: str, image_url: str) -> bool:
+        slug = re.sub(r'[^a-z0-9]+', '-', title.lower()).strip('-') or f"post-{int(time.time())}"
+        filepath = os.path.join(MnjnefConfig.POSTS_DIR, f"{slug}.md")
+        if os.path.exists(filepath): filepath = os.path.join(MnjnefConfig.POSTS_DIR, f"{slug}-{int(time.time())}.md")
+        
+        hugo_date = datetime.now().astimezone().isoformat()
+        clean_cat = category.replace('_', ' ')
+        keywords = SEOEngine.extract_keywords(title + " " + body)
+        
+        frontmatter = [
+            "---", f"title: \"{title.replace('\"', \"'\")}\"", f"date: {hugo_date}", "draft: false",
+            f"author: \"Mnjnef Editorial\"", f"categories: [\"{clean_cat}\"]", 
+            f"tags: [\"Mnjnef\", \"{clean_cat}\", {chr(34) + keywords.replace(', ', chr(34)+', '+chr(34)) + chr(34)}]",
+            "cover:", f"  image: \"{image_url}\"", "  relative: false", "---", "", body
+        ]
+        try:
+            with open(filepath, "w", encoding="utf-8") as f: f.write("\n".join(frontmatter))
+            return True
+        except Exception as e: 
+            logger.error(f"Write Error: {e}")
+            return False
+
+    def deploy(self):
+        cmd = f"cd {MnjnefConfig.BASE_DIR} && hugo --minify > /dev/null 2>&1 && rm -rf {MnjnefConfig.HTML_DIR}* && cp -r public/* {MnjnefConfig.HTML_DIR} && chmod -R 755 {MnjnefConfig.HTML_DIR}"
+        os.system(cmd)
+
+class MnjnefTitanEngine:
+    def __init__(self):
+        self.db = DatabaseManager(MnjnefConfig.DB_PATH)
+        self.ai = AIEngine(MnjnefConfig.API_KEY)
+        self.hugo = HugoDeployer()
+        self.is_running = True
+        signal.signal(signal.SIGINT, self.shutdown)
+        signal.signal(signal.SIGTERM, self.shutdown)
+
+    def shutdown(self, signum, frame):
+        logger.info("Shutting down Mnjnef Engine...")
+        self.is_running = False
+
+    def cycle(self):
+        category = random.choice(list(MNJNEF_SOURCES.keys()))
+        feed_url = random.choice(MNJNEF_SOURCES[category])
+        
+        try:
+            feed = feedparser.parse(feed_url)
+            if not feed.entries: return
+            entry = feed.entries[0]
+            if self.db.is_processed(entry.link): return
+            
+            logger.info(f"Scraping: {entry.title[:40]}...")
+            art = Article(entry.link, keep_article_html=False)
+            art.download(); art.parse()
+            txt = art.text.strip() if len(art.text.strip()) > 150 else BeautifulSoup(getattr(entry, 'description', ''), "html.parser").get_text()
+            
+            if len(txt) < 50: return
+            
+            logger.info("AI Rewriting...")
+            ai_data = self.ai.rewrite_content(category, txt)
+            if not ai_data: return
+            
+            img = FreeImageBank.fetch_image(category, ai_data['title'])
+            
+            if self.hugo.write_markdown(category, ai_data['title'], ai_data['body'], img):
+                self.db.save_record(entry.link, ai_data['title'], category)
+                self.hugo.deploy()
+                logger.info(f"✅ Published: {ai_data['title']}")
+                
+        except Exception as e: 
+            pass
+
+    def run(self):
+        if not MnjnefConfig.API_KEY or MnjnefConfig.API_KEY == "ضع_مفتاحك_السري_هنا":
+            logger.error("API Key missing!")
+            return
+            
+        logger.info("🚀 Mnjnef Ultimate Engine is LIVE (24/7 Mode).")
+        while self.is_running:
+            self.cycle()
+            if not self.is_running: break
+            
+            # توقيت النشر العشوائي الإلزامي (دقيقتين إلى 5 دقائق)
+            sleep_duration = random.randint(MnjnefConfig.MIN_WAIT_SECONDS, MnjnefConfig.MAX_WAIT_SECONDS)
+            logger.info(f"💤 Waiting {sleep_duration} seconds...")
+            for _ in range(sleep_duration):
+                if not self.is_running: break
+                time.sleep(1)
+
+if __name__ == "__main__":
+    os.makedirs(MnjnefConfig.POSTS_DIR, exist_ok=True)
+    MnjnefTitanEngine().run()
