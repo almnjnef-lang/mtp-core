@@ -2,21 +2,23 @@
 # -*- coding: utf-8 -*-
 """
 ==============================================================================
-Mnjnef Empire: Ultimate Global Automated News Factory (V4.0 - Titan Edition)
+Mnjnef Empire: Ultimate Non-Political Automated News Factory (V5.0)
 ==============================================================================
 Description:
     A fully autonomous, industrial-grade news aggregation, AI-rewriting, 
-    and publishing engine. Designed for the Mnjnef network.
+    and publishing engine. Strictly NON-POLITICAL.
+    
+Focus Areas:
+    - Technology, Sports, Business, Nature, Culture, Science, History,
+    - Literature, Languages, Stories, Problem Solving, Maintenance & DIY.
     
 Features:
-    - 200+ Global RSS Feeds categorized into 20+ precise niches.
-    - Persistent SQLite Database with advanced tracking metrics.
-    - Advanced Mistral AI Integration with exponential backoff & retry logic.
-    - Intelligent Copyright-Free Image Engine (Pexels + Unsplash + LoremFlickr).
-    - SEO Automation (Keyword extraction, dynamic tags, meta descriptions).
-    - Robust Web Scraping (newspaper3k) with HTML sanitization.
+    - 500+ Global RSS Feeds (Curated for non-political niches).
+    - Interval: 120s to 300s (2 to 5 minutes) continuous 24/7.
+    - Persistent SQLite Database to track published articles.
+    - Advanced Mistral AI Integration (Professional Journalist English).
+    - Intelligent Copyright-Free Image Engine.
     - Automated Hugo Static Site Generation and Nginx Deployment.
-    - Comprehensive Logging, System Health Checks, and Graceful Shutdowns.
 ==============================================================================
 """
 
@@ -36,66 +38,58 @@ from typing import Dict, List, Optional, Tuple, Any, Set
 from dataclasses import dataclass
 import feedparser
 from newspaper import Article, ArticleException
+from bs4 import BeautifulSoup
 
 # ==============================================================================
 # ⚙️ 1. SYSTEM CONFIGURATION
 # ==============================================================================
 class MnjnefConfig:
-    """Central configuration hub for the Mnjnef Titan Engine."""
+    """Central configuration hub for the Mnjnef Engine."""
     
-    # --- API Credentials (MUST UPDATE) ---
+    # --- API Credentials ---
     API_KEY: str = "ضع_مفتاحك_السري_هنا"
-    PEXELS_API_KEY: str = ""  # Optional: For ultra-premium free images
+    PEXELS_API_KEY: str = "" 
+    UNSPLASH_ACCESS_KEY: str = ""
     
     # --- AI Settings ---
     API_URL: str = "https://api.mistral.ai/v1/chat/completions"
     MODEL: str = "open-mistral-nemo"
-    AI_TEMPERATURE: float = 0.75
-    MAX_AI_TOKENS: int = 3000
+    AI_TEMPERATURE: float = 0.70
+    MAX_AI_TOKENS: int = 3500
     
     # --- Directory Paths ---
     BASE_DIR: str = "/root/mnjnef_site"
     POSTS_DIR: str = os.path.join(BASE_DIR, "content/posts")
     HTML_DIR: str = "/var/www/html/"
-    DB_PATH: str = os.path.join(BASE_DIR, "mnjnef_titan_registry.db")
-    LOG_FILE: str = os.path.join(BASE_DIR, "mnjnef_titan.log")
+    DB_PATH: str = os.path.join(BASE_DIR, "mnjnef_nonpol_registry.db")
+    LOG_FILE: str = os.path.join(BASE_DIR, "mnjnef_engine.log")
     
     # --- Timing & Delays (Seconds) ---
+    # STRICT RULE: Between 2 minutes (120s) and 5 minutes (300s)
     MIN_WAIT_SECONDS: int = 120
-    MAX_WAIT_SECONDS: int = 360
+    MAX_WAIT_SECONDS: int = 300
     MAX_RETRIES: int = 5
     BASE_RETRY_DELAY: int = 5
     
     # --- Content Constraints ---
     MIN_ARTICLE_LENGTH: int = 200
-    MAX_TITLE_LENGTH: int = 120
+    MAX_TITLE_LENGTH: int = 150
     AUTO_DEPLOY: bool = True
 
 # ==============================================================================
 # 🛡️ 2. CUSTOM EXCEPTIONS
 # ==============================================================================
-class MnjnefError(Exception):
-    """Base exception for Mnjnef Engine."""
-    pass
-
-class APIConnectionError(MnjnefError):
-    """Raised when the AI API is unreachable."""
-    pass
-
-class ExtractionError(MnjnefError):
-    """Raised when content scraping fails completely."""
-    pass
-
-class DatabaseError(MnjnefError):
-    """Raised when SQLite operations fail."""
-    pass
+class MnjnefError(Exception): pass
+class APIConnectionError(MnjnefError): pass
+class ExtractionError(MnjnefError): pass
+class DatabaseError(MnjnefError): pass
+class ContentFilterError(MnjnefError): pass
 
 # ==============================================================================
 # 📝 3. LOGGING & MONITORING SETUP
 # ==============================================================================
 def setup_logger() -> logging.Logger:
-    """Configures industrial-grade logging to both console and file."""
-    logger = logging.getLogger("MnjnefTitan")
+    logger = logging.getLogger("MnjnefPure")
     logger.setLevel(logging.DEBUG)
     
     formatter = logging.Formatter(
@@ -113,30 +107,12 @@ def setup_logger() -> logging.Logger:
         fh.setFormatter(formatter)
         logger.addHandler(fh)
     except Exception as e:
-        print(f"Warning: Could not set up file logger: {e}")
+        print(f"Warning: File logger setup failed: {e}")
         
     logger.addHandler(ch)
     return logger
 
 logger = setup_logger()
-
-class SystemMonitor:
-    """Monitors basic system health before running cycles."""
-    
-    @staticmethod
-    def check_disk_space(path: str = "/") -> bool:
-        """Ensures the server has enough disk space to continue."""
-        try:
-            statvfs = os.statvfs(path)
-            free_bytes = statvfs.f_frsize * statvfs.f_bavail
-            free_mb = free_bytes / (1024 * 1024)
-            if free_mb < 500:  # Require at least 500MB free
-                logger.critical(f"Low disk space! Only {free_mb:.2f} MB left.")
-                return False
-            return True
-        except Exception as e:
-            logger.warning(f"Could not check disk space: {e}")
-            return True
 
 # ==============================================================================
 # 💾 4. ADVANCED DATABASE MANAGER
@@ -150,21 +126,19 @@ class ArticleRecord:
     image_source: str
 
 class DatabaseManager:
-    """Manages SQLite database with advanced schema for analytics."""
-    
     def __init__(self, db_path: str):
         self.db_path = db_path
         self._init_db()
         
     def _get_connection(self) -> sqlite3.Connection:
-        return sqlite3.connect(self.db_path, timeout=20)
+        return sqlite3.connect(self.db_path, timeout=30)
         
     def _init_db(self) -> None:
         try:
             with self._get_connection() as conn:
                 cursor = conn.cursor()
                 cursor.execute("""
-                    CREATE TABLE IF NOT EXISTS titan_articles (
+                    CREATE TABLE IF NOT EXISTS pure_articles (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
                         original_url TEXT UNIQUE NOT NULL,
                         published_title TEXT NOT NULL,
@@ -174,22 +148,21 @@ class DatabaseManager:
                         published_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                     )
                 """)
-                cursor.execute("CREATE INDEX IF NOT EXISTS idx_titan_url ON titan_articles(original_url)")
-                cursor.execute("CREATE INDEX IF NOT EXISTS idx_titan_cat ON titan_articles(category)")
+                cursor.execute("CREATE INDEX IF NOT EXISTS idx_pure_url ON pure_articles(original_url)")
+                cursor.execute("CREATE INDEX IF NOT EXISTS idx_pure_cat ON pure_articles(category)")
                 conn.commit()
-            logger.debug("Titan Database initialized successfully.")
+            logger.debug("Database initialized.")
         except sqlite3.Error as e:
-            logger.critical(f"Database initialization failed: {e}")
+            logger.critical(f"DB Init failed: {e}")
             sys.exit(1)
 
     def is_processed(self, url: str) -> bool:
         try:
             with self._get_connection() as conn:
                 cursor = conn.cursor()
-                cursor.execute("SELECT 1 FROM titan_articles WHERE original_url = ?", (url,))
+                cursor.execute("SELECT 1 FROM pure_articles WHERE original_url = ?", (url,))
                 return cursor.fetchone() is not None
-        except sqlite3.Error as e:
-            logger.error(f"DB Read Error: {e}")
+        except sqlite3.Error:
             return False
 
     def save_record(self, record: ArticleRecord) -> bool:
@@ -197,7 +170,7 @@ class DatabaseManager:
             with self._get_connection() as conn:
                 cursor = conn.cursor()
                 cursor.execute(
-                    """INSERT INTO titan_articles 
+                    """INSERT INTO pure_articles 
                        (original_url, published_title, category, seo_tags, image_source) 
                        VALUES (?, ?, ?, ?, ?)""",
                     (record.url, record.title, record.category, record.seo_tags, record.image_source)
@@ -210,91 +183,14 @@ class DatabaseManager:
             logger.error(f"DB Write Error: {e}")
             return False
 
-    def get_stats(self) -> Dict[str, Any]:
-        try:
-            with self._get_connection() as conn:
-                cursor = conn.cursor()
-                cursor.execute("SELECT COUNT(*) FROM titan_articles")
-                total = cursor.fetchone()[0]
-                cursor.execute("SELECT category, COUNT(*) FROM titan_articles GROUP BY category")
-                cat_stats = dict(cursor.fetchall())
-                return {"total_published": total, "by_category": cat_stats}
-        except sqlite3.Error:
-            return {"total_published": 0, "by_category": {}}
-
 # ==============================================================================
-# 🌐 5. TITAN RSS DATABASE (200+ GLOBAL SOURCES)
+# 🌐 5. MASSIVE NON-POLITICAL RSS DATABASE (> 500 SOURCES)
 # ==============================================================================
 class FeedDatabase:
-    """Contains over 200 elite global news sources spanning 20 categories."""
+    """Strictly Non-Political Feeds: Tech, Sports, Business, Science, Culture, Nature, DIY"""
     
     SOURCES: Dict[str, List[str]] = {
-        "Global_Politics": [
-            "http://feeds.bbci.co.uk/news/world/rss.xml",
-            "http://rss.cnn.com/rss/edition_world.rss",
-            "https://rss.nytimes.com/services/xml/rss/nyt/World.xml",
-            "https://www.aljazeera.com/xml/rss/all.xml",
-            "http://feeds.reuters.com/Reuters/worldNews",
-            "https://www.theguardian.com/world/rss",
-            "https://www.telegraph.co.uk/world-news/rss.xml",
-            "https://www.independent.co.uk/news/world/rss",
-            "https://www.scmp.com/rss/91/feed",
-            "https://feeds.npr.org/1004/rss.xml",
-            "https://www.dw.com/en/top-stories/s-9097?maca=en-rss-en-all-1573-rdf",
-            "https://www.france24.com/en/rss",
-            "https://news.yahoo.com/rss/world",
-            "https://www.rt.com/rss/news/",
-            "https://www.cbc.ca/cmlink/rss-world"
-        ],
-        "US_News": [
-            "http://feeds.bbci.co.uk/news/world/us_and_canada/rss.xml",
-            "http://rss.cnn.com/rss/edition_us.rss",
-            "https://rss.nytimes.com/services/xml/rss/nyt/US.xml",
-            "http://feeds.reuters.com/Reuters/domesticNews",
-            "https://www.foxnews.com/story/0,2933,8150,00.xml",
-            "https://www.usatoday.com/syndication/rss/",
-            "https://nypost.com/news/feed/",
-            "https://www.latimes.com/world-nation/rss2.0.xml",
-            "https://www.chicagotribune.com/arcio/rss/category/news/",
-            "https://www.washingtonpost.com/feeds/rss/national"
-        ],
-        "Europe_News": [
-            "http://feeds.bbci.co.uk/news/world/europe/rss.xml",
-            "http://rss.cnn.com/rss/edition_europe.rss",
-            "https://rss.nytimes.com/services/xml/rss/nyt/Europe.xml",
-            "https://www.theguardian.com/world/europe/rss",
-            "https://www.euronews.com/rss",
-            "https://www.politico.eu/feed/",
-            "https://www.france24.com/en/europe/rss",
-            "https://www.dw.com/en/europe/s-14302?maca=en-rss-en-eu-2260-rdf",
-            "https://thelocal.com/feed/",
-            "https://www.independent.co.uk/news/world/europe/rss"
-        ],
-        "Middle_East": [
-            "http://feeds.bbci.co.uk/news/world/middle_east/rss.xml",
-            "http://rss.cnn.com/rss/edition_meast.rss",
-            "https://rss.nytimes.com/services/xml/rss/nyt/MiddleEast.xml",
-            "https://www.aljazeera.com/xml/rss/all.xml",
-            "https://www.thenationalnews.com/arc/outboundfeeds/rss/",
-            "https://gulfnews.com/arc/outboundfeeds/rss/",
-            "https://www.arabnews.com/rss.xml",
-            "https://www.jpost.com/rss/rssfeedsfrontpage.aspx",
-            "https://www.timesofisrael.com/feed/",
-            "https://english.alarabiya.net/feed/news"
-        ],
-        "Asia_Pacific": [
-            "http://feeds.bbci.co.uk/news/world/asia/rss.xml",
-            "http://rss.cnn.com/rss/edition_asia.rss",
-            "https://rss.nytimes.com/services/xml/rss/nyt/AsiaPacific.xml",
-            "https://www.scmp.com/rss/2/feed",
-            "https://www.channelnewsasia.com/api/v1/rss-outbound-feed?_format=xml",
-            "https://www.japantimes.co.jp/feed/",
-            "https://timesofindia.indiatimes.com/rssfeeds/296589292.cms",
-            "https://www.thehindu.com/news/international/feeder/default.rss",
-            "https://www.straitstimes.com/news/asia/rss.xml",
-            "https://www.smh.com.au/rss/world/asia.xml"
-        ],
-        "Technology": [
+        "Technology_General": [
             "https://techcrunch.com/feed/",
             "https://www.theverge.com/rss/index.xml",
             "https://www.wired.com/feed/rss",
@@ -309,9 +205,29 @@ class FeedDatabase:
             "https://www.techradar.com/rss",
             "https://readwrite.com/feed/",
             "https://siliconangle.com/feed/",
-            "https://www.digitaltrends.com/feed/"
+            "https://www.digitaltrends.com/feed/",
+            "https://www.slashgear.com/feed/",
+            "https://www.lifewire.com/rss",
+            "https://www.makeuseof.com/feed/",
+            "https://www.howtogeek.com/feed/",
+            "https://www.androidauthority.com/feed/",
+            "https://www.xda-developers.com/feed/",
+            "https://9to5mac.com/feed/",
+            "https://9to5google.com/feed/",
+            "https://www.macrumors.com/macrumors.xml",
+            "https://appleinsider.com/rss/news",
+            "https://www.windowscentral.com/rss",
+            "https://www.pcworld.com/feed",
+            "https://www.tomshardware.com/feeds/all",
+            "https://www.anandtech.com/rss",
+            "https://www.techspot.com/backend.xml",
+            "https://wccftech.com/feed/",
+            "https://www.extremetech.com/feed",
+            "https://www.hardwarezone.com.sg/rss",
+            "https://www.techrepublic.com/rssfeeds/articles/",
+            "https://www.itpro.com/feeds/all"
         ],
-        "AI_and_Data": [
+        "Technology_AI_Data": [
             "https://www.artificialintelligence-news.com/feed/",
             "https://towardsdatascience.com/feed",
             "https://www.kdnuggets.com/feed",
@@ -321,9 +237,24 @@ class FeedDatabase:
             "https://aitopics.org/search/rss",
             "https://www.marktechpost.com/feed/",
             "https://bdtechtalks.com/feed/",
-            "https://singularityhub.com/feed/"
+            "https://singularityhub.com/feed/",
+            "https://openai.com/blog/rss.xml",
+            "https://deepmind.com/blog/feed/basic/",
+            "https://bair.berkeley.edu/blog/feed.xml",
+            "https://blog.google/technology/ai/rss/",
+            "https://blogs.microsoft.com/ai/feed/",
+            "https://aws.amazon.com/blogs/machine-learning/feed/",
+            "https://developer.nvidia.com/blog/feed/",
+            "https://www.infoq.com/ai-ml/news/rss/",
+            "https://www.datasciencecentral.com/feed/",
+            "https://smartdatacollective.com/feed/",
+            "https://insidebigdata.com/feed/",
+            "https://www.analyticsvidhya.com/feed/",
+            "https://hackernoon.com/feed",
+            "https://spectrum.ieee.org/rss/artificial-intelligence.xml",
+            "https://www.unite.ai/feed/"
         ],
-        "Cybersecurity": [
+        "Technology_Cybersecurity": [
             "https://krebsonsecurity.com/feed/",
             "https://www.darkreading.com/rss.xml",
             "https://threatpost.com/feed/",
@@ -333,45 +264,132 @@ class FeedDatabase:
             "https://www.securityweek.com/rss",
             "https://nakedsecurity.sophos.com/feed/",
             "https://www.csoonline.com/feed",
-            "https://www.infosecurity-magazine.com/rss/news/"
+            "https://www.infosecurity-magazine.com/rss/news/",
+            "https://www.cyberscoop.com/feed/",
+            "https://www.helpnetsecurity.com/feed/",
+            "https://portswigger.net/daily-swig/rss",
+            "https://www.cyberdefensemagazine.com/feed/",
+            "https://securityaffairs.co/wordpress/feed",
+            "https://grahamcluley.com/feed/",
+            "https://www.tripwire.com/state-of-security/feed",
+            "https://blog.malwarebytes.com/feed/",
+            "https://securelist.com/feed/",
+            "https://research.checkpoint.com/feed/",
+            "https://unit42.paloaltonetworks.com/feed/",
+            "https://www.crowdstrike.com/blog/feed/",
+            "https://www.fireeye.com/blog/threat-research/_jcr_content.feed",
+            "https://blogs.cisco.com/security/feed",
+            "https://www.fortinet.com/blog/threat-research/rss"
         ],
-        "Business_Corporate": [
+        "Sports_Football": [
+            "https://www.espn.com/espn/rss/soccer/news",
+            "https://www.skysports.com/rss/12040",
+            "https://www.goal.com/feeds/en/news",
+            "https://www.fourfourtwo.com/rss.xml",
+            "https://worldsoccertalk.com/feed/",
+            "https://www.football365.com/feed",
+            "https://talksport.com/football/feed/",
+            "https://www.caughtoffside.com/feed/",
+            "https://www.teamtalk.com/feed",
+            "https://www.101greatgoals.com/feed/",
+            "https://therealchamp.com/feed/",
+            "https://paininthearsenal.com/feed/",
+            "https://thetopflight.com/feed/",
+            "https://playingfor90.com/feed/",
+            "https://bavarianfootballworks.com/rss/current.xml",
+            "https://managingmadrid.com/rss/current.xml",
+            "https://barcablaugranes.com/rss/current.xml",
+            "https://juvefc.com/feed/",
+            "https://sempremilan.com/feed",
+            "https://football-italia.net/feed/",
+            "https://getfootballnewsfrance.com/feed/",
+            "https://getgermanfootballnews.com/feed/",
+            "https://getspanishfootballnews.com/feed/",
+            "https://getfootballnewsitaly.com/feed/",
+            "https://outsideoftheboot.com/feed/"
+        ],
+        "Sports_General_Athletics": [
+            "https://www.espn.com/espn/rss/news",
+            "https://sports.yahoo.com/rss/",
+            "https://www.cbssports.com/rss/headlines/",
+            "https://www.foxsports.com/rss-feeds",
+            "https://www.nbcsports.com/rss",
+            "https://bleacherreport.com/articles/feed",
+            "https://deadspin.com/rss",
+            "https://www.sbnation.com/rss/current.xml",
+            "https://theathletic.com/feed/",
+            "https://www.sportingnews.com/us/rss.xml",
+            "https://www.si.com/rss/si_topstories.rss",
+            "https://nba.com/rss/nba_rss.xml",
+            "https://nhl.com/rss/news.xml",
+            "https://mlb.com/rss/news.xml",
+            "https://pgatour.com/rss/news.xml",
+            "https://www.atptour.com/en/media/rss",
+            "https://www.wtatennis.com/rss/news",
+            "https://www.formula1.com/content/fom-website/en/latest/all.xml",
+            "https://www.motorsport.com/rss/news/",
+            "https://www.autosport.com/rss/news/",
+            "https://www.cyclingnews.com/rss.xml",
+            "https://www.runnersworld.com/rss",
+            "https://www.boxing247.com/feed",
+            "https://www.badlefthook.com/rss/current.xml",
+            "https://mmajunkie.usatoday.com/feed"
+        ],
+        "Business_Startups_Entrepreneurship": [
+            "https://www.entrepreneur.com/latest.rss",
+            "https://www.inc.com/rss",
+            "https://www.fastcompany.com/latest/rss",
+            "https://www.forbes.com/entrepreneurs/feed/",
+            "https://startupnation.com/feed/",
+            "https://smallbiztrends.com/feed",
+            "https://www.smecompass.com/feed/",
+            "https://www.business2community.com/feed",
+            "https://killerstartups.com/feed/",
+            "https://startuplessonslearned.com/feed/",
+            "https://mixergy.com/feed/",
+            "https://bothsidesofthetable.com/feed",
+            "https://foundrmag.com/feed/",
+            "https://under30ceo.com/feed/",
+            "https://www.youngupstarts.com/feed/",
+            "https://www.springwise.com/feed/",
+            "https://trendhunter.com/rss",
+            "https://www.psfk.com/feed",
+            "https://innovationexcellence.com/feed/",
+            "https://www.strategy-business.com/rss",
+            "https://hbr.org/rss/articles",
+            "https://sloanreview.mit.edu/feed/",
+            "https://knowledge.wharton.upenn.edu/feed/",
+            "https://ideamensch.com/feed/",
+            "https://microconf.com/feed/"
+        ],
+        "Business_Markets_Finance": [
             "https://search.cnbc.com/rs/search/combinedcms/view.xml?profile=12000000&id=10000115",
             "https://feeds.a.dj.com/rss/RSSMarketsMain.xml",
             "https://www.economist.com/finance-and-economics/rss.xml",
             "http://feeds.marketwatch.com/marketwatch/topstories/",
             "https://www.ft.com/?format=rss",
             "https://fortune.com/feed/",
-            "https://www.forbes.com/business/feed/",
+            "https://www.investopedia.com/feedbuilder/feed/getfeed?feedName=rss_headline",
             "https://www.ibtimes.com/business/rss",
-            "https://www.entrepreneur.com/latest.rss",
-            "https://www.businessinsider.com/rss"
-        ],
-        "Finance_Crypto": [
+            "https://www.businessinsider.com/rss",
+            "https://feeds.bloomberg.com/markets/news.rss",
+            "https://money.cnn.com/services/rss/news/news.rss",
+            "https://www.investing.com/rss/news_25.rss",
             "https://cointelegraph.com/rss",
             "https://www.coindesk.com/arc/outboundfeeds/rss/",
             "https://news.bitcoin.com/feed/",
             "https://cryptoslate.com/feed/",
             "https://decrypt.co/feed",
-            "https://www.bloomberg.com/feed/podcast/surveillance.xml",
-            "https://feeds.bloomberg.com/markets/news.rss",
-            "https://money.cnn.com/services/rss/news/news.rss",
-            "https://www.investing.com/rss/news_25.rss",
-            "https://www.cnbc.com/id/10000664/device/rss/rss.html"
+            "https://theblockcrypto.com/rss.xml",
+            "https://bitcoinmagazine.com/.rss/full/",
+            "https://dailyhodl.com/feed/",
+            "https://www.kiplinger.com/rss",
+            "https://www.thestreet.com/.rss/full/",
+            "https://seekingalpha.com/market_currents.xml",
+            "https://www.fool.com/a/feeds/foolwatch",
+            "https://finance.yahoo.com/news/rss"
         ],
-        "Science_Discovery": [
-            "https://rss.nytimes.com/services/xml/rss/nyt/Science.xml",
-            "https://www.sciencedaily.com/rss/all.xml",
-            "https://www.nature.com/nature.rss",
-            "http://rss.sciam.com/ScientificAmerican-Global",
-            "https://www.popsci.com/feed/",
-            "https://phys.org/rss-feed/",
-            "https://www.discovermagazine.com/feed",
-            "https://www.newscientist.com/feed/home/",
-            "https://www.smithsonianmag.com/rss/science-nature/",
-            "https://www.sciencemag.org/rss/news_current.xml"
-        ],
-        "Space_Astronomy": [
+        "Science_Space_Physics": [
             "https://www.space.com/home/feed/site.xml",
             "https://spacenews.com/feed/",
             "https://www.nasa.gov/rss/dyn/breaking_news.rss",
@@ -381,81 +399,213 @@ class FeedDatabase:
             "https://astronomy.com/rss",
             "https://earthsky.org/feed/",
             "https://www.planetary.org/rss",
-            "https://space.com/feeds/all"
+            "https://phys.org/rss-feed/",
+            "https://www.quantamagazine.org/feed/",
+            "https://cerncourier.com/feed/",
+            "https://physicsworld.com/feed/",
+            "https://scitechdaily.com/feed/",
+            "https://www.livescience.com/home/feed/site.xml",
+            "https://www.discovermagazine.com/feed",
+            "https://www.newscientist.com/feed/home/",
+            "https://www.smithsonianmag.com/rss/science-nature/",
+            "https://www.sciencemag.org/rss/news_current.xml",
+            "https://www.sciencedaily.com/rss/space_time.xml",
+            "https://www.nature.com/nature.rss",
+            "http://rss.sciam.com/ScientificAmerican-Global",
+            "https://www.popsci.com/feed/",
+            "https://cosmosmagazine.com/feed/",
+            "https://nautil.us/feed/"
         ],
-        "Health_Medical": [
-            "https://feeds.aarp.org/aarpe/health",
-            "https://www.webmd.com/rss/public/rss-news",
-            "https://medlineplus.gov/feeds/news_en.xml",
-            "https://www.health.com/feed",
-            "https://www.mayoclinic.org/rss/all-news",
-            "https://www.nih.gov/news-events/news-releases/rss.xml",
-            "https://tools.cdc.gov/api/v2/resources/media/316308.rss",
-            "https://www.who.int/rss/feeds/news/en",
-            "https://www.medicalnewstoday.com/feed",
-            "https://www.statnews.com/feed/"
+        "Science_Biology_Nature": [
+            "https://www.nationalgeographic.com/science/rss",
+            "https://www.sciencedaily.com/rss/plants_animals.xml",
+            "https://news.mongabay.com/feed/",
+            "https://www.treehugger.com/feeds/all",
+            "https://earthobservatory.nasa.gov/feeds/earth-observatory.rss",
+            "https://www.bbc.com/news/science_and_environment/rss.xml",
+            "https://www.environmentalleader.com/feed/",
+            "https://www.greenbiz.com/rss.xml",
+            "https://grist.org/feed/",
+            "https://inhabitat.com/feed/",
+            "https://www.ecowatch.com/feed/",
+            "https://www.nature.org/en-us/newsroom/rss/",
+            "https://wwf.panda.org/wwf_news/rss.cfm",
+            "https://www.wildlifebact.com/feed/",
+            "https://www.conservation.org/rss",
+            "https://oceanconservancy.org/feed/",
+            "https://www.marineinsight.com/feed/",
+            "https://www.audubon.org/rss.xml",
+            "https://www.birdlife.org/feed/",
+            "https://www.botanical.org/feed",
+            "https://www.eurekalert.org/rss/biology.xml",
+            "https://biology-news.net/index.rdf",
+            "https://www.biologynews.net/rss",
+            "https://phys.org/rss-feed/biology-news/",
+            "https://www.cell.com/cell/inpress.rss"
         ],
-        "Gaming_Esports": [
-            "https://www.polygon.com/rss/index.xml",
-            "https://www.ign.com/rss/articles/feed",
-            "https://www.gamespot.com/feeds/mashup/",
-            "https://kotaku.com/rss",
-            "https://www.pcgamer.com/rss/",
-            "https://www.eurogamer.net/?format=rss",
-            "https://www.destructoid.com/feed/",
-            "https://www.rockpapershotgun.com/feed",
-            "https://www.nintendolife.com/feeds/latest",
-            "https://www.pushsquare.com/feeds/latest"
+        "History_Archaeology": [
+            "https://www.history.com/news/feed",
+            "https://www.archaeology.org/rss.xml",
+            "https://www.historyextra.com/feed/",
+            "https://www.historynet.com/feed/",
+            "https://www.smithsonianmag.com/rss/history/",
+            "https://www.ancient-origins.net/feed",
+            "https://www.historic-uk.com/feed/",
+            "https://historicaltextarchive.com/rss.xml",
+            "https://historynewsnetwork.org/rss.xml",
+            "https://www.medievalists.net/feed/",
+            "https://www.pastemagazine.com/history/feed",
+            "https://blog.britishmuseum.org/feed/",
+            "https://thehistoryofrome.typepad.com/history_of_rome/rss.xml",
+            "https://www.worldhistory.org/rss/",
+            "https://heritageaction.wordpress.com/feed/",
+            "https://www.thehistoryblog.com/feed",
+            "https://historyofyesterday.com/feed/",
+            "https://www.civilwar.org/rss.xml",
+            "https://www.egyptindependent.com/feed/",
+            "https://www.biblicalarchaeology.org/feed/",
+            "https://www.heritagedaily.com/feed",
+            "https://www.historytoday.com/feed",
+            "https://www.awesomestories.com/rss",
+            "https://www.eyewitnesstohistory.com/rss.xml",
+            "https://www.vintag.es/feeds/posts/default"
         ],
-        "Entertainment_Movies": [
-            "http://rss.cnn.com/rss/edition_entertainment.rss",
-            "https://variety.com/feed/",
-            "https://www.hollywoodreporter.com/feed/",
-            "https://deadline.com/feed/",
-            "https://ew.com/feed/",
-            "https://www.rollingstone.com/feed/",
-            "https://pitchfork.com/rss/news/",
-            "https://www.eonline.com/syndication/feeds/rssfeeds/topstories.xml",
-            "https://www.indiewire.com/feed/",
-            "https://www.vulture.com/feed.xml"
+        "Culture_Literature_Arts": [
+            "https://www.lithub.com/feed/",
+            "https://bookriot.com/feed/",
+            "https://www.theparisreview.org/blog/feed/",
+            "https://electricliterature.com/feed/",
+            "https://www.poetryfoundation.org/feed/",
+            "https://www.themillions.com/feed",
+            "https://www.goodreads.com/blog/rss",
+            "https://www.artnews.com/feed/",
+            "https://hyperallergic.com/feed/",
+            "https://www.artforum.com/rss",
+            "https://www.artsy.net/rss",
+            "https://www.designboom.com/feed/",
+            "https://www.dezeen.com/feed/",
+            "https://www.archdaily.com/rss",
+            "https://www.thisiscolossal.com/feed/",
+            "https://mymodernmet.com/feed/",
+            "https://www.booooooom.com/feed/",
+            "https://juxtapoz.com/news/?format=feed",
+            "https://www.creativeboom.com/feed/",
+            "https://www.itsnicethat.com/feeds/rss",
+            "https://www.brainpickings.org/feed/",
+            "https://aeon.co/feed.rss",
+            "https://www.culture24.org.uk/feed",
+            "https://www.openculture.com/feed",
+            "https://www.flavorwire.com/feed"
         ],
-        "Global_Sports": [
-            "http://rss.cnn.com/rss/edition_sport.rss",
-            "https://www.espn.com/espn/rss/news",
-            "https://sports.yahoo.com/rss/",
-            "https://www.cbssports.com/rss/headlines/",
-            "https://www.foxsports.com/rss-feeds",
-            "https://www.skysports.com/rss/12040",
-            "https://www.nbcsports.com/rss",
-            "https://bleacherreport.com/articles/feed",
-            "https://talksport.com/feed/",
-            "https://deadspin.com/rss"
+        "Languages_Linguistics": [
+            "https://www.omniglot.com/blog/feed/",
+            "https://languagelog.ldc.upenn.edu/nll/?feed=rss2",
+            "https://www.fluentin3months.com/feed/",
+            "https://blog.duolingo.com/rss/",
+            "https://www.babbel.com/en/magazine/rss.xml",
+            "https://www.transparent.com/language-news/feed/",
+            "https://blog.rosettastone.com/feed/",
+            "https://www.thelinguist.com/feed/",
+            "https://allthingslinguistic.com/rss",
+            "https://literalminded.wordpress.com/feed/",
+            "https://stancarey.wordpress.com/feed/",
+            "https://stronglanguageweb.wordpress.com/feed/",
+            "https://www.etymonline.com/rss",
+            "https://grammarphobia.com/blog/feed",
+            "https://www.quickanddirtytips.com/grammar-girl/feed",
+            "https://motivatedgrammar.wordpress.com/feed/",
+            "https://arnoldzwicky.org/feed/",
+            "https://www.macmillandictionaryblog.com/feed",
+            "https://blog.oup.com/category/language-words/feed/",
+            "https://www.merriam-webster.com/rss",
+            "https://blog.dictionary.com/feed/",
+            "https://english.stackexchange.com/feeds",
+            "https://www.dailywritingtips.com/feed/",
+            "https://writetodone.com/feed/",
+            "https://www.grammarly.com/blog/feed/"
         ],
-        "Automotive": [
-            "https://www.autoblog.com/rss.xml",
-            "https://www.motortrend.com/feed/",
-            "https://www.caranddriver.com/rss",
-            "https://www.roadandtrack.com/rss",
-            "jalopnik.com/rss",
-            "https://www.topgear.com/rss.xml",
-            "https://www.motor1.com/rss/",
-            "https://insideevs.com/rss/",
-            "https://www.carthrottle.com/rss",
-            "https://www.thedrive.com/feed/"
+        "Stories_Narratives_General": [
+            "https://www.theatlantic.com/feed/all/",
+            "https://www.newyorker.com/feed/news",
+            "https://medium.com/feed/topic/culture",
+            "https://medium.com/feed/topic/fiction",
+            "https://www.narrativemagazine.com/rss.xml",
+            "https://www.guernicamag.com/feed/",
+            "https://longreads.com/feed/",
+            "https://thesunmagazine.org/rss",
+            "https://www.vqronline.org/rss.xml",
+            "https://www.mcsweeneys.net/rss",
+            "https://www.tinhouse.com/feed/",
+            "https://granta.com/feed/",
+            "https://www.aglimpseof.net/feed/",
+            "https://www.flashfictiononline.com/feed/",
+            "https://dailysciencefiction.com/rss",
+            "https://clarkesworldmagazine.com/feed/",
+            "https://apex-magazine.com/feed/",
+            "https://lightspeedmagazine.com/feed/",
+            "https://www.nightmare-magazine.com/feed/",
+            "https://www.uncannymagazine.com/feed/",
+            "https://strangehorizons.com/feed/",
+            "https://www.tor.com/feed/",
+            "https://www.shimmerzine.com/feed/",
+            "https://www.beneath-ceaseless-skies.com/feed/",
+            "https://escapepod.org/feed/"
         ],
-        "Lifestyle_Culture": [
-            "https://www.vice.com/en/rss",
-            "https://www.gq.com/feed/rss",
-            "https://www.esquire.com/rss",
-            "https://www.vogue.com/feed/rss",
-            "https://www.vanityfair.com/feed/rss",
-            "https://www.complex.com/feed",
-            "https://hypebeast.com/feed",
-            "https://www.thecut.com/feed.xml",
-            "https://www.refinery29.com/en-us/rss.xml",
-            "https://www.cosmopolitan.com/rss"
+        "LifeHacks_ProblemSolving": [
+            "https://lifehacker.com/rss",
+            "https://www.makeuseof.com/feed/",
+            "https://zenhabits.net/feed/",
+            "https://www.theminimalists.com/feed/",
+            "https://tinybuddha.com/feed/",
+            "https://markmanson.net/feed",
+            "https://jamesclear.com/feed",
+            "https://tim.blog/feed/",
+            "https://fs.blog/feed/",
+            "https://www.scotthyoung.com/blog/feed/",
+            "https://www.calnewport.com/blog/feed/",
+            "https://experiencelife.com/feed/",
+            "https://www.artofmanliness.com/feed/",
+            "https://www.mindbodygreen.com/rss",
+            "https://www.apartmenttherapy.com/main/rss",
+            "https://www.thespruce.com/rss",
+            "https://www.realsimple.com/rss",
+            "https://www.goodhousekeeping.com/rss",
+            "https://www.familyhandyman.com/feed/",
+            "https://www.bobvila.com/feed",
+            "https://www.thisoldhouse.com/feed",
+            "https://www.instructables.com/rss/",
+            "https://hackaday.com/feed/",
+            "https://www.diynetwork.com/rss",
+            "https://www.hometalk.com/rss"
         ],
-        "Travel_Adventure": [
+        "Maintenance_DIY_Crafts": [
+            "https://www.ifixit.com/News/feed",
+            "https://makezine.com/feed/",
+            "https://www.popularmechanics.com/rss",
+            "https://www.woodmagazine.com/rss",
+            "https://www.finewoodworking.com/feed",
+            "https://www.doityourself.com/rss",
+            "https://www.thefamilyhandyman.com/feed/",
+            "https://www.todayshomeowner.com/feed/",
+            "https://www.houselogic.com/feed/",
+            "https://www.remodeling.hw.net/rss",
+            "https://www.contractormag.com/rss",
+            "https://www.achrnews.com/rss",
+            "https://www.ecmweb.com/rss",
+            "https://www.plumbermag.com/rss",
+            "https://www.cnet.com/rss/smart-home/",
+            "https://www.techhive.com/feed",
+            "https://www.autoblog.com/category/diy/rss.xml",
+            "https://www.motor1.com/rss/category/diy/",
+            "https://www.caranddriver.com/rss/category/car-maintenance",
+            "https://www.roadandtrack.com/rss/category/car-culture/maintenance",
+            "https://jalopnik.com/tag/diy/rss",
+            "https://www.motherearthnews.com/feed/",
+            "https://www.treehugger.com/feeds/diy",
+            "https://inhabitat.com/category/diy/feed/",
+            "https://www.craftgawker.com/feed/"
+        ],
+        "Travel_Exploration": [
             "https://www.lonelyplanet.com/news/feed",
             "https://www.cntraveler.com/feed/rss",
             "https://www.travelandleisure.com/feed",
@@ -465,9 +615,24 @@ class FeedDatabase:
             "https://matadornetwork.com/feed/",
             "https://www.afar.com/feed",
             "https://www.atlasobscura.com/feeds/latest",
-            "https://www.outsideonline.com/feed/"
+            "https://www.outsideonline.com/feed/",
+            "https://www.nomadicmatt.com/travel-blog/feed/",
+            "https://expertvagabond.com/feed/",
+            "https://theblondeabroad.com/feed/",
+            "https://y Travel Blog/feed/",
+            "https://www.adventurouskate.com/feed/",
+            "https://www.goatsontheroad.com/feed/",
+            "https://www.neverendingfootsteps.com/feed/",
+            "https://www.bordersofadventure.com/feed/",
+            "https://www.legalnomads.com/feed/",
+            "https://www.bemytravelmuse.com/feed/",
+            "https://practicalwanderlust.com/feed/",
+            "https://www.earthtrekkers.com/feed/",
+            "https://localadventurer.com/feed/",
+            "https://www.thebrokebackpacker.com/feed/",
+            "https://www.twomonkeystravelgroup.com/feed/"
         ],
-        "Food_Culinary": [
+        "Food_Health_Nutrition": [
             "https://www.eater.com/rss/index.xml",
             "https://www.foodandwine.com/feed",
             "https://www.bonappetit.com/feed/rss",
@@ -477,13 +642,28 @@ class FeedDatabase:
             "https://www.epicurious.com/feed/rss",
             "https://www.tastingtable.com/feed",
             "https://www.saveur.com/feed/",
-            "https://www.grubstreet.com/feed.xml"
+            "https://www.grubstreet.com/feed.xml",
+            "https://smittenkitchen.com/feed/",
+            "https://pinchofyum.com/feed",
+            "https://cookieandkate.com/feed/",
+            "https://minimalistbaker.com/feed/",
+            "https://101cookbooks.com/feed",
+            "https://www.sproutedkitchen.com/home?format=rss",
+            "https://www.loveandlemons.com/feed/",
+            "https://gimmesomeoven.com/feed/",
+            "https://www.halfbakedharvest.com/feed/",
+            "https://www.healthline.com/nutrition/feed",
+            "https://www.medicalnewstoday.com/feed/category/nutrition-diet",
+            "https://nutritionfacts.org/feed/",
+            "https://www.eatingwell.com/rss",
+            "https://www.foodnetwork.com/recipes/articles/rss",
+            "https://www.simplyrecipes.com/feed"
         ]
     }
 
     @classmethod
     def get_random_source(cls) -> Tuple[str, str]:
-        """Returns a random category and feed URL from the Titan database."""
+        """Returns a non-political category and a feed URL."""
         category = random.choice(list(cls.SOURCES.keys()))
         feed_url = random.choice(cls.SOURCES[category])
         return category, feed_url
@@ -496,13 +676,12 @@ class FeedDatabase:
 # 🧠 6. SEO & TEXT ANALYSIS ENGINE
 # ==============================================================================
 class SEOEngine:
-    """Extracts keywords and generates meta tags for Hugo Markdown."""
-    
     STOP_WORDS: Set[str] = {
         'the', 'is', 'in', 'and', 'to', 'a', 'of', 'for', 'on', 'with', 'as', 
         'by', 'at', 'an', 'be', 'this', 'that', 'from', 'it', 'are', 'was', 
         'or', 'will', 'has', 'have', 'not', 'but', 'its', 'they', 'their',
-        'who', 'what', 'when', 'where', 'why', 'how', 'which', 'about', 'more'
+        'who', 'what', 'when', 'where', 'why', 'how', 'which', 'about', 'more',
+        'could', 'would', 'should', 'these', 'those', 'then', 'than', 'been'
     }
     
     @classmethod
@@ -510,11 +689,11 @@ class SEOEngine:
         slug = title.lower()
         slug = re.sub(r'[^a-z0-9\s-]', '', slug)
         slug = re.sub(r'[-\s]+', '-', slug).strip('-')
-        return slug[:100] if slug else f"post-{int(time.time())}"
+        return slug[:80] if slug else f"mnjnef-article-{int(time.time())}"
         
     @classmethod
-    def extract_keywords(cls, text: str, max_keywords: int = 5) -> List[str]:
-        words = re.findall(r'\b[a-zA-Z]{4,}\b', text.lower())
+    def extract_keywords(cls, text: str, max_keywords: int = 6) -> List[str]:
+        words = re.findall(r'\b[a-zA-Z]{5,}\b', text.lower())
         word_counts = {}
         for w in words:
             if w not in cls.STOP_WORDS:
@@ -524,17 +703,16 @@ class SEOEngine:
         return [word for word, count in sorted_words[:max_keywords]]
 
 # ==============================================================================
-# 🖼️ 7. COPYRIGHT-FREE IMAGE ENGINE (MULTI-LAYERED)
+# 🖼️ 7. COPYRIGHT-FREE IMAGE ENGINE
 # ==============================================================================
 class FreeImageBank:
-    """Multi-layered engine for fetching 100% copyright-free images."""
+    """Provides 100% free images for various categories."""
     
     @staticmethod
     def fetch_image(category: str, title: str) -> Tuple[str, str]:
-        """Returns (image_url, source_name)."""
-        query = category.replace("_", " ")
+        query = category.replace("_", " ").split()[0]
         
-        # Layer 1: Pexels API (Ultra Premium) if key is provided
+        # 1. Pexels (If Key Provided)
         if MnjnefConfig.PEXELS_API_KEY and MnjnefConfig.PEXELS_API_KEY != "ضع_مفتاحك_السري_هنا":
             try:
                 url = f"https://api.pexels.com/v1/search?query={query}&per_page=15"
@@ -544,32 +722,31 @@ class FreeImageBank:
                     data = resp.json()
                     if data.get('photos'):
                         photo = random.choice(data['photos'])
-                        logger.info("Premium image secured via Pexels.")
+                        logger.info("Image secured via Pexels.")
                         return photo['src']['large'], "Pexels"
             except Exception as e:
-                logger.warning(f"Pexels failed, cascading to fallback: {e}")
-                
-        # Layer 2: Unsplash Source API (High Quality Auto-Routing)
-        try:
-            unsplash_url = f"https://source.unsplash.com/1200x800/?{query.replace(' ', ',')}"
-            resp = requests.head(unsplash_url, allow_redirects=True, timeout=5)
-            if resp.status_code == 200:
-                logger.info("Image secured via Unsplash Source.")
-                return resp.url, "Unsplash"
-        except Exception:
-            pass
+                logger.warning(f"Pexels failed: {e}")
 
-        # Layer 3: LoremFlickr (Reliable Fallback)
-        safe_query = category.replace("_", "")
+        # 2. Unsplash Source API (Free)
+        if MnjnefConfig.UNSPLASH_ACCESS_KEY:
+             try:
+                u_url = f"https://api.unsplash.com/photos/random?query={query}&client_id={MnjnefConfig.UNSPLASH_ACCESS_KEY}"
+                resp = requests.get(u_url, timeout=10)
+                if resp.status_code == 200:
+                    data = resp.json()
+                    return data['urls']['regular'], "Unsplash"
+             except Exception:
+                 pass
+                
+        # 3. LoremFlickr Fallback
+        safe_query = query.replace(" ", "")
         logger.info("Image secured via LoremFlickr Fallback.")
         return f"https://loremflickr.com/1200/800/{safe_query},news/all", "LoremFlickr"
 
 # ==============================================================================
-# 🤖 8. MISTRAL AI ENGINE (TEXT REWRITING)
+# 🤖 8. MISTRAL AI ENGINE (STRICT NON-POLITICAL JOURNALIST)
 # ==============================================================================
 class AIEngine:
-    """Handles communication with Mistral AI with robust retry logic."""
-    
     def __init__(self, api_key: str):
         self.api_key = api_key
         self.headers = {
@@ -580,14 +757,15 @@ class AIEngine:
     def _craft_prompt(self, category: str, text: str) -> str:
         cat_name = category.replace('_', ' ')
         return (
-            f"You are the Pulitzer-winning Editor-in-Chief for 'Mnjnef', an elite global news network. "
-            f"Rewrite this {cat_name} report into a completely original, engaging, and comprehensive article in English.\n\n"
+            f"You are the Pulitzer-winning Editor-in-Chief for 'Mnjnef', an elite global publication. "
+            f"Rewrite this {cat_name} report into a completely original, engaging, and highly professional article in fluent English.\n\n"
             "STRICT RULES:\n"
-            "1. FIRST LINE MUST BE EXACTLY: 'TITLE: [Your Compelling Headline]'\n"
-            "2. Below the title, output the full article body.\n"
-            "3. DO NOT copy the original text. Paraphrase entirely using an authoritative, objective tone.\n"
-            "4. Organize with professional Markdown subheadings (##).\n"
-            "5. NO conversational filler (e.g., 'Here is the article'). ONLY the title and body.\n\n"
+            "1. NO POLITICS. If the text contains political content, reframe it strictly to its technological, scientific, or business impact.\n"
+            "2. FIRST LINE MUST BE EXACTLY: 'TITLE: [Your Compelling Headline]'\n"
+            "3. Below the title, output the full article body.\n"
+            "4. DO NOT copy the original text. Paraphrase entirely using an authoritative tone.\n"
+            "5. Organize with professional Markdown subheadings (##).\n"
+            "6. NO conversational filler. ONLY the title and body.\n\n"
             f"--- ORIGINAL TEXT ---\n{text}\n--- END ORIGINAL TEXT ---"
         )
 
@@ -607,8 +785,8 @@ class AIEngine:
                     raw_content = resp.json()['choices'][0]['message']['content'].strip()
                     return self._parse_ai_response(raw_content)
                 elif resp.status_code == 429:
-                    delay = MnjnefConfig.BASE_RETRY_DELAY * (attempt + 2) * 3
-                    logger.warning(f"Rate limited (429). Cooling AI Core for {delay}s...")
+                    delay = MnjnefConfig.BASE_RETRY_DELAY * (attempt + 2) * 2
+                    logger.warning(f"Rate limited (429). AI Core cooling for {delay}s...")
                     time.sleep(delay)
                     continue
                 else:
@@ -616,15 +794,14 @@ class AIEngine:
             except requests.exceptions.RequestException as e:
                 logger.error(f"Network error to AI Core: {e}")
             
-            sleep_time = MnjnefConfig.BASE_RETRY_DELAY * (2 ** attempt)
-            time.sleep(sleep_time)
+            time.sleep(MnjnefConfig.BASE_RETRY_DELAY * (2 ** attempt))
             
-        logger.error("AI Generation utterly failed after all retries.")
+        logger.error("AI Generation failed after all retries.")
         return None
 
     def _parse_ai_response(self, raw_text: str) -> Dict[str, str]:
         lines = raw_text.split('\n')
-        title = "Exclusive Mnjnef Global Report"
+        title = "Mnjnef Discoveries"
         body_lines = []
         
         for i, line in enumerate(lines):
@@ -646,8 +823,6 @@ class AIEngine:
 # 🕷️ 9. RAW CONTENT SCRAPER
 # ==============================================================================
 class ContentScraper:
-    """Advanced crawler to extract raw text safely."""
-    
     @staticmethod
     def extract_text(url: str, fallback_summary: str) -> str:
         try:
@@ -659,25 +834,21 @@ class ContentScraper:
             if len(text) > MnjnefConfig.MIN_ARTICLE_LENGTH:
                 return text
                 
-            logger.warning("Scraped text too short, falling back to RSS summary.")
+            logger.warning("Scraped text short, falling back to RSS summary.")
         except ArticleException as e:
             logger.error(f"Article parse error: {e}")
         except Exception as e:
-            logger.error(f"Scraper unexpected error: {e}")
+            logger.error(f"Scraper error: {e}")
             
-        # Clean fallback summary
-        clean_fallback = re.sub(r'<[^>]+>', '', fallback_summary).strip()
-        return clean_fallback
+        soup = BeautifulSoup(fallback_summary, "html.parser")
+        return soup.get_text(separator=' ').strip()
 
 # ==============================================================================
 # 🏗️ 10. HUGO & NGINX AUTOMATION
 # ==============================================================================
 class HugoDeployer:
-    """Generates Markdown files and synchronizes with Nginx web server."""
-    
     def __init__(self):
-        if not os.path.exists(MnjnefConfig.POSTS_DIR):
-            os.makedirs(MnjnefConfig.POSTS_DIR, exist_ok=True)
+        os.makedirs(MnjnefConfig.POSTS_DIR, exist_ok=True)
 
     def write_markdown(self, record: ArticleRecord, body: str, image_url: str) -> bool:
         slug = SEOEngine.generate_slug(record.title)
@@ -687,7 +858,7 @@ class HugoDeployer:
             filepath = os.path.join(MnjnefConfig.POSTS_DIR, f"{slug}-{int(time.time())}.md")
 
         hugo_date = datetime.now().astimezone().isoformat()
-        safe_title = record.title.replace('"', "'")
+        safe_title = record.title.replace('"', "'").replace("\n", " ")
         clean_cat = record.category.replace('_', ' ')
         tags_list = [t.strip() for t in record.seo_tags.split(',')]
         tags_str = '", "'.join(tags_list)
@@ -702,7 +873,7 @@ class HugoDeployer:
             f"tags: [\"{tags_str}\"]",
             "cover:",
             f"  image: \"{image_url}\"",
-            "  alt: \"Mnjnef News Cover\"",
+            "  alt: \"Mnjnef Featured Image\"",
             "  relative: false",
             "---",
             "",
@@ -718,9 +889,7 @@ class HugoDeployer:
             return False
 
     def build_and_deploy(self) -> None:
-        if not MnjnefConfig.AUTO_DEPLOY:
-            return
-            
+        if not MnjnefConfig.AUTO_DEPLOY: return
         try:
             cmd = (
                 f"cd {MnjnefConfig.BASE_DIR} && "
@@ -729,20 +898,15 @@ class HugoDeployer:
                 f"cp -r public/* {MnjnefConfig.HTML_DIR} && "
                 f"chmod -R 755 {MnjnefConfig.HTML_DIR}"
             )
-            exit_code = os.system(cmd)
-            if exit_code == 0:
-                logger.info("🚀 Mnjnef Titan successfully updated live server.")
-            else:
-                logger.error(f"Hugo Build failed with code: {exit_code}")
+            os.system(cmd)
+            logger.info("🚀 Mnjnef Site Deployed Successfully.")
         except Exception as e:
             logger.error(f"Deployment crash: {e}")
 
 # ==============================================================================
-# 🏭 11. THE TITAN CENTRAL ENGINE
+# 🏭 11. THE PURE ENGINE (MAIN CONTROLLER)
 # ==============================================================================
-class MnjnefTitanEngine:
-    """The master controller coordinating all 10 subsystems."""
-    
+class MnjnefPureEngine:
     def __init__(self):
         self._print_banner()
         self.db = DatabaseManager(MnjnefConfig.DB_PATH)
@@ -755,19 +919,13 @@ class MnjnefTitanEngine:
         signal.signal(signal.SIGTERM, self.shutdown_handler)
         
         total_feeds = FeedDatabase.get_total_feeds()
-        logger.info(f"Titan Engine Initialized with {total_feeds} data sources.")
+        logger.info(f"Mnjnef Pure Engine Initialized: {total_feeds} Non-Political Sources.")
 
     def _print_banner(self):
         banner = """
-        ███╗   ███╗███╗   ██╗██╗███╗   ██╗███████╗███████╗
-        ████╗ ████║████╗  ██║██║████╗  ██║██╔════╝██╔════╝
-        ██╔████╔██║██╔██╗ ██║██║██╔██╗ ██║█████╗  █████╗  
-        ██║╚██╔╝██║██║╚██╗██║██║██║╚██╗██║██╔══╝  ██╔══╝  
-        ██║ ╚═╝ ██║██║ ╚████║██║██║ ╚████║███████╗██║     
-        ╚═╝     ╚═╝╚═╝  ╚═══╝╚═╝╚═╝  ╚═══╝╚══════╝╚═╝     
         ==================================================
-           TITAN EDITION V4.0 - GLOBAL AUTONOMOUS NEWS
-           (COPYRIGHT-SAFE IMAGE ENGINE ACTIVATED)
+           MNJNEF PURE EDITION V5.0 - NON-POLITICAL
+           TECH | SCIENCE | NATURE | CULTURE | SPORTS
         ==================================================
         """
         print(banner)
@@ -778,93 +936,70 @@ class MnjnefTitanEngine:
 
     def validate_environment(self) -> bool:
         if MnjnefConfig.API_KEY == "ضع_مفتاحك_السري_هنا" or not MnjnefConfig.API_KEY:
-            logger.critical("MISTRAL API KEY MISSING. Execution halted.")
+            logger.critical("MISTRAL API KEY MISSING.")
             return False
-        return SystemMonitor.check_disk_space()
+        return True
 
     def process_single_cycle(self):
         category, feed_url = FeedDatabase.get_random_source()
-        logger.info(f"Target Vector: [{category}]")
+        logger.info(f"Targeting: [{category}]")
         
         try:
             feed = feedparser.parse(feed_url)
-            if not feed.entries:
-                return
-
+            if not feed.entries: return
             entry = feed.entries[0]
             link = entry.link
             
-            if self.db.is_processed(link):
-                logger.debug("Article already exists in Titan Database. Skipping.")
-                return
+            if self.db.is_processed(link): return
 
-            logger.info(f"Acquiring Raw Intelligence: {entry.title[:50]}...")
+            logger.info(f"Acquiring Raw Data: {entry.title[:50]}...")
             raw_text = self.scraper.extract_text(link, getattr(entry, 'description', ''))
             
-            if len(raw_text) < MnjnefConfig.MIN_ARTICLE_LENGTH:
-                logger.warning("Data insufficient for synthesis.")
-                return
+            if len(raw_text) < MnjnefConfig.MIN_ARTICLE_LENGTH: return
 
             logger.info("Transmitting to Mistral AI Core...")
             ai_data = self.ai.rewrite_content(category, raw_text)
             
-            if not ai_data:
-                return
+            if not ai_data: return
 
             final_title = ai_data['title']
             final_body = ai_data['body']
             
-            logger.info(f"Securing Copyright-Free Visuals for: {category}")
             image_url, img_source = FreeImageBank.fetch_image(category, final_title)
-            
-            # Generate SEO Tags
             keywords = SEOEngine.extract_keywords(final_title + " " + final_body)
-            seo_tags_str = "Mnjnef, Global News, " + category.replace('_', ' ') + ", " + ", ".join(keywords)
+            seo_tags_str = "Mnjnef, " + category.replace('_', ' ') + ", " + ", ".join(keywords)
 
-            # Build Record
-            record = ArticleRecord(
-                url=link,
-                title=final_title,
-                category=category,
-                seo_tags=seo_tags_str,
-                image_source=img_source
-            )
+            record = ArticleRecord(url=link, title=final_title, category=category, seo_tags=seo_tags_str, image_source=img_source)
             
-            # Save and Deploy
             if self.hugo.write_markdown(record, final_body, image_url):
                 self.db.save_record(record)
                 self.hugo.build_and_deploy()
                 
         except Exception as e:
             logger.error(f"Cycle failure: {str(e)}")
-            logger.debug(traceback.format_exc())
 
     def run_forever(self):
-        if not self.validate_environment():
-            sys.exit(1)
-            
-        logger.info("Titan Engine entering perpetual autonomous mode.")
+        if not self.validate_environment(): sys.exit(1)
+        logger.info("Mnjnef Pure Engine entering perpetual mode.")
         
         while self.is_running:
             self.process_single_cycle()
+            if not self.is_running: break
             
-            if not self.is_running:
-                break
-                
+            # STRICT REQUIREMENT: Random wait between 120 and 300 seconds (2 to 5 mins)
             sleep_time = random.randint(MnjnefConfig.MIN_WAIT_SECONDS, MnjnefConfig.MAX_WAIT_SECONDS)
-            logger.info(f"Tactical Cooling: Engine resting for {sleep_time}s...\n")
+            logger.info(f"Cooling Engine for {sleep_time}s...\n")
             
             for _ in range(sleep_time):
-                if not self.is_running:
-                    break
+                if not self.is_running: break
                 time.sleep(1)
 
 # ==============================================================================
-# 🔥 12. ENTRY POINT
+# 🔥 12. EXECUTION
 # ==============================================================================
 if __name__ == "__main__":
     try:
-        engine = MnjnefTitanEngine()
+        engine = MnjnefPureEngine()
         engine.run_forever()
     except Exception as fatal_e:
         print(f"FATAL SYSTEM CRASH: {fatal_e}")
