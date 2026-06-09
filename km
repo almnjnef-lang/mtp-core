@@ -1,1 +1,1 @@
-11
+apt update && apt install python3-pip -y && pip3 install requests feedparser newspaper3k --break-system-packages
