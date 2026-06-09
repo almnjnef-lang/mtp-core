@@ -1,1 +1,1 @@
-python3 mnjnef_factory.py
+pip3 install lxml_html_clean --break-system-packages
