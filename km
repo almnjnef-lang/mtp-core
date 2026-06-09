@@ -1,1 +1,1 @@
-pkill -f mnjnef_factory.py
+nano /root/mnjnef_factory.py
