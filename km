@@ -1,1 +1,1 @@
-tail -f /root/mnjnef_factory.log
+pkill -f mnjnef_factory.py
