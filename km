@@ -1,1 +1,1 @@
-pkill -f mnjnef_factory.py
+rm -rf /root/mnjnef_site/content/posts/* && rm -rf /root/mnjnef_site/static/images/* && rm -f /root/mnjnef_site/mnjnef_mega_registry.db
