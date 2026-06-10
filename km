@@ -1,1 +1,1 @@
-rm -rf /root/mnjnef_site/content/posts/* && rm -rf /root/mnjnef_site/static/images/* && rm -f /root/mnjnef_site/mnjnef_mega_registry.db
+cd /root/mnjnef_site && hugo --minify > /dev/null 2>&1 && rm -rf /var/www/html/* && cp -r public/* /var/www/html/
