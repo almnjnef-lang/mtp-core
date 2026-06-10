@@ -1,1 +1,1 @@
-tail -f /root/mnjnef_factory.log
+sed -n '240,245p' /root/mnjnef_factory.py
