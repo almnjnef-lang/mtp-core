@@ -1,1 +1,1 @@
-tail -f /root/mnjnef_factory.log
+sed -i 's/Mnjnef Intelligence Desk/Mnjnef Editorial Desk/g' /root/mnjnef_factory.py
