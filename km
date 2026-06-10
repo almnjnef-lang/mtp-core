@@ -1,1 +1,1 @@
-pkill -f mnjnef_factory.py
+sed -i "s/'-? days'/'-' || ? || ' days'/g" /root/mnjnef_factory.py
