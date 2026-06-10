@@ -1,1 +1,1 @@
-sed -i 's/Mnjnef Intelligence Desk/Mnjnef Editorial Desk/g' /root/mnjnef_site/content/posts/*.md
+cd /root/mnjnef_site && hugo --minify > /dev/null 2>&1 && rm -rf /var/www/html/* && cp -r public/* /var/www/html/
