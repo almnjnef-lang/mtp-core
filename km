@@ -1,1 +1,1 @@
-sed -n '240,245p' /root/mnjnef_factory.py
+pkill -f mnjnef_factory.py
