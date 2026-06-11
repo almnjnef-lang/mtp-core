@@ -1,51 +1,103 @@
+# 1. إيقاف فوري لكافة الروبوتات والحراس لمنع توليد أي ملفات أثناء التنظيف
 pkill -f run_bot.sh
 pkill -f mnjnef_factory.py
 
-cat << 'EOF' > /root/factory_reset.py
-import os, glob, subprocess
+cat << 'EOF' > /root/purge_all_categories.py
+import os, glob, re, subprocess
 
-print("🧹 جاري تدمير جميع المقالات وإعادة ضبط المصنع لـ Mnjnef...")
+print("🧹 جاري بدء عملية التطهير الشامل وإزالة كافة الأقسام عدا سياسة الخصوصية...")
 
+# تحديد مجلد الموقع وملف الإعدادات الأساسي
 configs = glob.glob('/root/**/config.toml', recursive=True) + glob.glob('/root/**/hugo.toml', recursive=True) + glob.glob('/var/www/**/config.toml', recursive=True) + glob.glob('/var/www/**/hugo.toml', recursive=True)
 
 if configs:
-    site_dir = os.path.dirname(configs[0])
-    posts_dir = os.path.join(site_dir, 'content', 'posts')
+    conf = configs[0]
+    site_dir = os.path.dirname(conf)
+    print(f"📦 تم تحديد مسار الموقع: {site_dir}")
     
-    # 1. مسح جميع المقالات الحالية من الجذور
-    deleted_count = 0
-    if os.path.exists(posts_dir):
-        for file in glob.glob(os.path.join(posts_dir, '*.md')):
-            os.remove(file)
-            deleted_count += 1
-    print(f"✅ تم مسح {deleted_count} مقال بالكامل من السيرفر.")
+    # --------------------------------------------------------
+    # الخطوة 1: تنظيف ملف الإعدادات تماماً من قائمة الأقسام العشوائية
+    # --------------------------------------------------------
+    with open(conf, 'r', encoding='utf-8') as f:
+        content = f.read()
     
-    # 2. إعادة زرع المقالات التأسيسية لتهيئة الأقسام الـ 13
-    os.makedirs(posts_dir, exist_ok=True)
-    cats = ['Technology', 'Science_and_Health', 'Global_Education', 'World_History', 'Business_and_Economy', 'Arts_and_Culture', 'Space_Exploration', 'Environment', 'Daily_Solutions', 'Global_Discoveries', 'Physical_Sports', 'Tourism_and_Travel', 'Nature_and_Wildlife']
-    for c in cats:
-        name = c.replace("_", " ")
-        with open(os.path.join(posts_dir, f'seed_{c.lower()}.md'), 'w', encoding='utf-8') as f:
-            f.write(f"---\ntitle: 'Explore {name}'\ndate: 2026-06-11\ncategories: [\"{c}\"]\ndraft: false\n---\nWelcome to the {name} section. \n\nAt Mnjnef, our dedicated team of expert editors, researchers, and professional writers is continuously curating and publishing comprehensive, highly researched encyclopedia articles. \n\nWe are committed to providing you with the highest quality of authentic, human-driven editorial content. Stay tuned for our latest deep-dive articles and extensive updates in this category.\n")
-    print("✅ تم إعادة تأسيس الأقسام بنظافة تامة.")
+    # قص القائمة القديمة بالكامل من جذرها لمنع التكرار والتداخل
+    lines = content.split('\n')
+    cleaned_lines = []
+    for line in lines:
+        if line.strip() == '[menu]' or line.strip().startswith('[[menu'):
+            break
+        cleaned_lines.append(line)
+        
+    # بناء قائمة جديدة نقية تحتوي *فقط* على مربع سياسة الخصوصية الفخم
+    clean_privacy_menu = """
+[menu]
+  [[menu.main]]
+    identifier = "privacy"
+    name = "Privacy Policy"
+    url = "/privacy-policy/"
+    weight = 1
+"""
+    final_config = '\n'.join(cleaned_lines).strip() + "\n\n" + clean_privacy_menu
     
-    # 3. مسح ذاكرة الروبوت (قاعدة البيانات)
-    for db_file in glob.glob('/root/*.db'):
-        os.remove(db_file)
-    print("✅ تم مسح ذاكرة الروبوت القديمة. سيبدأ بصفحة بيضاء تماماً.")
+    with open(conf, 'w', encoding='utf-8') as f:
+        f.write(final_config)
+    print("✅ تم مسح جميع الأقسام من ملف الإعدادات وتثبيت سياسة الخصوصية وحيدة.")
 
-    # 4. غسيل السيرفر المباشر وتحديث الواجهة للزوار
+    # --------------------------------------------------------
+    # الخطوة 2: تطهير مجلد المقالات وتدمير ملفات الأقسام التأسيسية
+    # --------------------------------------------------------
+    posts_dir = os.path.join(site_dir, 'content', 'posts')
+    deleted_posts = 0
+    if os.path.exists(posts_dir):
+        for filepath in glob.glob(os.path.join(posts_dir, '*')):
+            filename = os.path.basename(filepath)
+            # مسح كل شيء عدا الملفات التي تحتوي لفظ سياسة الخصوصية لحمايتها
+            if 'privacy' not in filename.lower():
+                try:
+                    if os.path.isdir(filepath):
+                        import shutil
+                        shutil.rmtree(filepath)
+                    else:
+                        os.remove(filepath)
+                    deleted_posts += 1
+                except:
+                    pass
+    print(f"✅ تم مسح {deleted_posts} من ملفات المقالات والتصنيفات القديمة المسببة للفوضى.")
+
+    # --------------------------------------------------------
+    # الخطوة 3: تصفير ملفات التصميم (Injected CSS/JS) لإزالة أي تشويه بصري
+    # --------------------------------------------------------
+    layouts_dir = os.path.join(site_dir, 'layouts', 'partials')
+    head_file = os.path.join(layouts_dir, 'extend_head.html')
+    footer_file = os.path.join(layouts_dir, 'extend_footer.html')
+    
+    if os.path.exists(head_file):
+        with open(head_file, 'w', encoding='utf-8') as f:
+            f.write("") # تنظيف الرأس تماماً من أي جافاسكريبت أو تداخلات سابقة
+            
+    if os.path.exists(footer_file):
+        with open(footer_file, 'w', encoding='utf-8') as f:
+            f.write("") # تنظيف التذييل وإزالة الأقسام السفلية المستنسخة
+            
+    print("✅ تم تنظيف قوالب الموقع (Head & Footer) وإعادتها للحالة الخام الرسمية.")
+
+    # --------------------------------------------------------
+    # الخطوة 4: غسيل ملفات السيرفر العامة وإعادة البناء النظيف بالقوة
+    # --------------------------------------------------------
+    print("⚙️ جاري محو الكاش وإعادة توليد ملفات الموقع المستقرة...")
     subprocess.run(["rm", "-rf", os.path.join(site_dir, 'public')], capture_output=True)
     subprocess.run(["hugo", "--gc", "--minify"], cwd=site_dir, capture_output=True)
+    
     for dest in ['/var/www/html', '/var/www/mnjnef', '/var/www/mnjnef.com']:
         if os.path.exists(dest):
             subprocess.run(f"rm -rf {dest}/* 2>/dev/null", shell=True)
             subprocess.run(f"cp -r {os.path.join(site_dir, 'public')}/* {dest}/ 2>/dev/null", shell=True)
-    print("⚙️ تم غسيل السيرفر بالكامل! الموقع الآن نظيف وجاهز للانطلاق الصحيح.")
+            
+    print("🎉 تم غسيل السيرفر بنجاح! الموقع الآن عاد نقياً ومستقراً 100%.")
+else:
+    print("❌ لم يتم العثور على مجلد مشروع hugo")
 
 EOF
 
-python3 /root/factory_reset.py
-
-nohup /root/run_bot.sh > /dev/null 2>&1 &
-tail -f /root/mnjnef_factory.log
+python3 /root/purge_all_categories.py
