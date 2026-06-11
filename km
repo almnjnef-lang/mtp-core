@@ -1,1 +1,1 @@
-sed -i 's/300/90/g' /root/mnjnef_factory.py
+nohup python3 /root/mnjnef_factory.py > /root/mnjnef_factory.log 2>&1 &
