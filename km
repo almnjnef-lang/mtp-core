@@ -1,83 +1,34 @@
-pkill -f mnjnef_factory.py
+cat << 'EOF' > /root/allow_translation.py
+import os, glob, subprocess
 
-cat << 'EOF' > /root/human_team_upgrade.py
-import os, glob, re, subprocess
-
-print("🚀 جاري تحويل الموقع لعمل بشري احترافي وإضافة الأقسام الجديدة...")
+print("🌍 جاري إعادة تفعيل خيار الترجمة للزوار...")
 
 configs = glob.glob('/root/**/config.toml', recursive=True) + glob.glob('/root/**/hugo.toml', recursive=True) + glob.glob('/var/www/**/config.toml', recursive=True) + glob.glob('/var/www/**/hugo.toml', recursive=True)
-if not configs:
-    exit()
-conf = configs[0]
-site_dir = os.path.dirname(conf)
+if configs:
+    conf = configs[0]
+    site_dir = os.path.dirname(conf)
+    head_file = os.path.join(site_dir, 'layouts', 'partials', 'extend_head.html')
+    
+    if os.path.exists(head_file):
+        with open(head_file, 'r', encoding='utf-8') as f:
+            content = f.read()
+        
+        # مسح كود منع الترجمة
+        content = content.replace('<meta name="google" content="notranslate">\n', '')
+        content = content.replace('<meta name="google" content="notranslate">', '')
+        
+        with open(head_file, 'w', encoding='utf-8') as f:
+            f.write(content)
+        print("✅ تم إلغاء حظر الترجمة! متصفحات الزوار ستعرض لهم خيار الترجمة الآن براحة تامة.")
+        
+    # البناء والتحديث
+    subprocess.run(["hugo", "--gc", "--minify"], cwd=site_dir, capture_output=True)
+    for dest in ['/var/www/html', '/var/www/mnjnef', '/var/www/mnjnef.com']:
+        if os.path.exists(dest):
+            subprocess.run(f"cp -r {os.path.join(site_dir, 'public')}/* {dest}/ 2>/dev/null", shell=True)
+    print("⚙️ تم تحديث الواجهة للمستخدمين بنجاح.")
 
-# 1. تحديث عقل الروبوت ليوزع المقالات على 13 قسم
-bot_path = "/root/mnjnef_factory.py"
-try:
-    with open(bot_path, "r", encoding="utf-8") as f:
-        bot_code = f.read()
-    new_cats = "categories = ['Technology', 'Science_and_Health', 'Global_Education', 'World_History', 'Business_and_Economy', 'Arts_and_Culture', 'Space_Exploration', 'Environment', 'Daily_Solutions', 'Global_Discoveries', 'Physical_Sports', 'Tourism_and_Travel', 'Nature_and_Wildlife']"
-    bot_code = re.sub(r"categories\s*=\s*\[.*?\]", new_cats, bot_code, flags=re.DOTALL)
-    with open(bot_path, "w", encoding="utf-8") as f:
-        f.write(bot_code)
-except Exception as e:
-    pass
-
-# 2. إضافة الأقسام الثلاثة الجديدة לקائمة الموقع العلوية والسفلية
-with open(conf, 'r', encoding='utf-8') as f:
-    conf_data = f.read()
-
-new_menus = """
-  [[menu.main]]
-    identifier = "sports"
-    name = "Physical Sports"
-    url = "/categories/physical_sports/"
-    weight = 110
-  [[menu.main]]
-    identifier = "tourism"
-    name = "Tourism & Travel"
-    url = "/categories/tourism_and_travel/"
-    weight = 120
-  [[menu.main]]
-    identifier = "nature"
-    name = "Nature & Wildlife"
-    url = "/categories/nature_and_wildlife/"
-    weight = 130
-"""
-if "physical_sports" not in conf_data:
-    conf_data += new_menus
-    with open(conf, 'w', encoding='utf-8') as f:
-        f.write(conf_data)
-
-# 3. إجبار المتصفحات على عدم ترجمة الموقع (ليظل إنجليزي فخم)
-layouts_dir = os.path.join(site_dir, 'layouts', 'partials')
-os.makedirs(layouts_dir, exist_ok=True)
-head_file = os.path.join(layouts_dir, 'extend_head.html')
-with open(head_file, 'a', encoding='utf-8') as f:
-    f.write('\n<meta name="google" content="notranslate">\n')
-
-# 4. مسح كلام (الذكاء الاصطناعي) واستبداله بفريق بشري خبير لجميع الـ 13 قسم
-posts_dir = os.path.join(site_dir, 'content', 'posts')
-cats = ['Technology', 'Science_and_Health', 'Global_Education', 'World_History', 'Business_and_Economy', 'Arts_and_Culture', 'Space_Exploration', 'Environment', 'Daily_Solutions', 'Global_Discoveries', 'Physical_Sports', 'Tourism_and_Travel', 'Nature_and_Wildlife']
-
-for c in cats:
-    dummy_file = os.path.join(posts_dir, f'seed_{c.lower()}.md')
-    name = c.replace("_", " ")
-    content = f"---\ntitle: 'Explore {name}'\ndate: 2024-01-01\ncategories: ['{c}']\ndraft: false\n---\nWelcome to the {name} section. \n\nAt Mnjnef, our dedicated team of expert editors, researchers, and professional writers is continuously curating and publishing comprehensive, highly researched encyclopedia articles. \n\nWe are committed to providing you with the highest quality of authentic, human-driven editorial content. Stay tuned for our latest deep-dive articles and extensive updates in this category.\n"
-    with open(dummy_file, 'w', encoding='utf-8') as f:
-        f.write(content)
-print("✅ تم مسح أي ذكر للذكاء الاصطناعي، واستبداله بفريق التحرير البشري!")
-
-# 5. بناء الموقع ونشر التعديلات
-subprocess.run(["hugo", "--gc", "--minify"], cwd=site_dir, capture_output=True)
-for dest in ['/var/www/html', '/var/www/mnjnef', '/var/www/mnjnef.com']:
-    if os.path.exists(dest):
-        subprocess.run(f"cp -r {os.path.join(site_dir, 'public')}/* {dest}/ 2>/dev/null", shell=True)
-
-print("🎉 اكتملت المهمة! انطلاق الوحش الآن...")
+print("🎉 الموقع الآن إنجليزي فخم، ويدعم الترجمة الذكية للجميع!")
 EOF
 
-python3 /root/human_team_upgrade.py
-
-nohup python3 /root/mnjnef_factory.py > /root/mnjnef_factory.log 2>&1 &
-tail -f /root/mnjnef_factory.log
+python3 /root/allow_translation.py
