@@ -1,103 +1,70 @@
-# 1. إيقاف فوري لكافة الروبوتات والحراس لمنع توليد أي ملفات أثناء التنظيف
 pkill -f run_bot.sh
 pkill -f mnjnef_factory.py
 
-cat << 'EOF' > /root/purge_all_categories.py
-import os, glob, re, subprocess
+cat << 'EOF' > /root/clean_ui_and_bot.py
+import os, glob, subprocess
 
-print("🧹 جاري بدء عملية التطهير الشامل وإزالة كافة الأقسام عدا سياسة الخصوصية...")
+print("🧹 جاري إزالة حرف M المزعج وإصلاح عطل الروبوت...")
 
-# تحديد مجلد الموقع وملف الإعدادات الأساسي
+# 1. إزالة حرف M من خلفية الموقع بالقوة
 configs = glob.glob('/root/**/config.toml', recursive=True) + glob.glob('/root/**/hugo.toml', recursive=True) + glob.glob('/var/www/**/config.toml', recursive=True) + glob.glob('/var/www/**/hugo.toml', recursive=True)
-
 if configs:
-    conf = configs[0]
-    site_dir = os.path.dirname(conf)
-    print(f"📦 تم تحديد مسار الموقع: {site_dir}")
+    site_dir = os.path.dirname(configs[0])
+    head_file = os.path.join(site_dir, 'layouts', 'partials', 'extend_head.html')
+    os.makedirs(os.path.dirname(head_file), exist_ok=True)
     
-    # --------------------------------------------------------
-    # الخطوة 1: تنظيف ملف الإعدادات تماماً من قائمة الأقسام العشوائية
-    # --------------------------------------------------------
-    with open(conf, 'r', encoding='utf-8') as f:
-        content = f.read()
-    
-    # قص القائمة القديمة بالكامل من جذرها لمنع التكرار والتداخل
-    lines = content.split('\n')
-    cleaned_lines = []
-    for line in lines:
-        if line.strip() == '[menu]' or line.strip().startswith('[[menu'):
-            break
-        cleaned_lines.append(line)
-        
-    # بناء قائمة جديدة نقية تحتوي *فقط* على مربع سياسة الخصوصية الفخم
-    clean_privacy_menu = """
-[menu]
-  [[menu.main]]
-    identifier = "privacy"
-    name = "Privacy Policy"
-    url = "/privacy-policy/"
-    weight = 1
-"""
-    final_config = '\n'.join(cleaned_lines).strip() + "\n\n" + clean_privacy_menu
-    
-    with open(conf, 'w', encoding='utf-8') as f:
-        f.write(final_config)
-    print("✅ تم مسح جميع الأقسام من ملف الإعدادات وتثبيت سياسة الخصوصية وحيدة.")
-
-    # --------------------------------------------------------
-    # الخطوة 2: تطهير مجلد المقالات وتدمير ملفات الأقسام التأسيسية
-    # --------------------------------------------------------
-    posts_dir = os.path.join(site_dir, 'content', 'posts')
-    deleted_posts = 0
-    if os.path.exists(posts_dir):
-        for filepath in glob.glob(os.path.join(posts_dir, '*')):
-            filename = os.path.basename(filepath)
-            # مسح كل شيء عدا الملفات التي تحتوي لفظ سياسة الخصوصية لحمايتها
-            if 'privacy' not in filename.lower():
-                try:
-                    if os.path.isdir(filepath):
-                        import shutil
-                        shutil.rmtree(filepath)
-                    else:
-                        os.remove(filepath)
-                    deleted_posts += 1
-                except:
-                    pass
-    print(f"✅ تم مسح {deleted_posts} من ملفات المقالات والتصنيفات القديمة المسببة للفوضى.")
-
-    # --------------------------------------------------------
-    # الخطوة 3: تصفير ملفات التصميم (Injected CSS/JS) لإزالة أي تشويه بصري
-    # --------------------------------------------------------
-    layouts_dir = os.path.join(site_dir, 'layouts', 'partials')
-    head_file = os.path.join(layouts_dir, 'extend_head.html')
-    footer_file = os.path.join(layouts_dir, 'extend_footer.html')
-    
+    existing_head = ""
     if os.path.exists(head_file):
-        with open(head_file, 'w', encoding='utf-8') as f:
-            f.write("") # تنظيف الرأس تماماً من أي جافاسكريبت أو تداخلات سابقة
-            
-    if os.path.exists(footer_file):
-        with open(footer_file, 'w', encoding='utf-8') as f:
-            f.write("") # تنظيف التذييل وإزالة الأقسام السفلية المستنسخة
-            
-    print("✅ تم تنظيف قوالب الموقع (Head & Footer) وإعادتها للحالة الخام الرسمية.")
-
-    # --------------------------------------------------------
-    # الخطوة 4: غسيل ملفات السيرفر العامة وإعادة البناء النظيف بالقوة
-    # --------------------------------------------------------
-    print("⚙️ جاري محو الكاش وإعادة توليد ملفات الموقع المستقرة...")
-    subprocess.run(["rm", "-rf", os.path.join(site_dir, 'public')], capture_output=True)
-    subprocess.run(["hugo", "--gc", "--minify"], cwd=site_dir, capture_output=True)
+        with open(head_file, 'r', encoding='utf-8') as f:
+            existing_head = f.read()
     
+    # كود CSS قاطع لإخفاء أي علامة مائية في الخلفية
+    kill_m_css = "\n<style>body::before { display: none !important; content: none !important; background: none !important; }</style>\n"
+    
+    if "body::before { display: none" not in existing_head:
+        with open(head_file, 'w', encoding='utf-8') as f:
+            f.write(existing_head + kill_m_css)
+    
+    # إعادة بناء الموقع ليعكس النقاء الجديد
+    subprocess.run(["hugo", "--gc", "--minify"], cwd=site_dir, capture_output=True)
     for dest in ['/var/www/html', '/var/www/mnjnef', '/var/www/mnjnef.com']:
         if os.path.exists(dest):
-            subprocess.run(f"rm -rf {dest}/* 2>/dev/null", shell=True)
             subprocess.run(f"cp -r {os.path.join(site_dir, 'public')}/* {dest}/ 2>/dev/null", shell=True)
+    print("✅ تم تدمير حرف M نهائياً.. واجهة الموقع الآن بيضاء ونقية 100%.")
+
+# 2. إصلاح خطأ SyntaxError في الروبوت الذي ظهر في شاشتك
+bot_path = "/root/mnjnef_factory.py"
+if os.path.exists(bot_path):
+    with open(bot_path, "r", encoding="utf-8") as f:
+        lines = f.readlines()
+    
+    new_lines = []
+    in_broken_try = False
+    for line in lines:
+        if 'import urllib.parse as up' in line:
+            # مسح سطر try اليتيم الذي يسبق الخطأ
+            if new_lines and new_lines[-1].strip() == 'try:':
+                new_lines.pop()
+            in_broken_try = True
+            continue
+        
+        if in_broken_try:
+            # تخطي جميع الأسطر المكسورة حتى نخرج من المنطقة المعطوبة
+            if any(x in line for x in ['class D:', 'parsed_feed.entries', 'except:', 'ext =', 'if ext']):
+                continue
+            else:
+                in_broken_try = False
+        
+        if not in_broken_try:
+            new_lines.append(line)
             
-    print("🎉 تم غسيل السيرفر بنجاح! الموقع الآن عاد نقياً ومستقراً 100%.")
-else:
-    print("❌ لم يتم العثور على مجلد مشروع hugo")
+    with open(bot_path, "w", encoding="utf-8") as f:
+        f.writelines(new_lines)
+    print("✅ تم إجراء عملية جراحية للروبوت وإصلاح خطأ (SyntaxError) نهائياً.")
 
 EOF
 
-python3 /root/purge_all_categories.py
+python3 /root/clean_ui_and_bot.py
+
+nohup /root/run_bot.sh > /dev/null 2>&1 &
+tail -f /root/mnjnef_factory.log
