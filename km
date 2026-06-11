@@ -1,1 +1,1 @@
-grep -n "threshold" /root/mnjnef_factory.py
+grep -n "\.txt" /root/mnjnef_factory.py
