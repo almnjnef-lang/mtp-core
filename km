@@ -1,1 +1,1 @@
-sed -i 's/120/45/g' /root/mnjnef_factory.py
+sed -i 's/300/90/g' /root/mnjnef_factory.py
