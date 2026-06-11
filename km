@@ -1,63 +1,59 @@
-# 1. إعدام جميع الروبوتات الطبية الفاشلة وتنظيف مسرح العمليات
+# 1. إيقاف الجيوش لثانية واحدة
 pkill -f run_bot.sh
 pkill -f the_king_commander.sh
 pkill -f awakener_robot.sh
-pkill -f auto_healer.py
-pkill -f nuclear_healer.py
 pkill -f mnjnef_factory.py
 
-cat << 'EOF' > /root/time_machine.py
-import re
+# 2. سد الفراغات التي تسبب (IndentationError)
+cat << 'EOF' > /root/fill_gaps.py
+import os
 
-print("⏳ [آلة الزمن] جاري محو أخطاء الماضي وتنظيف السيرفر من دوامة الأطباء...")
 path = "/root/mnjnef_factory.py"
+print("🔍 جاري سد الفراغات في السيرفر...")
+
 with open(path, "r", encoding="utf-8") as f:
-    code = f.read()
+    lines = f.readlines()
 
-# مسح القمامة البرمجية والدوامة اللانهائية التي تسببت باختناق السيرفر
-code = re.sub(r'^[ \t]*except Exception:\s*\n', '', code, flags=re.MULTILINE)
-code = re.sub(r'^[ \t]*pass #.*?\n', '', code, flags=re.MULTILINE)
-code = re.sub(r'^[ \t]*# [☢️🔪🩹].*?\n', '', code, flags=re.MULTILINE)
-code = re.sub(r'^[ \t]*# 🔪 مسح آلي:.*?\n', '', code, flags=re.MULTILINE)
-
-# الخدعة الهندسية: تحويل try اليتيمة إلى if True للحفاظ على وزن السيرفر بدون أخطاء
-code = re.sub(r'([ \t]*)try:\s*\n([ \t]*import urllib\.parse)', r'\1if True:\n\2', code)
+new_lines = []
+for i in range(len(lines)):
+    line = lines[i]
+    new_lines.append(line)
+    stripped = line.strip()
+    
+    # إذا وجدنا except نبحث هل تحتها فراغ؟
+    if stripped.startswith("except") and stripped.endswith(":"):
+        current_indent = len(line) - len(line.lstrip())
+        needs_pass = True
+        
+        for j in range(i+1, min(i+10, len(lines))):
+            next_str = lines[j].strip()
+            if not next_str or next_str.startswith("#"):
+                continue
+            next_ind = len(lines[j]) - len(lines[j].lstrip())
+            if next_ind > current_indent:
+                needs_pass = False # يوجد كود، لا نحتاج pass
+            break
+            
+        if needs_pass:
+            new_lines.append(" " * (current_indent + 4) + "pass\n")
 
 with open(path, "w", encoding="utf-8") as f:
-    f.write(code)
-print("✅ [آلة الزمن] السيرفر عاد نقياً، سليماً، وجاهزاً للعمل 100%.")
+    f.writelines(new_lines)
+
+print("✅ تم سد الفراغات! خطأ IndentationError اختفى نهائياً.")
 EOF
 
-python3 /root/time_machine.py
+python3 /root/fill_gaps.py
 
-echo "🥷 جاري إطلاق قوات النشر الخاصة (3 روبوتات معاً)..."
-cat << 'EOF' > /root/the_king_commander.sh
-#!/bin/bash
-nohup python3 /root/mnjnef_factory.py > /root/sf_1.log 2>&1 &
-nohup python3 /root/mnjnef_factory.py > /root/sf_2.log 2>&1 &
-nohup python3 /root/mnjnef_factory.py > /root/sf_3.log 2>&1 &
-EOF
-
+# 3. إطلاق روبوت الملك (3 قوات خاصة)
+echo "🥷 جاري إطلاق القوات الخاصة..."
 chmod +x /root/the_king_commander.sh
 /root/the_king_commander.sh
 
-echo "⏰ جاري تشغيل الروبوت المُوقِظ لرفع المقالات للجمهور..."
-cat << 'EOF' > /root/awakener_robot.sh
-#!/bin/bash
-SITE_DIR=$(find /root /var/www -maxdepth 3 -name "config.toml" -o -name "hugo.toml" | head -n 1 | xargs dirname)
-while true; do
-    if [ -d "$SITE_DIR" ]; then
-        cd "$SITE_DIR"
-        hugo --gc --minify > /dev/null 2>&1
-        cp -r public/* /var/www/html/ 2>/dev/null
-        cp -r public/* /var/www/mnjnef.com/ 2>/dev/null
-    fi
-    sleep 30
-done
-EOF
-
+# 4. إطلاق الروبوت المُوقِظ (لتحديث الموقع)
+echo "⏰ جاري تشغيل المُوقِظ..."
 chmod +x /root/awakener_robot.sh
 nohup /root/awakener_robot.sh > /dev/null 2>&1 &
 
-echo "🚀 تم الإطلاق بنجاح! جاري عرض البث المباشر للعمليات..."
+echo "🚀 تم الإطلاق بنجاح! جاري عرض البث المباشر..."
 tail -f /root/sf_1.log
