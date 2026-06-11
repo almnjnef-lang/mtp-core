@@ -1,12 +1,103 @@
-# 1. تحديد مجلد الموقع
-SITE_DIR=$(find /root /var/www -maxdepth 3 -name "config.toml" -o -name "hugo.toml" | head -n 1 | xargs dirname)
+# 1. إيقاف أي بقايا للروبوتات القديمة لضمان عدم التداخل
+pkill -f mnjnef_ultimate_engine.py
 
-# 2. مسح مقال "السيستم لايف" المؤقت من الجذور
-rm -f $SITE_DIR/content/posts/mnjnef_system_live.md
+# 2. بناء المحرك الأبدي مع نظام التخفي
+cat << 'EOF' > /root/mnjnef_ultimate_engine.py
+import os, time, random, json, subprocess
+from urllib.request import urlopen, Request
+from urllib.parse import quote
 
-# 3. تحديث الواجهة فوراً لإخفائه من الجمهور
-cd $SITE_DIR && hugo --gc --minify > /dev/null 2>&1
-cp -r public/* /var/www/html/ 2>/dev/null
-cp -r public/* /var/www/mnjnef.com/ 2>/dev/null
+print("🚀 [محرك Mnjnef] بدأ العمل بنظام التخفي والنشر المكثف...")
 
-echo "✅ تم مسح المقال المؤقت بنجاح! الواجهة الآن نظيفة تماماً."
+USER_AGENTS = [
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.2 Safari/605.1.15",
+    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:122.0) Gecko/20100101 Firefox/122.0",
+    "Mozilla/5.0 (iPad; CPU OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1"
+]
+
+def fetch_and_publish():
+    try:
+        current_agent = random.choice(USER_AGENTS)
+        
+        # 1. جلب عنوان عشوائي
+        req = Request("https://en.wikipedia.org/api/rest_v1/page/random/title", headers={'User-Agent': current_agent})
+        res = urlopen(req)
+        title = json.loads(res.read().decode())['items'][0]['title']
+        
+        # 2. جلب المقال الشامل
+        full_url = f"https://en.wikipedia.org/w/api.php?action=query&prop=extracts&exlimit=1&titles={quote(title)}&explaintext=1&format=json"
+        req_full = Request(full_url, headers={'User-Agent': current_agent})
+        res_full = urlopen(req_full)
+        pages = json.loads(res_full.read().decode())['query']['pages']
+        extract = list(pages.values())[0].get('extract', '')
+        
+        if len(extract) < 1500: return # رفض المقالات الضعيفة
+        
+        # 3. جلب الاقتراحات المرتبطة
+        related_url = f"https://en.wikipedia.org/api/rest_v1/page/related/{quote(title)}"
+        req_rel = Request(related_url, headers={'User-Agent': current_agent})
+        res_rel = urlopen(req_rel)
+        related_data = json.loads(res_rel.read().decode())['pages']
+        
+        related_markdown = ""
+        for item in related_data[:3]:
+            rel_title = item.get('title', '').replace('_', ' ')
+            rel_desc = item.get('description', 'Discover more related insights.')
+            related_markdown += f"* **{rel_title}**: {rel_desc}\n"
+            
+        clean_title = title.replace('_', ' ')
+        categories = ['Scientific_Research', 'Historical_Archives', 'Global_Discoveries', 'Advanced_Technology']
+        cat = random.choice(categories)
+        
+        # 4. بناء المقال الفخم
+        content = f"""---
+title: "{clean_title}"
+date: {time.strftime('%Y-%m-%dT%H:%M:%S')}
+categories: ["{cat}"]
+---
+
+{extract}
+
+---
+### 🔗 Explore Related Topics:
+{related_markdown}
+
+*Curated by Mnjnef Global Encyclopedia*
+"""
+        
+        # 5. تحديد مسار الموقع
+        site_dirs = ["/var/www/mnjnef.com", "/var/www/html", "/root/mnjnef_site"]
+        active_dir = next((d for d in site_dirs if os.path.exists(os.path.join(d, "config.toml")) or os.path.exists(os.path.join(d, "hugo.toml"))), None)
+        if not active_dir: return
+
+        post_path = os.path.join(active_dir, 'content', 'posts', f"mnjnef_{int(time.time())}.md")
+        os.makedirs(os.path.dirname(post_path), exist_ok=True)
+        
+        with open(post_path, "w", encoding="utf-8") as f:
+            f.write(content)
+            
+        # 6. تحديث الواجهة للمستخدمين
+        subprocess.run(["hugo", "--gc", "--minify"], cwd=active_dir, capture_output=True)
+        subprocess.run(f"cp -r {active_dir}/public/* /var/www/html/ 2>/dev/null", shell=True)
+        subprocess.run(f"cp -r {active_dir}/public/* /var/www/mnjnef.com/ 2>/dev/null", shell=True)
+        
+        print(f"✅ [PUBLISHED] تمت إضافة مقال جديد: {clean_title}")
+        
+    except Exception as e:
+        pass # تجاوز صامت للأخطاء لضمان استمرار السيرفر
+
+# حلقة العمل الدائمة
+while True:
+    fetch_and_publish()
+    # تمويه زمني بين 30 و 35 ثانية لمنع الحظر
+    time.sleep(random.randint(30, 35))
+EOF
+
+# 3. إطلاق المحرك في الخلفية (سيعمل حتى لو أغلقت الجوال)
+nohup python3 /root/mnjnef_ultimate_engine.py > /root/mnjnef_live.log 2>&1 &
+
+echo "🎉 تم الانطلاق بنجاح! السيرفر يعمل الآن ومحمي من الحظر."
+echo "لمشاهدة الروبوت وهو ينشر المقالات الحية، راقب الشاشة أدناه:"
+tail -f /root/mnjnef_live.log
