@@ -1,60 +1,179 @@
 pkill -f mnjnef_factory.py
 
-cat << 'EOF' > /root/ultimate_fix.py
-import os
-import glob
-import subprocess
+cat << 'EOF' > /root/english_upgrade.py
+import os, glob, re, subprocess
 
-print("🚀 جاري تطبيق الإصلاح الجذري وبناء الإمبراطورية...")
+print("🚀 جاري تحويل الموسوعة للغة الإنجليزية وتصميم المربعات...")
 
-# 1. تدمير فلتر الرفض (إجبار الروبوت على النشر دائماً وتأليف الموسوعة)
+# 1. تحديث عقل الروبوت ليوزع المقالات على 10 أقسام إنجليزية
 bot_path = "/root/mnjnef_factory.py"
 try:
-    with open(bot_path, "r") as f:
-        lines = f.readlines()
+    with open(bot_path, "r", encoding="utf-8") as f:
+        content = f.read()
+    
+    new_cats = "categories = ['Technology', 'Science_and_Health', 'Global_Education', 'World_History', 'Business_and_Economy', 'Arts_and_Culture', 'Space_Exploration', 'Environment', 'Daily_Solutions', 'Global_Discoveries']"
+    
+    if "categories =" in content:
+        content = re.sub(r"categories\s*=\s*\[.*?\]", new_cats, content, flags=re.DOTALL)
+    else:
+        content = content.replace("category = 'Mnjnef_Encyclopedia'", f"import random\n            {new_cats}\n            category = random.choice(categories)")
         
-    for i in range(len(lines)):
-        if "Extracted raw text failed length threshold validation" in lines[i] or "Discarding target" in lines[i]:
-            indent = lines[i][:len(lines[i]) - len(lines[i].lstrip())]
-            lines[i] = indent + "logger.info('🛡️ تم تجاوز التشفير! جاري توليد مقال موسوعي ضخم من عنوان الخبر عبر الذكاء الاصطناعي...')\n"
-            if i + 1 < len(lines) and "return False" in lines[i+1]:
-                lines[i+1] = indent + "extracted_raw_text = f'Topic: {initial_headline} \\n Details: {rss_desc} \\n Instruction: Write a highly detailed, massive, and structured encyclopedia article. Do not write a short news snippet. Use sections.'\n"
-            break
-            
-    with open(bot_path, "w") as f:
-        f.writelines(lines)
-    print("✅ 1. تم كسر حماية المواقع! الروبوت سيكتب المقالات ولن يرفض أي خبر بعد اليوم.")
+    with open(bot_path, "w", encoding="utf-8") as f:
+        f.write(content)
+    print("✅ 1. تم ربط الروبوت بـ 10 أقسام إنجليزية أساسية وشاملة (بدون إيموجي).")
 except Exception as e:
     print(f"⚠️ خطأ في تعديل الروبوت: {e}")
 
-# 2. إصلاح القالب وبناء الواجهة فوراً بالقوة
+# 2. تحديث قائمة الموقع (حذف العربي والإيموجي ووضع المربعات)
 try:
     hugo_dirs = glob.glob('/root/**/config.toml', recursive=True) + glob.glob('/root/**/hugo.toml', recursive=True) + glob.glob('/var/www/**/config.toml', recursive=True) + glob.glob('/var/www/**/hugo.toml', recursive=True)
     if hugo_dirs:
         config_file = hugo_dirs[0]
         site_dir = os.path.dirname(config_file)
         
-        with open(config_file, "r") as f:
-            config_data = f.read()
+        with open(config_file, "r", encoding="utf-8") as f:
+            lines = f.readlines()
             
-        # تصحيح أكواد القالب
-        config_data = config_data.replace("[params.logo]", "[params.label]")
+        new_lines = []
+        skip = False
+        for line in lines:
+            if line.strip() == '[menu]':
+                skip = True
+            elif skip and line.strip().startswith('[') and not line.strip().startswith('[[menu'):
+                skip = False
+                
+            if not skip:
+                new_lines.append(line)
         
-        with open(config_file, "w") as f:
-            f.write(config_data)
+        config_data = "".join(new_lines).strip()
+        
+        english_menus = """
+[menu]
+  [[menu.main]]
+    identifier = "tech"
+    name = "Technology"
+    url = "/categories/technology/"
+    weight = 10
+  [[menu.main]]
+    identifier = "science"
+    name = "Science & Health"
+    url = "/categories/science_and_health/"
+    weight = 20
+  [[menu.main]]
+    identifier = "education"
+    name = "Global Education"
+    url = "/categories/global_education/"
+    weight = 30
+  [[menu.main]]
+    identifier = "history"
+    name = "World History"
+    url = "/categories/world_history/"
+    weight = 40
+  [[menu.main]]
+    identifier = "business"
+    name = "Business & Economy"
+    url = "/categories/business_and_economy/"
+    weight = 50
+  [[menu.main]]
+    identifier = "arts"
+    name = "Arts & Culture"
+    url = "/categories/arts_and_culture/"
+    weight = 60
+  [[menu.main]]
+    identifier = "space"
+    name = "Space Exploration"
+    url = "/categories/space_exploration/"
+    weight = 70
+  [[menu.main]]
+    identifier = "environment"
+    name = "Environment"
+    url = "/categories/environment/"
+    weight = 80
+  [[menu.main]]
+    identifier = "daily"
+    name = "Daily Solutions"
+    url = "/categories/daily_solutions/"
+    weight = 90
+  [[menu.main]]
+    identifier = "discoveries"
+    name = "Global Discoveries"
+    url = "/categories/global_discoveries/"
+    weight = 100
+"""
+        with open(config_file, "w", encoding="utf-8") as f:
+            f.write(config_data + "\n\n" + english_menus)
+        
+        # 3. زرع تصميم المربعات (CSS) للقائمة
+        assets_css_dir = os.path.join(site_dir, "assets", "css", "extended")
+        os.makedirs(assets_css_dir, exist_ok=True)
+        css_file = os.path.join(assets_css_dir, "menu_boxes.css")
+        
+        box_css = """
+/* تصميم الروابط العلوية كمربعات أزرار احترافية */
+.nav {
+    flex-wrap: wrap !important;
+}
+#menu {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+    width: 100% !important;
+    justify-content: flex-start !important;
+    margin-top: 15px !important;
+    padding: 0 !important;
+}
+#menu li {
+    list-style: none !important;
+    margin: 0 !important;
+}
+#menu a {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    background-color: #f8f9fa !important;
+    border: 1px solid #e1e4e8 !important;
+    border-radius: 8px !important;
+    padding: 8px 14px !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    color: #24292e !important;
+    text-decoration: none !important;
+    transition: all 0.2s ease-in-out !important;
+    line-height: 1.2 !important;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.03) !important;
+}
+#menu a:hover {
+    background-color: #111111 !important;
+    color: #ffffff !important;
+    border-color: #111111 !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1) !important;
+}
+.dark #menu a {
+    background-color: #1c1c1e !important;
+    border-color: #2c2c2e !important;
+    color: #e5e5ea !important;
+}
+.dark #menu a:hover {
+    background-color: #2c2c2e !important;
+    border-color: #3a3a3c !important;
+}
+"""
+        with open(css_file, "w", encoding="utf-8") as f:
+            f.write(box_css)
             
-        print("⚙️ جاري إجبار السيرفر على تحديث الواجهة والأقسام الآن فوراً...")
+        print("✅ 2. تم تصميم الواجهة بالمربعات الإنجليزية الرسمية.")
+        
+        # تحديث السيرفر
         subprocess.run(["hugo"], cwd=site_dir, capture_output=True)
-        print("🎉 2. تم تحديث واجهة الموقع بنجاح! الأقسام واللوجو جاهزة الآن.")
-    else:
-        print("❌ لم يتم العثور على مجلد الموقع لتحديثه.")
+        print("⚙️ 3. تم إجبار السيرفر على التحديث فوراً!")
 except Exception as e:
-    print(f"⚠️ خطأ في تحديث الواجهة: {e}")
+    print(f"⚠️ خطأ: {e}")
 
-print("\n🔥 انطلاق الوحش الآن...")
+print("🎉 اكتملت المهمة! انطلاق الوحش الآن...")
 EOF
 
-python3 /root/ultimate_fix.py
+python3 /root/english_upgrade.py
 
 nohup python3 /root/mnjnef_factory.py > /root/mnjnef_factory.log 2>&1 &
 tail -f /root/mnjnef_factory.log
