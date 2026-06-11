@@ -1,45 +1,27 @@
-# إيقاف جميع العمليات المعلقة
 pkill -f run_bot.sh
 pkill -f the_king_commander.sh
 pkill -f mnjnef_factory.py
 
-cat << 'EOF' > /root/restore_engine.py
-import os, re
+cat << 'EOF' > /root/fix_try_except.py
+import re
 
-print("🛠️ جاري ترميم الأسطر المكسورة في المحرك...")
+print("🛠️ جاري الكي الجراحي لسطر الخطأ 278...")
 path = "/root/mnjnef_factory.py"
 
-if os.path.exists(path):
-    with open(path, "r", encoding="utf-8") as f:
-        code = f.read()
+with open(path, "r", encoding="utf-8") as f:
+    code = f.read()
 
-    # إعادة تفعيل أسطر except التي تم تعطيلها سابقاً بالخطأ
-    code = re.sub(r'^(\s*)# 🔪 استئصال ملكي:\s*(except.*)', r'\1\2', code, flags=re.MULTILINE)
-    
-    # تأمين أسطر try اليتيمة في حال عدم وجود except
-    code = re.sub(r'^(\s*)try:\s*\n(\s*import urllib\.parse as up)', r'\1try:\n\2\n\1except Exception:\n\1    pass', code, flags=re.MULTILINE)
+# البحث عن كلمة try اليتيمة التي تسبق import urllib وتغليفها بشكل صحيح
+code = re.sub(r'([ \t]*)try:\s*\n([ \t]*)import urllib\.parse as up', r'\1try:\n\2import urllib.parse as up\n\1except Exception:\n\2pass', code)
 
-    with open(path, "w", encoding="utf-8") as f:
-        f.write(code)
-    
-    print("✅ تم ترميم الكود بنجاح. السيرفر جاهز للعمل.")
-else:
-    print("❌ لم يتم العثور على الملف.")
+with open(path, "w", encoding="utf-8") as f:
+    f.write(code)
+
+print("✅ تم إغلاق الثغرة البرمجية بنجاح!")
 EOF
 
-python3 /root/restore_engine.py
+python3 /root/fix_try_except.py
 
-# إعادة تشغيل الروبوت الأساسي في الخلفية ليواصل النشر
-cat << 'EOF' > /root/run_bot.sh
-#!/bin/bash
-while true; do
-    python3 /root/mnjnef_factory.py >> /root/mnjnef_factory.log 2>&1
-    sleep 5
-done
-EOF
-
-chmod +x /root/run_bot.sh
-nohup /root/run_bot.sh > /dev/null 2>&1 &
-
-echo "🚀 تم إطلاق المحرك من جديد في الخلفية. يمكنك الآن إغلاق الكمبيوتر."
-tail -f /root/mnjnef_factory.log
+# إعادة إطلاق روبوت الملك والقوات الخاصة
+nohup /root/the_king_commander.sh > /root/king_orders.log 2>&1 &
+tail -f /root/special_forces_1.log
