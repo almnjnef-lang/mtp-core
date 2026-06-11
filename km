@@ -1,57 +1,61 @@
-# 1. إيقاف المحرك القديم
-pkill -f mnjnef_real_engine.py
+# 1. إيقاف كافة العمليات السابقة
 pkill -f mnjnef_full_engine.py
 
-# 2. تنظيف الموقع من المقالات القصيرة (الملخصات)
-echo "🧹 جاري مسح المقالات القصيرة القديمة..."
-find /var/www/ -name "real_article_*.md" -type f -delete 2>/dev/null
-find /root/ -name "real_article_*.md" -type f -delete 2>/dev/null
+# 2. حل مشكلة (Error 520 Cloudflare) بإنعاش خوادم الويب
+echo "🛠️ جاري إنعاش خوادم الويب لحل مشكلة 520..."
+systemctl restart nginx 2>/dev/null || systemctl restart apache2 2>/dev/null
 
-# 3. بناء محرك Mnjnef الشامل (المقالات الطويلة + الاقتراحات)
-cat << 'EOF' > /root/mnjnef_full_engine.py
+# 3. التطهير الشامل: مسح جميع المقالات القديمة والقصيرة
+echo "🧹 جاري إبادة المقالات القديمة لتنظيف الموسوعة..."
+SITE_DIR=$(find /root /var/www -maxdepth 3 -name "config.toml" -o -name "hugo.toml" | head -n 1 | xargs dirname)
+if [ -d "$SITE_DIR" ]; then
+    rm -rf $SITE_DIR/content/posts/*.md
+    rm -rf /var/www/html/* 2>/dev/null
+    rm -rf /var/www/mnjnef.com/* 2>/dev/null
+fi
+
+# 4. بناء المحرك الضخم المعزز بنظام الاقتراحات العلمي الحقيقي
+cat << 'EOF' > /root/mnjnef_ultimate_engine.py
 import os, time, random, json, subprocess
 from urllib.request import urlopen, Request
-from urllib.error import URLError
+from urllib.parse import quote
 
-print("🚀 [محرك Mnjnef الشامل] بدأ سحب المقالات العلمية الطويلة مع الاقتراحات...")
+print("🚀 [المحرك الإمبراطوري] بدأ العمل بنظام الاقتراحات الحقيقية...")
 
-def fetch_full_article():
+def fetch_ultimate_article():
     try:
-        # جلب عنوان عشوائي أولاً
-        random_url = "https://en.wikipedia.org/api/rest_v1/page/random/title"
-        req = Request(random_url, headers={'User-Agent': 'MnjnefBot/2.0'})
-        response = urlopen(req)
-        title_data = json.loads(response.read().decode('utf-8'))
-        title = title_data.get('items', [{}])[0].get('title', '')
+        # 1. جلب عنوان عشوائي
+        req = Request("https://en.wikipedia.org/api/rest_v1/page/random/title", headers={'User-Agent': 'MnjnefBot/4.0'})
+        res = urlopen(req)
+        title = json.loads(res.read().decode())['items'][0]['title']
         
-        if not title: return
-
-        # جلب المقال الشامل بالكامل (وليس الملخص) بناءً على العنوان
-        full_url = f"https://en.wikipedia.org/w/api.php?action=query&prop=extracts&exlimit=1&titles={title}&explaintext=1&format=json"
-        req_full = Request(full_url, headers={'User-Agent': 'MnjnefBot/2.0'})
+        # 2. جلب المقال الشامل
+        full_url = f"https://en.wikipedia.org/w/api.php?action=query&prop=extracts&exlimit=1&titles={quote(title)}&explaintext=1&format=json"
+        req_full = Request(full_url, headers={'User-Agent': 'MnjnefBot/4.0'})
         res_full = urlopen(req_full)
-        full_data = json.loads(res_full.read().decode('utf-8'))
+        pages = json.loads(res_full.read().decode())['query']['pages']
+        extract = list(pages.values())[0].get('extract', '')
         
-        pages = full_data.get('query', {}).get('pages', {})
-        page_id = list(pages.keys())[0]
-        extract = pages[page_id].get('extract', '')
+        # تخطي المقالات القصيرة جداً
+        if len(extract) < 1500: return
         
-        # تخطي المقالات القصيرة جداً لضمان الجودة
-        if len(extract) < 1000:
-            return
+        # 3. نظام الاقتراحات الحقيقي (جلب مقالات مرتبطة علمياً من ويكيبيديا)
+        related_url = f"https://en.wikipedia.org/api/rest_v1/page/related/{quote(title)}"
+        req_rel = Request(related_url, headers={'User-Agent': 'MnjnefBot/4.0'})
+        res_rel = urlopen(req_rel)
+        related_data = json.loads(res_rel.read().decode())['pages']
+        
+        related_markdown = ""
+        for item in related_data[:3]: # سحب أفضل 3 مواضيع مرتبطة
+            rel_title = item.get('title', '').replace('_', ' ')
+            rel_desc = item.get('description', 'Dive deeper into this related topic.')
+            related_markdown += f"* **{rel_title}**: {rel_desc}\n"
             
-        categories = ['Science_and_Health', 'World_History', 'Global_Discoveries', 'Technology']
-        cat = random.choice(categories)
         clean_title = title.replace('_', ' ')
+        categories = ['Scientific_Research', 'Historical_Archives', 'Global_Discoveries', 'Advanced_Technology']
+        cat = random.choice(categories)
         
-        # توليد 3 اقتراحات مشابهة (وهمية حالياً لربطها لاحقاً بمقالاتك، لكنها تبدو احترافية)
-        related_topics = [
-            f"The History of {clean_title.split()[0]}",
-            f"Scientific Impacts of {clean_title[-5:]}",
-            "Explore more in Global Discoveries"
-        ]
-        
-        # تصميم المقال الطويل مع قسم الاقتراحات
+        # 4. دمج المقال مع الاقتراحات بتصميم فخم
         content = f"""---
 title: "{clean_title}"
 date: {time.strftime('%Y-%m-%d')}
@@ -61,15 +65,13 @@ categories: ["{cat}"]
 {extract}
 
 ---
-### 📚 Explore Related Topics:
-* [{related_topics[0]}](/)
-* [{related_topics[1]}](/)
-* [{related_topics[2]}](/)
+### 🔗 Explore Related Topics:
+{related_markdown}
 
 *Curated by Mnjnef Global Encyclopedia*
 """
         
-        # تحديد مسار الموقع بذكاء
+        # 5. الحفظ والنشر
         site_dirs = ["/var/www/mnjnef.com", "/var/www/html", "/root/mnjnef_site"]
         active_dir = None
         for d in site_dirs:
@@ -79,30 +81,31 @@ categories: ["{cat}"]
                 
         if not active_dir: return
 
-        post_path = os.path.join(active_dir, 'content', 'posts', f"full_article_{int(time.time())}.md")
-        
-        # حفظ المقال الطويل
+        post_path = os.path.join(active_dir, 'content', 'posts', f"mnjnef_ultimate_{int(time.time())}.md")
         os.makedirs(os.path.dirname(post_path), exist_ok=True)
+        
         with open(post_path, "w", encoding="utf-8") as f:
             f.write(content)
             
-        print(f"📖 تم سحب وصياغة مقال شامل عن: {clean_title}")
+        print(f"📖 تمت صياغة مقال شامل مع اقتراحاته: {clean_title}")
 
-        # النشر الفوري
         subprocess.run(["hugo", "--gc", "--minify"], cwd=active_dir, capture_output=True)
         subprocess.run(f"cp -r {active_dir}/public/* /var/www/html/ 2>/dev/null", shell=True)
         subprocess.run(f"cp -r {active_dir}/public/* /var/www/mnjnef.com/ 2>/dev/null", shell=True)
-        print("✅ [PUBLISHED] المقال الطويل متاح الآن على الموقع!")
+        
+        # إصلاح الصلاحيات لضمان عدم عودة خطأ 520
+        subprocess.run("chown -R www-data:www-data /var/www/", shell=True, stderr=subprocess.DEVNULL)
+        
+        print("✅ [PUBLISHED] المقال متاح الآن بوضوح واحترافية!")
         
     except Exception as e:
-        pass # تجاوز الأخطاء بهدوء
+        pass # تجاوز صامت للأخطاء
 
-# حلقة العمل (مقال طويل كل 40 ثانية)
+# حلقة العمل (مقال دسم كل 45 ثانية لتخفيف الضغط على السيرفر)
 while True:
-    fetch_full_article()
-    time.sleep(random.randint(30, 45))
-
+    fetch_ultimate_article()
+    time.sleep(random.randint(35, 50))
 EOF
 
-# 4. تشغيل المحرك الجديد بشكل مرئي
-python3 /root/mnjnef_full_engine.py
+# 5. تشغيل المحرك النهائي 
+python3 /root/mnjnef_ultimate_engine.py
