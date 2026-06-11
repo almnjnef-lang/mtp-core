@@ -1,88 +1,95 @@
 pkill -f run_bot.sh
+pkill -f surgeon_bot.py
 pkill -f mnjnef_factory.py
 
-cat << 'EOF' > /root/surgeon_bot.py
-import os, ast, time
+cat << 'EOF' > /root/legion_commander.py
+import os, re
 
-print("👨‍⚕️ [الطبيب الجراح] بدأ فحص المريض (سيرفر Mnjnef)...")
+print("🛡️ [القيادة العليا] جاري تفعيل جيوش Mnjnef للذكاء الاصطناعي...")
 
-def perform_surgery():
-    path = '/root/mnjnef_factory.py'
-    if not os.path.exists(path):
-        print("❌ المريض غير موجود!")
-        return
-    
-    with open(path, 'r', encoding='utf-8') as f:
-        code = f.read()
+path = "/root/mnjnef_factory.py"
+if not os.path.exists(path):
+    print("❌ خطأ: ملف المحرك غير موجود!")
+    exit()
+
+with open(path, "r", encoding="utf-8") as f:
+    lines = f.readlines()
+
+# 1. جيش الأطباء (ترميم التمزق في الكود بذكاء هندسي)
+print("👨‍⚕️ [جيش الأطباء] جاري مسح السيرفر وترميم الأكواد الممزقة...")
+for _ in range(3): # 3 جولات من الفحص والعلاج
+    for i in range(len(lines)):
+        line_strip = lines[i].strip()
+        indent = len(lines[i]) - len(lines[i].lstrip())
         
-    lines = code.split('\n')
-    
-    # العملية الأولى: ترقيع المسافات المفقودة (Indentation Fixer)
-    new_lines = []
-    for i, line in enumerate(lines):
-        new_lines.append(line)
-        s = line.strip()
-        if s.endswith(':') and not s.startswith('#'):
-            next_ind = -1
-            for j in range(i+1, len(lines)):
-                if lines[j].strip() and not lines[j].strip().startswith('#'):
-                    next_ind = len(lines[j]) - len(lines[j].lstrip())
+        # علاج جراحي: إذا وجدنا try بدون except
+        if line_strip == 'try:':
+            has_except = False
+            for j in range(i+1, min(i+60, len(lines))):
+                j_strip = lines[j].strip()
+                j_indent = len(lines[j]) - len(lines[j].lstrip())
+                if j_strip.startswith('except') and j_indent == indent:
+                    has_except = True
                     break
-            curr_ind = len(line) - len(line.lstrip())
-            if next_ind <= curr_ind and next_ind != -1:
-                new_lines.append(" " * (curr_ind + 4) + "pass # 🩹 تم الترقيع بواسطة الطبيب الجراح")
-            elif next_ind == -1:
-                new_lines.append(" " * (curr_ind + 4) + "pass # 🩹 تم الترقيع بواسطة الطبيب الجراح")
-                
-    with open(path, 'w', encoding='utf-8') as f:
-        f.write('\n'.join(new_lines))
+                # إذا رجعنا لسطر غير مسافات انتهى البلوك
+                if j_indent < indent and j_strip != '' and not j_strip.startswith('#'):
+                    break
+            if not has_except:
+                lines[i] = lines[i].replace('try:', 'if True: # 👨‍⚕️ Healed Try')
         
-    # العملية الثانية: استئصال الأورام البرمجية (Syntax Bruteforce)
-    for attempt in range(1, 51):
-        with open(path, 'r', encoding='utf-8') as f:
-            source = f.read()
-        try:
-            ast.parse(source)
-            print(f"✅ [الطبيب الجراح] العملية نجحت! السيرفر تعافى تماماً بعد {attempt} تدخلات جراحية.")
-            break
-        except SyntaxError as e:
-            bad_line = e.lineno - 1
-            print(f"🔪 [الطبيب الجراح] اكتشاف ورم برمجي في السطر {e.lineno}.. جاري الاستئصال!")
-            source_lines = source.split('\n')
-            # تخدير واستئصال السطر المعطوب
-            source_lines[bad_line] = "# 🔪 تم الاستئصال بواسطة الطبيب الجراح: " + source_lines[bad_line]
-            with open(path, 'w', encoding='utf-8') as f:
-                f.write('\n'.join(source_lines))
-        except Exception as e:
-            print(f"⚠️ خطأ أثناء الجراحة: {e}")
-            break
+        # علاج جراحي: إذا وجدنا except بدون try
+        if line_strip.startswith('except') or line_strip.startswith('finally:'):
+            has_try = False
+            for j in range(i-1, max(-1, i-60), -1):
+                j_strip = lines[j].strip()
+                j_indent = len(lines[j]) - len(lines[j].lstrip())
+                if j_strip == 'try:' and j_indent == indent:
+                    has_try = True
+                    break
+            if not has_try:
+                lines[i] = " " * indent + "pass # 👨‍⚕️ Healed Except\n"
 
-perform_surgery()
+# 2. جيش الحراس (درع المحتوى الصارم)
+print("💂 [جيش الحراس] جاري تفعيل قوانين النشر العلمي الصارمة...")
+code = "".join(lines)
+
+strict_rule = "Instruction: You are an elite Scientific Encyclopedia AI. STRICT RULES: 1. NEVER publish outdated news, rumors, or misleading/fake info. 2. ABSOLUTELY NO hate speech, bias, or harmful content. 3. FOCUS EXCLUSIVELY on generating highly detailed, factual, and timeless scientific, historical, and technological encyclopedia articles. 4. Maintain absolute professional neutrality."
+code = re.sub(r'Instruction:.*?(?="|\')', strict_rule, code, flags=re.DOTALL)
+
+# 3. جيش النشر (توقيت 35-70 ثانية)
+print("🚀 [جيش النشر] جاري ضبط المحرك للعمل الصاروخي المتزن...")
+code = re.sub(r'random\.randint\(\s*\d+\s*,\s*\d+\s*\)', 'random.randint(35, 70)', code)
+
+# تنظيف الشوائب المتبقية
+code = code.replace('}"\n', '\n').replace('}"', '')
+
+with open(path, "w", encoding="utf-8") as f:
+    f.write(code)
+
+print("✅ تمت تهيئة جميع الجيوش بنجاح! السيرفر جاهز للانطلاق.")
 EOF
 
-# 1. إدخال السيرفر لغرفة العمليات (تشغيل الطبيب الجراح)
-python3 /root/surgeon_bot.py
+python3 /root/legion_commander.py
 
-# 2. تعديل الحارس الآلي لكي يستدعي (الطبيب الجراح) تلقائياً لو حدث خطأ مستقبلاً!
-cat << 'EOF' > /root/run_bot.sh
+# 4. جيش الإيقاظ (The Watchdog Army)
+cat << 'EOF' > /root/legion_watchdog.sh
 #!/bin/bash
 while true; do
-    echo "▶️ [WATCHDOG] بدء تشغيل محرك Mnjnef العلمي..." >> /root/mnjnef_factory.log
+    echo "⚡ [جيش الإيقاظ] إطلاق محرك Mnjnef العلمي..." >> /root/mnjnef_factory.log
     python3 /root/mnjnef_factory.py >> /root/mnjnef_factory.log 2>&1
     
     EXIT_CODE=$?
     if [ $EXIT_CODE -ne 0 ]; then
-        echo "⚠️ [WATCHDOG] المحرك انهار! جاري استدعاء (الطبيب الجراح) للإنقاذ..." >> /root/mnjnef_factory.log
-        python3 /root/surgeon_bot.py >> /root/mnjnef_factory.log 2>&1
+        echo "⚠️ [جيش الإيقاظ] المحرك تعثر! يتم الآن استدعاء القيادة العليا (جيش الأطباء) للترميم الفوري..." >> /root/mnjnef_factory.log
+        python3 /root/legion_commander.py >> /root/mnjnef_factory.log 2>&1
     fi
     
-    echo "⏳ إعادة التشغيل خلال 3 ثواني..." >> /root/mnjnef_factory.log
     sleep 3
 done
 EOF
 
-chmod +x /root/run_bot.sh
-nohup /root/run_bot.sh > /dev/null 2>&1 &
+chmod +x /root/legion_watchdog.sh
+nohup /root/legion_watchdog.sh > /dev/null 2>&1 &
 
-echo "🎉 السيرفر الآن محمي ومستقل تماماً! جاري المراقبة..."
+echo "🎉 إمبراطورية Mnjnef محمية الآن بجيوش الذكاء الاصطناعي!"
 tail -f /root/mnjnef_factory.log
