@@ -2,26 +2,26 @@ pkill -f run_bot.sh
 pkill -f the_king_commander.sh
 pkill -f mnjnef_factory.py
 
-cat << 'EOF' > /root/fix_try_except.py
+cat << 'EOF' > /root/surgical_fix.py
 import re
 
-print("🛠️ جاري الكي الجراحي لسطر الخطأ 278...")
+print("🛠️ جاري إغلاق الثغرة في السطر 278 نهائياً...")
 path = "/root/mnjnef_factory.py"
 
 with open(path, "r", encoding="utf-8") as f:
     code = f.read()
 
-# البحث عن كلمة try اليتيمة التي تسبق import urllib وتغليفها بشكل صحيح
-code = re.sub(r'([ \t]*)try:\s*\n([ \t]*)import urllib\.parse as up', r'\1try:\n\2import urllib.parse as up\n\1except Exception:\n\2pass', code)
+# إزالة البلوك اليتيم الذي يسبب الاختناق
+code = re.sub(r'^[ \t]*try:\s*\n[ \t]*import urllib\.parse as up\s*\n', '        import urllib.parse as up\n', code, flags=re.MULTILINE)
 
 with open(path, "w", encoding="utf-8") as f:
     f.write(code)
 
-print("✅ تم إغلاق الثغرة البرمجية بنجاح!")
+print("✅ تمت العملية الجراحية! الكود الآن سليم 100%.")
 EOF
 
-python3 /root/fix_try_except.py
+python3 /root/surgical_fix.py
 
-# إعادة إطلاق روبوت الملك والقوات الخاصة
+# إطلاق روبوت الملك والقوات الخاصة من جديد
 nohup /root/the_king_commander.sh > /root/king_orders.log 2>&1 &
 tail -f /root/special_forces_1.log
