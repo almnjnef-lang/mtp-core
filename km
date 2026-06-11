@@ -1,70 +1,75 @@
 pkill -f run_bot.sh
 pkill -f mnjnef_factory.py
 
-cat << 'EOF' > /root/clean_ui_and_bot.py
-import os, glob, subprocess
+cat << 'EOF' > /root/ultimate_scientific_engine.py
+import os, re
 
-print("🧹 جاري إزالة حرف M المزعج وإصلاح عطل الروبوت...")
+print("🚀 جاري معالجة السيرفر وبرمجة العقل العلمي الصارم...")
 
-# 1. إزالة حرف M من خلفية الموقع بالقوة
-configs = glob.glob('/root/**/config.toml', recursive=True) + glob.glob('/root/**/hugo.toml', recursive=True) + glob.glob('/var/www/**/config.toml', recursive=True) + glob.glob('/var/www/**/hugo.toml', recursive=True)
-if configs:
-    site_dir = os.path.dirname(configs[0])
-    head_file = os.path.join(site_dir, 'layouts', 'partials', 'extend_head.html')
-    os.makedirs(os.path.dirname(head_file), exist_ok=True)
-    
-    existing_head = ""
-    if os.path.exists(head_file):
-        with open(head_file, 'r', encoding='utf-8') as f:
-            existing_head = f.read()
-    
-    # كود CSS قاطع لإخفاء أي علامة مائية في الخلفية
-    kill_m_css = "\n<style>body::before { display: none !important; content: none !important; background: none !important; }</style>\n"
-    
-    if "body::before { display: none" not in existing_head:
-        with open(head_file, 'w', encoding='utf-8') as f:
-            f.write(existing_head + kill_m_css)
-    
-    # إعادة بناء الموقع ليعكس النقاء الجديد
-    subprocess.run(["hugo", "--gc", "--minify"], cwd=site_dir, capture_output=True)
-    for dest in ['/var/www/html', '/var/www/mnjnef', '/var/www/mnjnef.com']:
-        if os.path.exists(dest):
-            subprocess.run(f"cp -r {os.path.join(site_dir, 'public')}/* {dest}/ 2>/dev/null", shell=True)
-    print("✅ تم تدمير حرف M نهائياً.. واجهة الموقع الآن بيضاء ونقية 100%.")
-
-# 2. إصلاح خطأ SyntaxError في الروبوت الذي ظهر في شاشتك
 bot_path = "/root/mnjnef_factory.py"
 if os.path.exists(bot_path):
     with open(bot_path, "r", encoding="utf-8") as f:
         lines = f.readlines()
     
-    new_lines = []
-    in_broken_try = False
+    # 1. تنظيف السيرفر من الأخطاء البرمجية (IndentationError & SyntaxError)
+    clean_lines = []
+    skip = False
     for line in lines:
-        if 'import urllib.parse as up' in line:
-            # مسح سطر try اليتيم الذي يسبق الخطأ
-            if new_lines and new_lines[-1].strip() == 'try:':
-                new_lines.pop()
-            in_broken_try = True
-            continue
+        stripped = line.strip()
+        if stripped.startswith("def get_strict_category"): skip = True
+        if skip and stripped.startswith("return 'Global_Discoveries'"): skip = False; continue
+        if skip: continue
         
-        if in_broken_try:
-            # تخطي جميع الأسطر المكسورة حتى نخرج من المنطقة المعطوبة
-            if any(x in line for x in ['class D:', 'parsed_feed.entries', 'except:', 'ext =', 'if ext']):
-                continue
-            else:
-                in_broken_try = False
+        # إزالة الأسطر اليتيمة التي سببت تعليق السيرفر
+        if line.startswith("    text = str(text).lower()"): continue
+        if line.startswith("    if any(w in text"): continue
+        if line.startswith("    return '"): continue
+        if stripped == "except:" or stripped == "pass": continue
         
-        if not in_broken_try:
-            new_lines.append(line)
-            
+        clean_lines.append(line)
+
+    content = "".join(clean_lines)
+
+    # 2. تعديل سرعة النشر لتكون بين 35 إلى 70 ثانية بدقة
+    content = re.sub(r'random\.randint\(\s*\d+\s*,\s*\d+\s*\)', 'random.randint(35, 70)', content)
+
+    # 3. زرع القانون الصارم (موسوعة علمية + منع الكراهية والكذب)
+    strict_prompt = "Instruction: You are an elite Scientific Encyclopedia AI Engine. STRICT RULES: 1. FORBIDDEN to use outdated news, rumors, or fake/misleading info. 2. FORBIDDEN to use any hate speech, bias, or harmful content. 3. FOCUS EXCLUSIVELY on generating a massive, highly detailed, timeless scientific, historical, and technological encyclopedia article. 4. Maintain ultimate professional neutrality."
+    content = re.sub(r'Instruction:.*?(?="|\')', strict_prompt, content, flags=re.DOTALL)
+
+    # 4. تفعيل نظام التخفي لتجنب الحظر من جوجل (Anti-Ban System)
+    anti_ban_headers = """
+        import random
+        user_agents = [
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.2 Safari/605.1.15",
+            "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:122.0) Gecko/20100101 Firefox/122.0",
+            "Mozilla/5.0 (iPad; CPU OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1"
+        ]
+        self.headers = {
+            "User-Agent": random.choice(user_agents),
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+            "Accept-Language": "en-US,en;q=0.9"
+        }
+    """
+    content = re.sub(r'self\.headers\s*=\s*\{.*?\}', anti_ban_headers.strip(), content, flags=re.DOTALL)
+
+    # ضمان توجيه المقالات إلى القسم الرئيسي (لأننا حذفنا الأقسام الفرعية وبقي سياسة الخصوصية)
+    content = re.sub(r'categories:\s*\[.*?\]', 'categories: ["Scientific_Encyclopedia"]', content)
+    content = re.sub(r'category\s*=\s*[\'"].*?[\'"]', 'category = "Scientific_Encyclopedia"', content)
+
     with open(bot_path, "w", encoding="utf-8") as f:
-        f.writelines(new_lines)
-    print("✅ تم إجراء عملية جراحية للروبوت وإصلاح خطأ (SyntaxError) نهائياً.")
+        f.write(content)
+    
+    print("✅ تم فرمتة الروبوت، وتفعيل الفلتر العلمي، ونظام التخفي من جوجل بنجاح.")
+else:
+    print("❌ لم يتم العثور على ملف الروبوت.")
 
 EOF
 
-python3 /root/clean_ui_and_bot.py
+python3 /root/ultimate_scientific_engine.py
 
+# تشغيل الحارس الآلي لضمان عمل السيرفر 24 ساعة بدون توقف
 nohup /root/run_bot.sh > /dev/null 2>&1 &
 tail -f /root/mnjnef_factory.log
