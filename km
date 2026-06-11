@@ -1,65 +1,44 @@
-# 1. إيقاف كل العمليات المعلقة
+# 1. إيقاف كل شيء قديم لتنظيف الذاكرة
 pkill -f run_bot.sh
 pkill -f the_king_commander.sh
 pkill -f mnjnef_factory.py
+pkill -f awakener_robot.sh
 
-# 2. مسح مقال "الذكاء الاصطناعي" بالكامل وزرع مقال "بشري احترافي"
-echo "📝 جاري مسح المقال القديم وزرع مقال التأسيس الاحترافي..."
-SITE_DIR=$(find /root /var/www -maxdepth 3 -name "config.toml" -o -name "hugo.toml" | head -n 1 | xargs dirname)
-rm -f $SITE_DIR/content/posts/mnjnef_launch_2026.md
-
-cat << 'EOF' > $SITE_DIR/content/posts/welcome_to_mnjnef.md
----
-title: "Welcome to Mnjnef: The Premium Global Encyclopedia"
-date: 2026-06-11
-categories: ["Global_Discoveries"]
----
-### A New Era of Knowledge
-Welcome to Mnjnef. Our dedicated global team of expert researchers, professional editors, and academic writers is committed to delivering highly researched, factual, and timeless articles across multiple disciplines. 
-
-We believe in the power of authentic, well-curated information. Stay tuned as our editorial board continuously populates this space with premium, meticulously fact-checked content designed to enrich your understanding of the world.
-EOF
-
-cd $SITE_DIR && hugo --gc --minify
-cp -r public/* /var/www/html/ 2>/dev/null
-cp -r public/* /var/www/mnjnef.com/ 2>/dev/null
-
-# 3. الكي الجراحي الدقيق للسطر 278 (القضاء على الخطأ نهائياً)
-echo "🛠️ جاري الكي الجراحي لسطر 278 لحل مشكلة توقف السيرفر..."
-cat << 'EOF' > /root/ultimate_fixer.py
-import os
-
-path = "/root/mnjnef_factory.py"
-if os.path.exists(path):
-    with open(path, "r", encoding="utf-8") as f:
-        lines = f.readlines()
-    
-    # البحث عن السطر المسبب للمشكلة وتعديل ما قبله برمجياً
-    for i in range(len(lines)):
-        if "import urllib.parse as up" in lines[i]:
-            # الرجوع للخلف للبحث عن كلمة try اليتيمة وتحويلها لـ if True لمنع الخطأ
-            for j in range(i-1, max(-1, i-5), -1):
-                if lines[j].strip() == "try:":
-                    lines[j] = lines[j].replace("try:", "if True:")
-                    break
-                    
-    with open(path, "w", encoding="utf-8") as f:
-        f.writelines(lines)
-    print("✅ تم القضاء على الخطأ البرمجي في السطر 278 للأبد!")
-EOF
-python3 /root/ultimate_fixer.py
-
-# 4. إطلاق روبوت الملك والقوات الخاصة لتبدأ العمل
-echo "🥷 جاري إطلاق قوات النشر الخاصة..."
-cat << 'EOF' > /root/the_king_commander.sh
+# 2. صناعة "الروبوت المُوقِظ" (The Awakener)
+cat << 'EOF' > /root/awakener_robot.sh
 #!/bin/bash
-nohup python3 /root/mnjnef_factory.py > /root/sf_1.log 2>&1 &
-nohup python3 /root/mnjnef_factory.py > /root/sf_2.log 2>&1 &
-nohup python3 /root/mnjnef_factory.py > /root/sf_3.log 2>&1 &
+echo "⚡ [الروبوت المُوقِظ] بدأ العمل.. لا مجال للنوم بعد اليوم!"
+
+# البحث عن مجلد الموقع بذكاء
+SITE_DIR=$(find /root /var/www -maxdepth 3 -name "config.toml" -o -name "hugo.toml" | head -n 1 | xargs dirname)
+
+while true; do
+    # المهمة 1: إيقاظ القوات الخاصة إذا توقفت
+    if ! pgrep -f "mnjnef_factory.py" > /dev/null; then
+        echo "⚠️ [الروبوت المُوقِظ] القوات الخاصة نائمة! جاري الإيقاظ الإجباري..."
+        nohup python3 /root/mnjnef_factory.py > /root/sf_1.log 2>&1 &
+        nohup python3 /root/mnjnef_factory.py > /root/sf_2.log 2>&1 &
+        nohup python3 /root/mnjnef_factory.py > /root/sf_3.log 2>&1 &
+    fi
+
+    # المهمة 2: تجميع المقالات ونشرها بقوة للجمهور (تحديث الواجهة)
+    if [ -d "$SITE_DIR" ]; then
+        cd "$SITE_DIR"
+        hugo --gc --minify > /dev/null 2>&1
+        cp -r public/* /var/www/html/ 2>/dev/null
+        cp -r public/* /var/www/mnjnef.com/ 2>/dev/null
+        echo "🌐 [الروبوت المُوقِظ] تم تحديث واجهة Mnjnef ونشر المقالات الجديدة!"
+    fi
+
+    # الانتظار 30 ثانية قبل الدورة التالية
+    sleep 30
+done
 EOF
 
-chmod +x /root/the_king_commander.sh
-/root/the_king_commander.sh
+# 3. إعطاء الصلاحيات وإطلاق الروبوت الموقظ في الخلفية
+chmod +x /root/awakener_robot.sh
+nohup /root/awakener_robot.sh > /root/awakener.log 2>&1 &
 
-echo "🚀 تمت المهمة بنجاح! جاري عرض البث المباشر للقوات الخاصة..."
-tail -f /root/sf_1.log
+echo "🎉 تمت المهمة! الروبوت المُوقِظ يعمل الآن في الخلفية ويقود جيوش النشر."
+echo "جاري عرض تقارير الروبوت المُوقِظ المباشرة..."
+tail -f /root/awakener.log
