@@ -1,34 +1,162 @@
-cat << 'EOF' > /root/allow_translation.py
-import os, glob, subprocess
+pkill -f mnjnef_factory.py
+pkill -f run_bot.sh
 
-print("🌍 جاري إعادة تفعيل خيار الترجمة للزوار...")
+cat << 'EOF' > /root/masterpiece_v4.py
+import os, glob, subprocess, re
+
+print("🚀 جاري تطبيق الإصلاحات النهائية وإنقاذ السيرفر...")
 
 configs = glob.glob('/root/**/config.toml', recursive=True) + glob.glob('/root/**/hugo.toml', recursive=True) + glob.glob('/var/www/**/config.toml', recursive=True) + glob.glob('/var/www/**/hugo.toml', recursive=True)
-if configs:
-    conf = configs[0]
-    site_dir = os.path.dirname(conf)
-    head_file = os.path.join(site_dir, 'layouts', 'partials', 'extend_head.html')
-    
-    if os.path.exists(head_file):
-        with open(head_file, 'r', encoding='utf-8') as f:
-            content = f.read()
-        
-        # مسح كود منع الترجمة
-        content = content.replace('<meta name="google" content="notranslate">\n', '')
-        content = content.replace('<meta name="google" content="notranslate">', '')
-        
-        with open(head_file, 'w', encoding='utf-8') as f:
-            f.write(content)
-        print("✅ تم إلغاء حظر الترجمة! متصفحات الزوار ستعرض لهم خيار الترجمة الآن براحة تامة.")
-        
-    # البناء والتحديث
-    subprocess.run(["hugo", "--gc", "--minify"], cwd=site_dir, capture_output=True)
-    for dest in ['/var/www/html', '/var/www/mnjnef', '/var/www/mnjnef.com']:
-        if os.path.exists(dest):
-            subprocess.run(f"cp -r {os.path.join(site_dir, 'public')}/* {dest}/ 2>/dev/null", shell=True)
-    print("⚙️ تم تحديث الواجهة للمستخدمين بنجاح.")
+if not configs:
+    exit()
+conf = configs[0]
+site_dir = os.path.dirname(conf)
 
-print("🎉 الموقع الآن إنجليزي فخم، ويدعم الترجمة الذكية للجميع!")
+# 1. تحديث سياسة الخصوصية لتكون عملاقة واحترافية
+pp_file = os.path.join(site_dir, 'content', 'privacy-policy.md')
+os.makedirs(os.path.dirname(pp_file), exist_ok=True)
+pp_text = """---
+title: 'Privacy Policy'
+date: 2024-01-01
+layout: 'single'
+---
+## Privacy Policy for Mnjnef
+
+At Mnjnef, accessible from mnjnef.com, one of our main priorities is the privacy of our visitors. This Privacy Policy document contains types of information that is collected and recorded by Mnjnef and how we use it.
+
+If you have additional questions or require more information about our Privacy Policy, do not hesitate to contact us.
+
+### General Data Protection Regulation (GDPR)
+We are a Data Controller of your information. Mnjnef legal basis for collecting and using the personal information described in this Privacy Policy depends on the Personal Information we collect and the specific context in which we collect the information.
+
+### Log Files
+Mnjnef follows a standard procedure of using log files. These files log visitors when they visit websites. All hosting companies do this and a part of hosting services' analytics. The information collected by log files include internet protocol (IP) addresses, browser type, Internet Service Provider (ISP), date and time stamp, referring/exit pages, and possibly the number of clicks.
+
+### Cookies and Web Beacons
+Like any other website, Mnjnef uses "cookies". These cookies are used to store information including visitors' preferences, and the pages on the website that the visitor accessed or visited. The information is used to optimize the users' experience by customizing our web page content based on visitors' browser type.
+
+### Google DoubleClick DART Cookie
+Google is one of a third-party vendor on our site. It also uses cookies, known as DART cookies, to serve ads to our site visitors based upon their visit to our site and other sites on the internet. However, visitors may choose to decline the use of DART cookies by visiting the Google ad and content network Privacy Policy at the following URL – https://policies.google.com/technologies/ads
+
+### Third Party Privacy Policies
+Mnjnef's Privacy Policy does not apply to other advertisers or websites. Thus, we are advising you to consult the respective Privacy Policies of these third-party ad servers for more detailed information.
+
+### CCPA Privacy Rights (Do Not Sell My Personal Information)
+Under the CCPA, among other rights, California consumers have the right to request that a business delete any personal data about the consumer that a business has collected.
+
+### Children's Information
+Mnjnef does not knowingly collect any Personal Identifiable Information from children under the age of 13.
+"""
+with open(pp_file, 'w', encoding='utf-8') as f:
+    f.write(pp_text)
+print("✅ 1. تم زرع سياسة خصوصية عملاقة تضمن قبول AdSense.")
+
+# 2. الواجهة الذكية (إخفاء الأقسام العلوية في المقالات ونقلها للأسفل)
+footer_file = os.path.join(site_dir, 'layouts', 'partials', 'extend_footer.html')
+os.makedirs(os.path.dirname(footer_file), exist_ok=True)
+
+smart_js = """
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    var path = window.location.pathname;
+    // التحقق من أننا داخل مقال وليس الصفحة الرئيسية
+    var isArticle = path !== '/' && path !== '/index.html' && !path.includes('/privacy-policy');
+    
+    var topMenu = document.querySelector('#menu');
+    var mainContent = document.querySelector('main') || document.querySelector('.post-single') || document.querySelector('article');
+
+    if (isArticle && topMenu && mainContent) {
+        // إخفاء الأقسام من الأعلى باستثناء سياسة الخصوصية
+        var menuItems = topMenu.querySelectorAll('li, a');
+        menuItems.forEach(function(item) {
+            if (item.href && !item.href.includes('privacy')) {
+                item.style.display = 'none';
+            }
+        });
+
+        // بناء منطقة الأقسام الفخمة في الأسفل
+        var bottomWrapper = document.createElement('div');
+        bottomWrapper.style.marginTop = '80px';
+        bottomWrapper.style.paddingTop = '40px';
+        bottomWrapper.style.borderTop = '2px solid #eaeaea';
+        bottomWrapper.style.marginBottom = '50px';
+        bottomWrapper.innerHTML = '<h3 style="text-align:center; font-family:sans-serif; margin-bottom:25px; font-weight:bold; font-size: 1.6rem; color: #111;">Explore Mnjnef Categories</h3>';
+        
+        var bottomMenu = document.createElement('div');
+        bottomMenu.style.display = 'flex';
+        bottomMenu.style.flexWrap = 'wrap';
+        bottomMenu.style.gap = '8px';
+        bottomMenu.style.justifyContent = 'center';
+        
+        // استنساخ الأقسام للأسفل
+        var allLinks = document.querySelectorAll('#menu a');
+        allLinks.forEach(function(link) {
+            if (!link.href.includes('privacy')) {
+                var clone = link.cloneNode(true);
+                clone.style.display = 'flex';
+                bottomMenu.appendChild(clone);
+            }
+        });
+        
+        bottomWrapper.appendChild(bottomMenu);
+        
+        // زرع الأقسام في نهاية المقال
+        if (mainContent.parentNode) {
+            mainContent.parentNode.insertBefore(bottomWrapper, mainContent.nextSibling);
+        } else {
+            document.body.appendChild(bottomWrapper);
+        }
+    }
+});
+</script>
+"""
+if os.path.exists(footer_file):
+    with open(footer_file, 'r', encoding='utf-8') as f:
+        existing = f.read()
+    existing = re.sub(r'<script>.*?</script>', '', existing, flags=re.DOTALL)
+else:
+    existing = ""
+
+with open(footer_file, 'w', encoding='utf-8') as f:
+    f.write(existing + "\n" + smart_js)
+print("✅ 2. تم برمجة الواجهة الذكية (الأقسام تظهر أسفل المقالات فقط).")
+
+subprocess.run(["hugo", "--gc", "--minify"], cwd=site_dir, capture_output=True)
+for dest in ['/var/www/html', '/var/www/mnjnef', '/var/www/mnjnef.com']:
+    if os.path.exists(dest):
+        subprocess.run(f"cp -r {os.path.join(site_dir, 'public')}/* {dest}/ 2>/dev/null", shell=True)
+
+# 3. تحصين عقل الروبوت وإصلاح خطأ الانهيار
+bot_path = "/root/mnjnef_factory.py"
+if os.path.exists(bot_path):
+    with open(bot_path, "r", encoding="utf-8") as f:
+        bot_code = f.read()
+    
+    # إصلاح خطأ التاريخ الذي تسبب في انهيار الروبوت
+    if 'self.description = "AI Bypass"' in bot_code:
+        bot_code = bot_code.replace('self.description = "AI Bypass"', 'self.description = "AI Bypass"\\n                        self.published = "Thu, 11 Jun 2026 00:00:00 GMT"')
+    
+    # إجبار التوقيت على أقصى سرعة 45 إلى 90 ثانية دائماً
+    bot_code = re.sub(r'random\.randint\(\s*\d+,\s*\d+\s*\)', 'random.randint(45, 90)', bot_code)
+    
+    with open(bot_path, "w", encoding="utf-8") as f:
+        f.write(bot_code)
+    print("✅ 3. تم ترقيع خطأ الانهيار وتسريع المحرك (45-90 ثانية).")
 EOF
 
-python3 /root/allow_translation.py
+python3 /root/masterpiece_v4.py
+
+# 4. تشغيل "الحارس الآلي" الذي لا ينام أبداً
+cat << 'EOF' > /root/run_bot.sh
+#!/bin/bash
+while true; do
+    echo "▶️ [WATCHDOG] بدء تشغيل محرك Mnjnef..." >> /root/mnjnef_factory.log
+    python3 /root/mnjnef_factory.py >> /root/mnjnef_factory.log 2>&1
+    echo "⚠️ [WATCHDOG] المحرك توقف أو انهار! جاري إيقاظه بقوة خلال 3 ثواني..." >> /root/mnjnef_factory.log
+    sleep 3
+done
+EOF
+
+chmod +x /root/run_bot.sh
+nohup /root/run_bot.sh > /dev/null 2>&1 &
+tail -f /root/mnjnef_factory.log
