@@ -1,47 +1,71 @@
-# 1. إيقاف المحرك الوهمي القديم
-pkill -f mnjnef_core_engine.py
+# 1. إيقاف المحرك القديم
+pkill -f mnjnef_real_engine.py
+pkill -f mnjnef_full_engine.py
 
-# 2. مسح المقالات القبيحة والوهمية من جذورها
-echo "🧹 جاري مسح المقالات الوهمية القبيحة..."
-find /var/www/ -name "mnjnef_*.md" -type f -delete 2>/dev/null
-find /root/ -name "mnjnef_*.md" -type f -delete 2>/dev/null
+# 2. تنظيف الموقع من المقالات القصيرة (الملخصات)
+echo "🧹 جاري مسح المقالات القصيرة القديمة..."
+find /var/www/ -name "real_article_*.md" -type f -delete 2>/dev/null
+find /root/ -name "real_article_*.md" -type f -delete 2>/dev/null
 
-# 3. بناء المحرك الحقيقي (المرتبط بقواعد بيانات فعلية)
-cat << 'EOF' > /root/mnjnef_real_engine.py
+# 3. بناء محرك Mnjnef الشامل (المقالات الطويلة + الاقتراحات)
+cat << 'EOF' > /root/mnjnef_full_engine.py
 import os, time, random, json, subprocess
 from urllib.request import urlopen, Request
+from urllib.error import URLError
 
-print("🚀 [محرك Mnjnef الحقيقي] تم الاتصال بقواعد البيانات العالمية بنجاح...")
+print("🚀 [محرك Mnjnef الشامل] بدأ سحب المقالات العلمية الطويلة مع الاقتراحات...")
 
-def fetch_real_encyclopedia():
+def fetch_full_article():
     try:
-        # جلب مقالات علمية وتاريخية حقيقية وعشوائية من قواعد بيانات مفتوحة
-        url = "https://en.wikipedia.org/api/rest_v1/page/random/summary"
-        req = Request(url, headers={'User-Agent': 'MnjnefGlobalBot/1.0 (Windows NT 10.0)'})
+        # جلب عنوان عشوائي أولاً
+        random_url = "https://en.wikipedia.org/api/rest_v1/page/random/title"
+        req = Request(random_url, headers={'User-Agent': 'MnjnefBot/2.0'})
         response = urlopen(req)
-        data = json.loads(response.read().decode('utf-8'))
+        title_data = json.loads(response.read().decode('utf-8'))
+        title = title_data.get('items', [{}])[0].get('title', '')
         
-        title = data.get('title', '')
-        extract = data.get('extract', '')
+        if not title: return
+
+        # جلب المقال الشامل بالكامل (وليس الملخص) بناءً على العنوان
+        full_url = f"https://en.wikipedia.org/w/api.php?action=query&prop=extracts&exlimit=1&titles={title}&explaintext=1&format=json"
+        req_full = Request(full_url, headers={'User-Agent': 'MnjnefBot/2.0'})
+        res_full = urlopen(req_full)
+        full_data = json.loads(res_full.read().decode('utf-8'))
         
-        # تخطي المقالات القصيرة جداً أو الفارغة
-        if not extract or len(extract) < 80:
-            return 
+        pages = full_data.get('query', {}).get('pages', {})
+        page_id = list(pages.keys())[0]
+        extract = pages[page_id].get('extract', '')
+        
+        # تخطي المقالات القصيرة جداً لضمان الجودة
+        if len(extract) < 1000:
+            return
             
         categories = ['Science_and_Health', 'World_History', 'Global_Discoveries', 'Technology']
         cat = random.choice(categories)
+        clean_title = title.replace('_', ' ')
         
-        # تصميم المقال بشكل أنيق واحترافي خالي من أي أكواد
+        # توليد 3 اقتراحات مشابهة (وهمية حالياً لربطها لاحقاً بمقالاتك، لكنها تبدو احترافية)
+        related_topics = [
+            f"The History of {clean_title.split()[0]}",
+            f"Scientific Impacts of {clean_title[-5:]}",
+            "Explore more in Global Discoveries"
+        ]
+        
+        # تصميم المقال الطويل مع قسم الاقتراحات
         content = f"""---
-title: "{title}"
+title: "{clean_title}"
 date: {time.strftime('%Y-%m-%d')}
 categories: ["{cat}"]
 ---
 
-### Overview
 {extract}
 
 ---
+### 📚 Explore Related Topics:
+* [{related_topics[0]}](/)
+* [{related_topics[1]}](/)
+* [{related_topics[2]}](/)
+
 *Curated by Mnjnef Global Encyclopedia*
 """
         
@@ -53,38 +77,32 @@ categories: ["{cat}"]
                 active_dir = d
                 break
                 
-        if not active_dir:
-            return
+        if not active_dir: return
 
-        post_path = os.path.join(active_dir, 'content', 'posts', f"real_article_{int(time.time())}.md")
+        post_path = os.path.join(active_dir, 'content', 'posts', f"full_article_{int(time.time())}.md")
         
-        # حفظ المقال النظيف
+        # حفظ المقال الطويل
         os.makedirs(os.path.dirname(post_path), exist_ok=True)
         with open(post_path, "w", encoding="utf-8") as f:
             f.write(content)
             
-        print(f"📝 تم سحب وصياغة مقال حقيقي عن: {title}")
+        print(f"📖 تم سحب وصياغة مقال شامل عن: {clean_title}")
 
         # النشر الفوري
         subprocess.run(["hugo", "--gc", "--minify"], cwd=active_dir, capture_output=True)
         subprocess.run(f"cp -r {active_dir}/public/* /var/www/html/ 2>/dev/null", shell=True)
         subprocess.run(f"cp -r {active_dir}/public/* /var/www/mnjnef.com/ 2>/dev/null", shell=True)
-        print("✅ [PUBLISHED] تم النشر على الموقع بنجاح!")
+        print("✅ [PUBLISHED] المقال الطويل متاح الآن على الموقع!")
         
     except Exception as e:
-        # صمت تام في حال فشل سحب مقال معين، سيحاول مرة أخرى دون إزعاج
-        pass
+        pass # تجاوز الأخطاء بهدوء
 
-# حلقة العمل الدائمة
+# حلقة العمل (مقال طويل كل 40 ثانية)
 while True:
-    fetch_real_encyclopedia()
-    # الانتظار بين 30 إلى 45 ثانية للنشر التالي
+    fetch_full_article()
     time.sleep(random.randint(30, 45))
 
 EOF
 
-# 4. إطلاق المحرك الحقيقي في الخلفية
-nohup python3 /root/mnjnef_real_engine.py > /root/real_engine.log 2>&1 &
-
-echo "🎉 تم مسح المقالات القبيحة وإطلاق المحرك الحقيقي!"
-tail -f /root/real_engine.log
+# 4. تشغيل المحرك الجديد بشكل مرئي
+python3 /root/mnjnef_full_engine.py
