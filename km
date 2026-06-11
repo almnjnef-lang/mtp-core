@@ -1,1 +1,1 @@
-sed -n '785,795p' /root/mnjnef_factory.py
+sed -n '255,270p' /root/mnjnef_factory.py
