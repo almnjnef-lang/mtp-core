@@ -1,1 +1,36 @@
-tail -f /root/mnjnef_factory.log
+cat << 'EOF' > /root/generate_mega_sources.py
+topics = [
+    "Technology", "Space", "Artificial_Intelligence", "Health", "Medicine", "Science", "Robotics", 
+    "Physics", "Biology", "History", "Automotive", "Engineering", "Cybersecurity", "Environment", 
+    "Astronomy", "Genetics", "Neuroscience", "Nanotechnology", "Aviation", "Renewable_Energy", 
+    "Geology", "Agriculture", "Psychology", "Archaeology", "Quantum_Computing", "Biotechnology", 
+    "Materials_Science", "Oceanography", "Meteorology", "Telecommunications", "Software_Development", 
+    "Virtual_Reality", "Augmented_Reality", "Blockchain", "Internet_of_Things", "Drones", "3D_Printing", 
+    "Autonomous_Vehicles", "Smart_Cities", "Wearable_Technology", "Space_Exploration", "Astrophysics", 
+    "Cosmology", "Particle_Physics", "Quantum_Mechanics", "Genomics", "Immunology", "Pharmacology", 
+    "Epidemiology", "Paleontology", "Botany", "Zoology", "Ecology", "Climate_Change", "Renewables", 
+    "Electric_Vehicles", "Spacecraft", "Satellites", "Nutrition", "Fitness", "Data_Science", "Cloud_Computing",
+    "Cryptography", "Bioengineering", "Marine_Biology", "Virology", "Pathology", "Geophysics", "Seismology"
+]
+
+keywords = [
+    "breakthrough", "discovery", "innovation", "research", "study", "latest", "development", "advancement", 
+    "analysis", "report", "future", "trends", "tech", "science", "experiment", "milestone", "project", 
+    "mission", "evidence", "findings", "theory", "solution", "insight", "evolution", "revolution", 
+    "device", "system", "model", "test", "trial", "method", "concept", "framework", "understanding",
+    "perspective", "impact", "application", "strategy", "vision", "approach", "technique", "results",
+    "data", "statistics", "review", "guide"
+]
+
+with open("/root/mnjnef_mega_sources.txt", "w") as f:
+    count = 0
+    for t in topics:
+        for k in keywords:
+            url = f"https://news.google.com/rss/search?q={t}+{k}&hl=en-US&gl=US&ceid=US:en\n"
+            f.write(url)
+            count += 1
+            
+print(f"\n✅ مبروك! تم إنشاء الملف بنجاح.")
+print(f"📊 عدد المصادر النقية: {count} مصدر موسوعي (تجاوزنا الـ 3000 سطر)!\n")
+EOF
+python3 /root/generate_mega_sources.py
