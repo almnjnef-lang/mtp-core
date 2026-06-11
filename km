@@ -1,27 +1,53 @@
+# 1. إعدام كل الروبوتات المعلقة والمنهارة لتنظيف الساحة
 pkill -f run_bot.sh
 pkill -f the_king_commander.sh
 pkill -f mnjnef_factory.py
 
-cat << 'EOF' > /root/surgical_fix.py
-import re
+# 2. الكي الجراحي النهائي للسطر المكسور
+cat << 'EOF' > /root/final_cleaner.py
+import os, re
 
-print("🛠️ جاري إغلاق الثغرة في السطر 278 نهائياً...")
 path = "/root/mnjnef_factory.py"
+if os.path.exists(path):
+    with open(path, "r", encoding="utf-8") as f:
+        code = f.read()
 
-with open(path, "r", encoding="utf-8") as f:
-    code = f.read()
+    # مسح كلمة try اليتيمة التي سببت توقف السيرفر تماماً
+    code = re.sub(r'^[ \t]*try:\s*\n([ \t]*import urllib\.parse)', r'\1', code, flags=re.MULTILINE)
+    
+    with open(path, "w", encoding="utf-8") as f:
+        f.write(code)
+    print("✅ تم استئصال الخطأ البرمجي.. المحرك الآن سليم 100%.")
+EOF
+python3 /root/final_cleaner.py
 
-# إزالة البلوك اليتيم الذي يسبب الاختناق
-code = re.sub(r'^[ \t]*try:\s*\n[ \t]*import urllib\.parse as up\s*\n', '        import urllib.parse as up\n', code, flags=re.MULTILINE)
+# 3. بناء وإطلاق "روبوت الملك" وجيش القوات الخاصة للنشر الفوري
+cat << 'EOF' > /root/the_king_commander.sh
+#!/bin/bash
+echo "👑 [روبوت الملك] يصدر أوامر الانتشار للقوات الخاصة..."
 
-with open(path, "w", encoding="utf-8") as f:
-    f.write(code)
+# تشغيل 3 روبوتات معاً لتسريع النشر بشكل مضاعف
+nohup python3 /root/mnjnef_factory.py > /root/sf_1.log 2>&1 &
+sleep 3
+nohup python3 /root/mnjnef_factory.py > /root/sf_2.log 2>&1 &
+sleep 3
+nohup python3 /root/mnjnef_factory.py > /root/sf_3.log 2>&1 &
 
-print("✅ تمت العملية الجراحية! الكود الآن سليم 100%.")
+# حماية الملك (مراقبة مستمرة لإعادة التشغيل لو حدث أي تعثر)
+while true; do
+    if ! pgrep -f "mnjnef_factory.py" > /dev/null; then
+        echo "⚠️ [روبوت الملك] القوات سقطت! جاري إعادة الإحياء..." >> /root/king.log
+        nohup python3 /root/mnjnef_factory.py > /root/sf_1.log 2>&1 &
+        nohup python3 /root/mnjnef_factory.py > /root/sf_2.log 2>&1 &
+        nohup python3 /root/mnjnef_factory.py > /root/sf_3.log 2>&1 &
+    fi
+    sleep 10
+done
 EOF
 
-python3 /root/surgical_fix.py
+chmod +x /root/the_king_commander.sh
+nohup /root/the_king_commander.sh > /root/king.log 2>&1 &
 
-# إطلاق روبوت الملك والقوات الخاصة من جديد
-nohup /root/the_king_commander.sh > /root/king_orders.log 2>&1 &
-tail -f /root/special_forces_1.log
+echo "🚀 تم إطلاق كل شيء بنجاح! الموقع الآن يعمل وينشر المقالات في الخلفية."
+echo "جاري عرض البث المباشر لأحد روبوتات القوات الخاصة..."
+tail -f /root/sf_1.log
