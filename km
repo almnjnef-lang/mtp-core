@@ -1,80 +1,88 @@
 pkill -f run_bot.sh
 pkill -f mnjnef_factory.py
 
-cat << 'EOF' > /root/strict_category_linker.py
-import os, glob, re, random, subprocess
+cat << 'EOF' > /root/smart_category_scanner.py
+import os, glob, re, subprocess
 
-print("🚀 جاري ربط المقالات بالأقسام وإعادة هيكلة الموسوعة...")
+print("🚀 جاري تفعيل نظام (الفرز الذكي الصارم) للموسوعة...")
 
-# 1. البحث عن مجلد الموقع
-configs = glob.glob('/root/**/config.toml', recursive=True) + glob.glob('/root/**/hugo.toml', recursive=True) + glob.glob('/var/www/**/config.toml', recursive=True) + glob.glob('/var/www/**/hugo.toml', recursive=True)
-if not configs:
-    print("❌ لم يتم العثور على الموقع")
-    exit()
-site_dir = os.path.dirname(configs[0])
-posts_dir = os.path.join(site_dir, 'content', 'posts')
+# العقل الفاحص (يقرأ المقال ويحدد قسمه بدقة)
+router_func = """
+def get_strict_category(text):
+    if not text: return 'Global_Discoveries'
+    text = str(text).lower()
+    if any(w in text for w in ['health', 'medicine', 'disease', 'weight', 'diet', 'covid', 'brain', 'body', 'symptom', 'doctor', 'cancer', 'obesity', 'menopause', 'fat', 'blood', 'virus', 'syndrome', 'clinical', 'hospital']): return 'Science_and_Health'
+    if any(w in text for w in ['tech', 'software', 'apple', 'google', 'cyber', 'ai ', 'cloud', 'app ', 'digital', 'data', 'algorithm', 'device', 'quantum', 'computing', 'robot']): return 'Technology'
+    if any(w in text for w in ['history', 'ancient', 'war', 'century', 'empire', 'historical', 'museum', 'archaeology', 'dynasty', 'civilization']): return 'World_History'
+    if any(w in text for w in ['economy', 'business', 'market', 'stock', 'trade', 'finance', 'money', 'startup', 'import', 'export', 'tax', 'inflation', 'industry']): return 'Business_and_Economy'
+    if any(w in text for w in ['space', 'nasa', 'mars', 'moon', 'galaxy', 'planet', 'astronomy', 'telescope', 'black hole', 'universe', 'orbit']): return 'Space_Exploration'
+    if any(w in text for w in ['education', 'school', 'university', 'student', 'teacher', 'learning', 'study', 'academic', 'college']): return 'Global_Education'
+    if any(w in text for w in ['art', 'culture', 'music', 'movie', 'film', 'painting', 'artist', 'festival', 'literature']): return 'Arts_and_Culture'
+    if any(w in text for w in ['environment', 'climate', 'warming', 'green', 'pollution', 'earth', 'weather', 'sustainable', 'ecology']): return 'Environment'
+    if any(w in text for w in ['sport', 'football', 'basketball', 'olympic', 'athlete', 'gym', 'workout', 'fitness', 'soccer', 'tournament']): return 'Physical_Sports'
+    if any(w in text for w in ['travel', 'tourism', 'hotel', 'flight', 'destination', 'tourist', 'resort', 'vacation']): return 'Tourism_and_Travel'
+    if any(w in text for w in ['animal', 'wildlife', 'nature', 'forest', 'ocean', 'species', 'bird', 'fish', 'botanical', 'mammal']): return 'Nature_and_Wildlife'
+    return 'Global_Discoveries'
+"""
 
-valid_cats = ['Technology', 'Science_and_Health', 'Global_Education', 'World_History', 'Business_and_Economy', 'Arts_and_Culture', 'Space_Exploration', 'Environment', 'Daily_Solutions', 'Global_Discoveries', 'Physical_Sports', 'Tourism_and_Travel', 'Nature_and_Wildlife']
-
-# 2. تصحيح جميع المقالات السابقة والحالية
-fixed_count = 0
-for filepath in glob.glob(os.path.join(posts_dir, '*.md')):
-    try:
-        with open(filepath, 'r', encoding='utf-8') as f:
-            content = f.read()
-
-        if content.startswith('---'):
-            parts = content.split('---', 2)
-            if len(parts) >= 3:
-                front_matter = parts[1]
-                body = parts[2]
-
-                # البحث عن التصنيف الحالي
-                cat_match = re.search(r'categor(?:y|ies):\s*\[?[\'"]?(.*?)[\'"]?\]?\n', front_matter)
-                current_cat = cat_match.group(1).strip() if cat_match else ""
-
-                # إذا كان التصنيف غير موجود في قائمتنا الـ 13، نعطيه تصنيفاً متوافقاً
-                if current_cat not in valid_cats:
-                    current_cat = random.choice(valid_cats)
-
-                # إزالة أي تصنيف قديم خاطئ
-                front_matter = re.sub(r'categor(?:y|ies):.*\n', '', front_matter)
-                
-                # زرع التصنيف بالصيغة الصارمة التي يطلبها Hugo
-                front_matter = f"{front_matter.strip()}\ncategories: [\"{current_cat}\"]\n"
-                
-                new_content = f"---\n{front_matter}---\n{body}"
-                with open(filepath, 'w', encoding='utf-8') as f:
-                    f.write(new_content)
-                fixed_count += 1
-    except Exception as e:
-        pass
-
-print(f"✅ 1. تم سحب وتصحيح المقالات وربطها داخل الأقسام الـ 13 بنجاح.")
-
-# 3. تعديل عقل الروبوت ليكتب التصنيف بالصيغة الصحيحة مستقبلاً
+# 1. زرع العقل الفاحص في الروبوت
 bot_path = "/root/mnjnef_factory.py"
 if os.path.exists(bot_path):
     with open(bot_path, "r", encoding="utf-8") as f:
-        bot_code = f.read()
+        code = f.read()
     
-    # تصحيح صيغة كتابة الماركدوان داخل الروبوت لمنع الخطأ مستقبلاً
-    bot_code = re.sub(r'categor(?:y|ies):\s*\[?[\'"]?\{category\}[\'"]?\]?', 'categories: ["{category}"]', bot_code)
-
+    if "def get_strict_category" not in code:
+        code = router_func + "\n" + code
+        
+    # إجبار الروبوت على تصنيف المقال بناءً على نصه النهائي بدلاً من التخمين
+    if "category = get_strict_category" not in code:
+        code = re.sub(r'(journalism_payload\s*=\s*.*?)\n', r'\1\n        category = get_strict_category(journalism_payload)\n', code)
+        
     with open(bot_path, "w", encoding="utf-8") as f:
-        f.write(bot_code)
-    print("✅ 2. تم تعليم الروبوت الصيغة الصارمة.. أي مقال قادم سينزل في قسمه مباشرة.")
+        f.write(code)
+    print("✅ 1. تم زرع (العقل الفاحص) في الروبوت.. لن يخطئ في تصنيف أي مقال قادم!")
 
-# 4. إعادة بناء الموقع بالقوة
-subprocess.run(["hugo", "--gc", "--minify"], cwd=site_dir, capture_output=True)
-for dest in ['/var/www/html', '/var/www/mnjnef', '/var/www/mnjnef.com']:
-    if os.path.exists(dest):
-        subprocess.run(f"cp -r {os.path.join(site_dir, 'public')}/* {dest}/ 2>/dev/null", shell=True)
-print("⚙️ 3. تم تحديث واجهة الموقع وإجبار السيرفر على عرض المقالات داخل أقسامها!")
+# 2. إصلاح المقالات القديمة المبعثرة
+configs = glob.glob('/root/**/config.toml', recursive=True) + glob.glob('/root/**/hugo.toml', recursive=True) + glob.glob('/var/www/**/config.toml', recursive=True) + glob.glob('/var/www/**/hugo.toml', recursive=True)
+if configs:
+    site_dir = os.path.dirname(configs[0])
+    posts_dir = os.path.join(site_dir, 'content', 'posts')
+    
+    exec(router_func) 
+    
+    fixed = 0
+    for filepath in glob.glob(os.path.join(posts_dir, '*.md')):
+        with open(filepath, 'r', encoding='utf-8') as f:
+            content = f.read()
+        
+        parts = content.split('---', 2)
+        if len(parts) >= 3:
+            front = parts[1]
+            body = parts[2]
+            
+            # فحص المقال وتحديد قسمه الجديد
+            correct_cat = get_strict_category(body)
+            
+            # تبديل القسم القديم بالقسم الصحيح
+            new_front = re.sub(r'categories:\s*\[.*?\]', f'categories: ["{correct_cat}"]', front)
+            
+            with open(filepath, 'w', encoding='utf-8') as f:
+                f.write(f"---{new_front}---{body}")
+            fixed += 1
+            
+    print(f"✅ 2. تم قراءة {fixed} مقال سابق، وإعادة توجيهها للأقسام الصحيحة بدقة.")
+    
+    # تحديث الموقع
+    subprocess.run(["hugo", "--gc", "--minify"], cwd=site_dir, capture_output=True)
+    for dest in ['/var/www/html', '/var/www/mnjnef', '/var/www/mnjnef.com']:
+        if os.path.exists(dest):
+            subprocess.run(f"cp -r {os.path.join(site_dir, 'public')}/* {dest}/ 2>/dev/null", shell=True)
+    print("⚙️ 3. تم تحديث الواجهة وتطبيق التنظيف الشامل.")
 
+print("🎉 اكتملت المهمة! جاري إطلاق المحرك...")
 EOF
 
-python3 /root/strict_category_linker.py
+python3 /root/smart_category_scanner.py
 
 nohup /root/run_bot.sh > /dev/null 2>&1 &
 tail -f /root/mnjnef_factory.log
