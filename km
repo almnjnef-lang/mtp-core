@@ -1,42 +1,12 @@
-# 1. إيقاف أي عمليات معلقة
-pkill -f mnjnef_ultimate_engine.py
-
-# 2. زرع صفحة ترحيبية فورية لكسر خطأ 403 حالاً
-echo "<h1>Welcome to Mnjnef Encyclopedia. The core is booting up...</h1>" > /var/www/html/index.html
-echo "<h1>Welcome to Mnjnef Encyclopedia. The core is booting up...</h1>" > /var/www/mnjnef.com/index.html
-
-# 3. بناء المقال التأسيسي لإجبار Hugo على بناء الموقع
+# 1. تحديد مجلد الموقع
 SITE_DIR=$(find /root /var/www -maxdepth 3 -name "config.toml" -o -name "hugo.toml" | head -n 1 | xargs dirname)
-if [ -d "$SITE_DIR" ]; then
-    mkdir -p $SITE_DIR/content/posts/
-    cat << 'EOF' > $SITE_DIR/content/posts/mnjnef_system_live.md
----
-title: "Mnjnef System is Live"
-date: 2026-06-11
-categories: ["Global_Discoveries"]
----
-The Mnjnef infrastructure has been successfully upgraded and secured. Our automated scientific engine is now connected to global databases and will begin populating the encyclopedia shortly.
-EOF
-    
-    # بناء الموقع الجديد
-    cd $SITE_DIR
-    hugo --gc --minify
-    
-    # نسخ الملفات النظيفة إلى واجهة الجمهور
-    cp -r public/* /var/www/html/ 2>/dev/null
-    cp -r public/* /var/www/mnjnef.com/ 2>/dev/null
-fi
 
-# 4. الحل الجذري لمشكلة 403 (إصلاح صلاحيات المجلدات)
-chown -R www-data:www-data /var/www/html /var/www/mnjnef.com
-chmod -R 755 /var/www/html /var/www/mnjnef.com
-find /var/www/html /var/www/mnjnef.com -type f -exec chmod 644 {} \;
+# 2. مسح مقال "السيستم لايف" المؤقت من الجذور
+rm -f $SITE_DIR/content/posts/mnjnef_system_live.md
 
-# 5. إنعاش حارس السيرفر ليعتمد التعديلات
-systemctl restart nginx 2>/dev/null || systemctl restart apache2 2>/dev/null
+# 3. تحديث الواجهة فوراً لإخفائه من الجمهور
+cd $SITE_DIR && hugo --gc --minify > /dev/null 2>&1
+cp -r public/* /var/www/html/ 2>/dev/null
+cp -r public/* /var/www/mnjnef.com/ 2>/dev/null
 
-# 6. إطلاق المحرك الإمبراطوري الشامل من جديد
-nohup python3 /root/mnjnef_ultimate_engine.py > /root/ultimate.log 2>&1 &
-
-echo "✅ تم كسر القفل وإصلاح 403! جاري عرض بث المحرك..."
-tail -f /root/ultimate.log
+echo "✅ تم مسح المقال المؤقت بنجاح! الواجهة الآن نظيفة تماماً."
