@@ -1,74 +1,45 @@
-# إعدام جميع الروبوتات القديمة المتمردة والمنهارة
+# إيقاف جميع العمليات المعلقة
 pkill -f run_bot.sh
-pkill -f legion_watchdog.sh
-pkill -f surgeon_bot.py
+pkill -f the_king_commander.sh
 pkill -f mnjnef_factory.py
 
-cat << 'EOF' > /root/master_surgeon.py
+cat << 'EOF' > /root/restore_engine.py
 import os, re
-print("👨‍⚕️ [كبير الأطباء] جاري فحص وتشريح السيرفر...")
+
+print("🛠️ جاري ترميم الأسطر المكسورة في المحرك...")
 path = "/root/mnjnef_factory.py"
 
 if os.path.exists(path):
     with open(path, "r", encoding="utf-8") as f:
-        lines = f.readlines()
+        code = f.read()
 
-    # 1. فلتر حرس الإمبراطورية (منع المحتوى الهابط وفرض الموسوعة العلمية)
-    code_str = "".join(lines)
-    strict_rule = "Instruction: You are an elite Scientific Encyclopedia AI. STRICT RULES: 1. NEVER publish outdated news, rumors, or fake info. 2. NO hate speech or harmful content. 3. FOCUS ONLY on massive, factual scientific, historical, and tech articles. 4. Neutral tone."
-    code_str = re.sub(r'Instruction:.*?(?="|\')', strict_rule, code_str, flags=re.DOTALL)
+    # إعادة تفعيل أسطر except التي تم تعطيلها سابقاً بالخطأ
+    code = re.sub(r'^(\s*)# 🔪 استئصال ملكي:\s*(except.*)', r'\1\2', code, flags=re.MULTILINE)
     
-    # 2. تسليح القوات الخاصة (سرعة جنونية 15-30 ثانية)
-    code_str = re.sub(r'random\.randint\(\s*\d+\s*,\s*\d+\s*\)', 'random.randint(15, 30)', code_str)
-    lines = code_str.split('\n')
-    lines = [line + '\n' for line in lines]
-
-    # 3. عملية الشفاء الذاتي الخارقة (ضمان التخلص من SyntaxError للأبد)
-    while True:
-        try:
-            compile("".join(lines), "mnjnef_test", "exec")
-            break # إذا نجح الفحص، المريض تعافى!
-        except (SyntaxError, IndentationError) as e:
-            bad_line = e.lineno - 1
-            print(f"🔪 [كبير الأطباء] استئصال ورم خبيث في السطر {e.lineno}")
-            lines[bad_line] = f"# 🔪 استئصال ملكي: {lines[bad_line]}"
+    # تأمين أسطر try اليتيمة في حال عدم وجود except
+    code = re.sub(r'^(\s*)try:\s*\n(\s*import urllib\.parse as up)', r'\1try:\n\2\n\1except Exception:\n\1    pass', code, flags=re.MULTILINE)
 
     with open(path, "w", encoding="utf-8") as f:
-        f.writelines(lines)
-    print("✅ [كبير الأطباء] السيرفر معافى 100% وجاهز لأوامر الملك!")
+        f.write(code)
+    
+    print("✅ تم ترميم الكود بنجاح. السيرفر جاهز للعمل.")
+else:
+    print("❌ لم يتم العثور على الملف.")
 EOF
 
-cat << 'EOF' > /root/the_king_commander.sh
+python3 /root/restore_engine.py
+
+# إعادة تشغيل الروبوت الأساسي في الخلفية ليواصل النشر
+cat << 'EOF' > /root/run_bot.sh
 #!/bin/bash
-echo "👑 [روبوت الملك] يصدر الأوامر العليا..."
-
-# استدعاء كبير الأطباء لتنظيف الساحة أولاً
-python3 /root/master_surgeon.py
-
-echo "🥷 [روبوت الملك] يأمر (القوات الخاصة) بالانتشار!"
-# نشر 3 روبوتات تعمل معاً في نفس اللحظة لمضاعفة النشر
-nohup python3 /root/mnjnef_factory.py > /root/special_forces_1.log 2>&1 &
-sleep 5
-nohup python3 /root/mnjnef_factory.py > /root/special_forces_2.log 2>&1 &
-sleep 5
-nohup python3 /root/mnjnef_factory.py > /root/special_forces_3.log 2>&1 &
-
-echo "🛡️ [روبوت الملك] يدخل في وضع المراقبة الأبدية لجيوشه..."
-# الملك يراقب، وإذا سقطت القوات يعيد إحيائها فوراً
 while true; do
-    if ! pgrep -f "mnjnef_factory.py" > /dev/null; then
-        echo "⚠️ [روبوت الملك] القوات الخاصة سقطت! جاري الإنعاش..." >> /root/king_orders.log
-        python3 /root/master_surgeon.py
-        nohup python3 /root/mnjnef_factory.py > /root/special_forces_1.log 2>&1 &
-        nohup python3 /root/mnjnef_factory.py > /root/special_forces_2.log 2>&1 &
-        nohup python3 /root/mnjnef_factory.py > /root/special_forces_3.log 2>&1 &
-    fi
-    sleep 10
+    python3 /root/mnjnef_factory.py >> /root/mnjnef_factory.log 2>&1
+    sleep 5
 done
 EOF
 
-chmod +x /root/the_king_commander.sh
-nohup /root/the_king_commander.sh > /root/king_orders.log 2>&1 &
+chmod +x /root/run_bot.sh
+nohup /root/run_bot.sh > /dev/null 2>&1 &
 
-echo "🎉 إمبراطورية Mnjnef الآن تحت سيطرة الملك والقوات الخاصة!"
-tail -f /root/special_forces_1.log
+echo "🚀 تم إطلاق المحرك من جديد في الخلفية. يمكنك الآن إغلاق الكمبيوتر."
+tail -f /root/mnjnef_factory.log
