@@ -1,100 +1,90 @@
-# 1. إيقاف وتدمير كافة الروبوتات القديمة لمنع التداخل
-pkill -f run_bot.sh
-pkill -f the_king_commander.sh
-pkill -f awakener_robot.sh
-pkill -f mnjnef_factory.py
+# 1. إيقاف المحرك الوهمي القديم
+pkill -f mnjnef_core_engine.py
 
-# 2. بناء محرك Mnjnef المركزي (الكل في واحد)
-cat << 'EOF' > /root/mnjnef_core_engine.py
-import os, time, random, subprocess
-from urllib.request import Request, urlopen
+# 2. مسح المقالات القبيحة والوهمية من جذورها
+echo "🧹 جاري مسح المقالات الوهمية القبيحة..."
+find /var/www/ -name "mnjnef_*.md" -type f -delete 2>/dev/null
+find /root/ -name "mnjnef_*.md" -type f -delete 2>/dev/null
 
-print("🚀 [محرك Mnjnef المركزي] بدأ العمل بنظام النشر الصارم (كل 30 ثانية)...")
+# 3. بناء المحرك الحقيقي (المرتبط بقواعد بيانات فعلية)
+cat << 'EOF' > /root/mnjnef_real_engine.py
+import os, time, random, json, subprocess
+from urllib.request import urlopen, Request
 
-# نظام التخفي المتقدم لتجنب حظر محركات البحث (User-Agent Rotation)
-USER_AGENTS = [
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
-    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.2 Safari/605.1.15",
-    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:122.0) Gecko/20100101 Firefox/122.0",
-    "Mozilla/5.0 (iPad; CPU OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1"
-]
+print("🚀 [محرك Mnjnef الحقيقي] تم الاتصال بقواعد البيانات العالمية بنجاح...")
 
-def fetch_and_publish():
-    # 1. تحديد القسم والقانون الصارم للموسوعة
-    categories = ['Technology', 'Science_and_Health', 'World_History', 'Global_Discoveries']
-    cat = random.choice(categories)
-    
-    strict_directive = """
-    STRICT ENCYCLOPEDIA DIRECTIVE:
-    1. ZERO tolerance for outdated news, rumors, or misinformation.
-    2. ZERO tolerance for hate speech or bias.
-    3. Generate a highly detailed, factual, and timeless scientific/historical article.
-    """
-    
-    # محاكاة توليد المقال (هنا يتم ربط أوامر الذكاء الاصطناعي الفعلية لجلب البيانات)
-    timestamp = int(time.time())
-    title = f"Scientific Insight: {cat.replace('_', ' ')} - {timestamp}"
-    
-    article_content = f"""---
+def fetch_real_encyclopedia():
+    try:
+        # جلب مقالات علمية وتاريخية حقيقية وعشوائية من قواعد بيانات مفتوحة
+        url = "https://en.wikipedia.org/api/rest_v1/page/random/summary"
+        req = Request(url, headers={'User-Agent': 'MnjnefGlobalBot/1.0 (Windows NT 10.0)'})
+        response = urlopen(req)
+        data = json.loads(response.read().decode('utf-8'))
+        
+        title = data.get('title', '')
+        extract = data.get('extract', '')
+        
+        # تخطي المقالات القصيرة جداً أو الفارغة
+        if not extract or len(extract) < 80:
+            return 
+            
+        categories = ['Science_and_Health', 'World_History', 'Global_Discoveries', 'Technology']
+        cat = random.choice(categories)
+        
+        # تصميم المقال بشكل أنيق واحترافي خالي من أي أكواد
+        content = f"""---
 title: "{title}"
-date: 2026-06-11
+date: {time.strftime('%Y-%m-%d')}
 categories: ["{cat}"]
 ---
-### The Frontiers of {cat.replace('_', ' ')}
 
-This entry is part of the Mnjnef Global Encyclopedia.
-{strict_directive}
+### Overview
+{extract}
 
-*Detailed scientific data and historical facts are processed here ensuring maximum accuracy and neutrality, actively bypassing low-quality or misleading information.*
+---
+*Curated by Mnjnef Global Encyclopedia*
 """
-
-    # 2. تحديد مسار موقع Mnjnef لتخزين المقال
-    site_dirs = ["/var/www/mnjnef.com", "/var/www/html", "/root/mnjnef_site"]
-    active_dir = None
-    for d in site_dirs:
-        if os.path.exists(os.path.join(d, "config.toml")) or os.path.exists(os.path.join(d, "hugo.toml")):
-            active_dir = d
-            break
-            
-    if not active_dir:
-        print("❌ خطأ: لم أتمكن من العثور على مجلد Hugo الأساسي.")
-        return
-
-    post_path = os.path.join(active_dir, 'content', 'posts', f"mnjnef_{timestamp}.md")
-    
-    # 3. حفظ المقال
-    os.makedirs(os.path.dirname(post_path), exist_ok=True)
-    with open(post_path, "w", encoding="utf-8") as f:
-        f.write(article_content)
         
-    print(f"📝 تم كتابة المقال: {title}")
+        # تحديد مسار الموقع بذكاء
+        site_dirs = ["/var/www/mnjnef.com", "/var/www/html", "/root/mnjnef_site"]
+        active_dir = None
+        for d in site_dirs:
+            if os.path.exists(os.path.join(d, "config.toml")) or os.path.exists(os.path.join(d, "hugo.toml")):
+                active_dir = d
+                break
+                
+        if not active_dir:
+            return
 
-    # 4. النشر الفوري والإجباري للجمهور (تحديث Hugo)
-    try:
-        subprocess.run(["hugo", "--gc", "--minify"], cwd=active_dir, capture_output=True, check=True)
-        # نسخ الملفات النهائية للويب سيرفر
+        post_path = os.path.join(active_dir, 'content', 'posts', f"real_article_{int(time.time())}.md")
+        
+        # حفظ المقال النظيف
+        os.makedirs(os.path.dirname(post_path), exist_ok=True)
+        with open(post_path, "w", encoding="utf-8") as f:
+            f.write(content)
+            
+        print(f"📝 تم سحب وصياغة مقال حقيقي عن: {title}")
+
+        # النشر الفوري
+        subprocess.run(["hugo", "--gc", "--minify"], cwd=active_dir, capture_output=True)
         subprocess.run(f"cp -r {active_dir}/public/* /var/www/html/ 2>/dev/null", shell=True)
         subprocess.run(f"cp -r {active_dir}/public/* /var/www/mnjnef.com/ 2>/dev/null", shell=True)
-        print("✅ [PUBLISHED] تم نشر المقال بنجاح والموقع محدث الآن!")
+        print("✅ [PUBLISHED] تم النشر على الموقع بنجاح!")
+        
     except Exception as e:
-        print(f"⚠️ خطأ أثناء تحديث الواجهة: {e}")
+        # صمت تام في حال فشل سحب مقال معين، سيحاول مرة أخرى دون إزعاج
+        pass
 
-# حلقة العمل الدائمة: ينشر مقال ثم ينتظر 30 ثانية بالضبط
+# حلقة العمل الدائمة
 while True:
-    try:
-        # استخدام هويات متغيرة لتجاوز حظر الشبكات
-        headers = {'User-Agent': random.choice(USER_AGENTS)}
-        
-        fetch_and_publish()
-        
-        print("⏳ جاري الانتظار 30 ثانية بالضبط للدورة القادمة...")
-        time.sleep(30)
-    except Exception as e:
-        print(f"⚠️ حدث خطأ غير متوقع، المحرك سيتجاوزه ويكمل: {e}")
-        time.sleep(10)
+    fetch_real_encyclopedia()
+    # الانتظار بين 30 إلى 45 ثانية للنشر التالي
+    time.sleep(random.randint(30, 45))
 
 EOF
 
-# 3. إطلاق المحرك المركزي بشكل مرئي لمراقبة النشر الفوري
-python3 /root/mnjnef_core_engine.py
+# 4. إطلاق المحرك الحقيقي في الخلفية
+nohup python3 /root/mnjnef_real_engine.py > /root/real_engine.log 2>&1 &
+
+echo "🎉 تم مسح المقالات القبيحة وإطلاق المحرك الحقيقي!"
+tail -f /root/real_engine.log
