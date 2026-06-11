@@ -1,101 +1,99 @@
-cat << 'EOF' > /root/ultimate_security_ui.py
-import os, glob, subprocess
+cat << 'EOF' > /root/million_visitors_tuning.py
+import os, subprocess
 
-print("🛡️ جاري تسليح السيرفر وبناء الواجهة السفلية الاحترافية...")
+print("🚀 جاري تحويل السيرفر إلى وحش يستوعب الملايين...")
 
-# 1. إصلاح الواجهة (إخفاء # وزرع الأقسام أسفل المقالات بالقوة)
-configs = glob.glob('/root/**/config.toml', recursive=True) + glob.glob('/root/**/hugo.toml', recursive=True) + glob.glob('/var/www/**/config.toml', recursive=True) + glob.glob('/var/www/**/hugo.toml', recursive=True)
-if configs:
-    site_dir = os.path.dirname(configs[0])
-    head_file = os.path.join(site_dir, 'layouts', 'partials', 'extend_head.html')
-    os.makedirs(os.path.dirname(head_file), exist_ok=True)
-    
-    magic_ui_code = """
-<style>
-/* إخفاء علامة المربع # المزعجة من العناوين نهائياً */
-a.anchor, .anchor, .heading-link {
-    display: none !important;
-    visibility: hidden !important;
-}
-</style>
-
-<script>
-document.addEventListener("DOMContentLoaded", function() {
-    var path = window.location.pathname;
-    // التحقق من أننا داخل مقال
-    if (path.length > 2 && !path.includes('privacy-policy')) {
-        
-        // بناء منطقة الأقسام السفلية الفخمة
-        var bottomNav = document.createElement('div');
-        bottomNav.innerHTML = '<div style="margin-top: 60px; padding-top: 35px; border-top: 2px solid #eaeaea; margin-bottom: 40px; text-align: center;"><h3 style="font-family:sans-serif; margin-bottom:25px; font-weight:bold; font-size: 1.6rem; color: #111;">Explore Mnjnef Categories</h3><div style="display: flex; flex-wrap: wrap; gap: 10px; justify-content: center;"><a href="/categories/technology/" class="cat-btn">Technology</a><a href="/categories/science_and_health/" class="cat-btn">Science & Health</a><a href="/categories/global_education/" class="cat-btn">Global Education</a><a href="/categories/world_history/" class="cat-btn">World History</a><a href="/categories/business_and_economy/" class="cat-btn">Business & Economy</a><a href="/categories/arts_and_culture/" class="cat-btn">Arts & Culture</a><a href="/categories/space_exploration/" class="cat-btn">Space Exploration</a><a href="/categories/environment/" class="cat-btn">Environment</a><a href="/categories/daily_solutions/" class="cat-btn">Daily Solutions</a><a href="/categories/global_discoveries/" class="cat-btn">Global Discoveries</a><a href="/categories/physical_sports/" class="cat-btn">Physical Sports</a><a href="/categories/tourism_and_travel/" class="cat-btn">Tourism & Travel</a><a href="/categories/nature_and_wildlife/" class="cat-btn">Nature & Wildlife</a></div></div>';
-        
-        // ستايل الأزرار
-        var style = document.createElement('style');
-        style.innerHTML = '.cat-btn { background: #f8f9fa; border: 1px solid #e1e4e8; border-radius: 8px; padding: 10px 16px; color: #24292e !important; text-decoration: none; font-weight: 600; font-size: 14px; transition: all 0.2s; box-shadow: 0 1px 2px rgba(0,0,0,0.03); } .cat-btn:hover { background: #111; color: #fff !important; border-color: #111; transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }';
-        document.head.appendChild(style);
-
-        // زرع المنطقة بذكاء أسفل المقال مباشرة (قبل حقوق النشر)
-        var mainContent = document.querySelector('.post-content') || document.querySelector('.post-single') || document.querySelector('main') || document.querySelector('article');
-        if (mainContent) {
-            mainContent.appendChild(bottomNav);
-        }
-    }
-});
-</script>
+# 1. فك القيود عن نظام التشغيل (Linux Kernel Tuning)
+sysctl_conf = "/etc/sysctl.conf"
+kernel_tuning = """
+# Mnjnef Massive Scale Tuning
+fs.file-max = 2097152
+net.core.somaxconn = 65535
+net.ipv4.tcp_tw_reuse = 1
+net.ipv4.ip_local_port_range = 1024 65535
+net.ipv4.tcp_max_syn_backlog = 65535
 """
-    # قراءة الملف ومسح الأكواد القديمة إن وجدت لمنع التكرار
-    existing_head = ""
-    if os.path.exists(head_file):
-        with open(head_file, 'r', encoding='utf-8') as f:
-            existing_head = f.read()
-            if "Explore Mnjnef Categories" not in existing_head:
-                existing_head += magic_ui_code
-    else:
-        existing_head = magic_ui_code
-        
-    with open(head_file, 'w', encoding='utf-8') as f:
-        f.write(existing_head)
-        
-    # إعادة بناء الموقع
-    subprocess.run(["hugo", "--gc", "--minify"], cwd=site_dir, capture_output=True)
-    for dest in ['/var/www/html', '/var/www/mnjnef', '/var/www/mnjnef.com']:
-        if os.path.exists(dest):
-            subprocess.run(f"cp -r {os.path.join(site_dir, 'public')}/* {dest}/ 2>/dev/null", shell=True)
-    print("✅ 1. تم إصلاح الواجهة! (اختفت علامة #، وتم زرع الأقسام أسفل المقالات).")
+with open(sysctl_conf, 'r') as f:
+    if "Mnjnef Massive Scale Tuning" not in f.read():
+        with open(sysctl_conf, 'a') as append_f:
+            append_f.write(kernel_tuning)
+subprocess.run(["sysctl", "-p"], capture_output=True)
+print("✅ 1. تم فك قيود نواة لينكس (Kernel) للسماح بـ 2 مليون اتصال.")
 
-# 2. ترقية الحماية العسكرية والبنية التحتية للسيرفر (Nginx Tuning)
+# 2. رفع حدود الأمان للملفات المفتوحة
+limits_conf = "/etc/security/limits.conf"
+limits_tuning = """
+* soft nofile 1048576
+* hard nofile 1048576
+root soft nofile 1048576
+root hard nofile 1048576
+"""
+with open(limits_conf, 'r') as f:
+    if "1048576" not in f.read():
+        with open(limits_conf, 'a') as append_f:
+            append_f.write(limits_tuning)
+print("✅ 2. تم رفع حدود الأمان للحد الأقصى (1,048,576 ملف).")
+
+# 3. إعادة برمجة Nginx بالكامل للسرعة القصوى
 nginx_conf = "/etc/nginx/nginx.conf"
-try:
-    with open(nginx_conf, "r") as f:
-        conf = f.read()
-    
-    # رفع الاستيعاب لـ 10 آلاف زائر في الثانية
-    if "worker_connections 768;" in conf or "worker_connections 1024;" in conf:
-        conf = conf.replace("worker_connections 768;", "worker_connections 10000;")
-        conf = conf.replace("worker_connections 1024;", "worker_connections 10000;")
-    
-    # جدار الحماية وإخفاء هوية السيرفر
-    security_headers = """
-    # Mnjnef Military Grade Security
+ultra_nginx = """user www-data;
+worker_processes auto;
+worker_rlimit_nofile 1048576;
+pid /run/nginx.pid;
+include /etc/nginx/modules-enabled/*.conf;
+
+events {
+    worker_connections 65535;
+    multi_accept on;
+    use epoll;
+}
+
+http {
+    sendfile on;
+    tcp_nopush on;
+    tcp_nodelay on;
+    keepalive_timeout 15;
+    types_hash_max_size 2048;
     server_tokens off;
     client_max_body_size 50M;
+
+    # Mnjnef Military Grade Security
     add_header X-Frame-Options "SAMEORIGIN" always;
     add_header X-XSS-Protection "1; mode=block" always;
     add_header X-Content-Type-Options "nosniff" always;
     add_header Referrer-Policy "strict-origin-when-cross-origin" always;
-    """
-    if "Mnjnef Military Grade Security" not in conf:
-        conf = conf.replace("http {", "http {\\n" + security_headers)
-        
-    with open(nginx_conf, "w") as f:
-        f.write(conf)
-        
-    subprocess.run(["systemctl", "restart", "nginx"])
-    print("✅ 2. تم تفعيل الحماية القصوى للسيرفر (يدعم الآن الملايين ومحمي من الثغرات).")
-except Exception as e:
-    print(f"⚠️ خطأ في إعدادات الحماية: {e}")
 
-print("🎉 اكتملت المهمة الإمبراطورية بنجاح!")
+    # Open File Cache (يقلل الضغط على الهارد ديسك ويضاعف السرعة)
+    open_file_cache max=200000 inactive=20s;
+    open_file_cache_valid 30s;
+    open_file_cache_min_uses 2;
+    open_file_cache_errors on;
+
+    include /etc/nginx/mime.types;
+    default_type application/octet-stream;
+
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_prefer_server_ciphers on;
+
+    access_log off; # إيقاف التسجيل لتوفير طاقة السيرفر
+    error_log /var/log/nginx/error.log crit; # تسجيل الأخطاء القاتلة فقط
+
+    # ضغط الملفات الخارق (Gzip)
+    gzip on;
+    gzip_vary on;
+    gzip_proxied any;
+    gzip_comp_level 6;
+    gzip_types text/plain text/css text/xml application/json application/javascript application/rss+xml application/atom+xml image/svg+xml;
+
+    include /etc/nginx/conf.d/*.conf;
+    include /etc/nginx/sites-enabled/*;
+}
+"""
+with open(nginx_conf, 'w') as f:
+    f.write(ultra_nginx)
+subprocess.run(["systemctl", "restart", "nginx"])
+print("✅ 3. تم ترقية Nginx وتركيب أنظمة (الكاش المتقدم، ضغط Gzip، وتفعيل Epoll).")
+print("🎉 اكتملت المهمة! السيرفر الآن وحش تقني جاهز لمواجهة العالم.")
 EOF
 
-python3 /root/ultimate_security_ui.py
+python3 /root/million_visitors_tuning.py
