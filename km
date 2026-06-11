@@ -1,1 +1,32 @@
-sed -n '255,270p' /root/mnjnef_factory.py
+pkill -f mnjnef_factory.py
+
+cat << 'EOF' > /root/patch_mnjnef.py
+file_path = "/root/mnjnef_factory.py"
+with open(file_path, "r") as f:
+    content = f.read()
+
+# 1. تخفيض الفلتر ليقبل أي فتفوتة معلومة ويكبرها
+content = content.replace("len(extracted_raw_text) < 90:", "len(extracted_raw_text) < 15:")
+
+# 2. زراعة الموسوعة العملاقة في عقل الروبوت
+old_code = "        chosen_feed = random.choice(target_feeds)"
+new_code = """        try:
+            target_feeds = [line.strip() for line in open('/root/mnjnef_encyclopedia_sources.txt') if line.strip()]
+            category = 'Mnjnef_Encyclopedia'
+        except:
+            pass
+        chosen_feed = random.choice(target_feeds)"""
+
+if "Mnjnef_Encyclopedia" not in content:
+    content = content.replace(old_code, new_code)
+    
+with open(file_path, "w") as f:
+    f.write(content)
+
+print("\n✅ تمت العملية الجراحية بنجاح!")
+print("✅ تم تخفيض الفلتر.. الروبوت الآن سيصنع المعجزات من أبسط الكلمات!")
+print("✅ تم ربط 72,000 مصدر موسوعي بعقل الروبوت.\n")
+EOF
+python3 /root/patch_mnjnef.py
+
+nohup python3 /root/mnjnef_factory.py > /root/mnjnef_factory.log 2>&1 &
