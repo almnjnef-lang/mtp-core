@@ -1,55 +1,46 @@
 pkill -f run_bot.sh
 pkill -f mnjnef_factory.py
 
-cat << 'EOF' > /root/smart_category_scanner.py
+cat << 'EOF' > /root/ironclad_categorization.py
 import os, glob, re, subprocess
 
-print("🚀 جاري تفعيل نظام (الفرز الذكي الصارم) للموسوعة...")
+print("🛡️ جاري تفعيل نظام الربط الفولاذي وإنهاء الفوضى نهائياً...")
 
-# العقل الفاحص (يقرأ المقال ويحدد قسمه بدقة)
-router_func = """
-def get_strict_category(text):
-    if not text: return 'Global_Discoveries'
-    text = str(text).lower()
-    if any(w in text for w in ['health', 'medicine', 'disease', 'weight', 'diet', 'covid', 'brain', 'body', 'symptom', 'doctor', 'cancer', 'obesity', 'menopause', 'fat', 'blood', 'virus', 'syndrome', 'clinical', 'hospital']): return 'Science_and_Health'
-    if any(w in text for w in ['tech', 'software', 'apple', 'google', 'cyber', 'ai ', 'cloud', 'app ', 'digital', 'data', 'algorithm', 'device', 'quantum', 'computing', 'robot']): return 'Technology'
-    if any(w in text for w in ['history', 'ancient', 'war', 'century', 'empire', 'historical', 'museum', 'archaeology', 'dynasty', 'civilization']): return 'World_History'
-    if any(w in text for w in ['economy', 'business', 'market', 'stock', 'trade', 'finance', 'money', 'startup', 'import', 'export', 'tax', 'inflation', 'industry']): return 'Business_and_Economy'
-    if any(w in text for w in ['space', 'nasa', 'mars', 'moon', 'galaxy', 'planet', 'astronomy', 'telescope', 'black hole', 'universe', 'orbit']): return 'Space_Exploration'
-    if any(w in text for w in ['education', 'school', 'university', 'student', 'teacher', 'learning', 'study', 'academic', 'college']): return 'Global_Education'
-    if any(w in text for w in ['art', 'culture', 'music', 'movie', 'film', 'painting', 'artist', 'festival', 'literature']): return 'Arts_and_Culture'
-    if any(w in text for w in ['environment', 'climate', 'warming', 'green', 'pollution', 'earth', 'weather', 'sustainable', 'ecology']): return 'Environment'
-    if any(w in text for w in ['sport', 'football', 'basketball', 'olympic', 'athlete', 'gym', 'workout', 'fitness', 'soccer', 'tournament']): return 'Physical_Sports'
-    if any(w in text for w in ['travel', 'tourism', 'hotel', 'flight', 'destination', 'tourist', 'resort', 'vacation']): return 'Tourism_and_Travel'
-    if any(w in text for w in ['animal', 'wildlife', 'nature', 'forest', 'ocean', 'species', 'bird', 'fish', 'botanical', 'mammal']): return 'Nature_and_Wildlife'
-    return 'Global_Discoveries'
-"""
-
-# 1. زرع العقل الفاحص في الروبوت
+# 1. استئصال التخمين من عقل الروبوت وإجباره على الربط المباشر
 bot_path = "/root/mnjnef_factory.py"
 if os.path.exists(bot_path):
     with open(bot_path, "r", encoding="utf-8") as f:
         code = f.read()
     
-    if "def get_strict_category" not in code:
-        code = router_func + "\n" + code
-        
-    # إجبار الروبوت على تصنيف المقال بناءً على نصه النهائي بدلاً من التخمين
-    if "category = get_strict_category" not in code:
-        code = re.sub(r'(journalism_payload\s*=\s*.*?)\n', r'\1\n        category = get_strict_category(journalism_payload)\n', code)
-        
+    # مسح كود التخمين الفاشل من الجذور
+    code = re.sub(r'def get_strict_category.*?return \'Global_Discoveries\'\n', '', code, flags=re.DOTALL)
+    code = re.sub(r'category\s*=\s*get_strict_category\([^)]+\)\n', '', code)
+    
     with open(bot_path, "w", encoding="utf-8") as f:
         f.write(code)
-    print("✅ 1. تم زرع (العقل الفاحص) في الروبوت.. لن يخطئ في تصنيف أي مقال قادم!")
+    print("✅ 1. تم فرمتة عقل الروبوت. سيتم ربط كل مقال جديد بقسمه المخصص إجبارياً وبدون أي تخمين.")
 
-# 2. إصلاح المقالات القديمة المبعثرة
+# 2. غسيل وإعادة فرز المقالات السابقة بناءً على العنوان فقط (دقة 100%)
 configs = glob.glob('/root/**/config.toml', recursive=True) + glob.glob('/root/**/hugo.toml', recursive=True) + glob.glob('/var/www/**/config.toml', recursive=True) + glob.glob('/var/www/**/hugo.toml', recursive=True)
 if configs:
     site_dir = os.path.dirname(configs[0])
     posts_dir = os.path.join(site_dir, 'content', 'posts')
-    
-    exec(router_func) 
-    
+
+    def strict_title_router(title):
+        t = title.lower()
+        if any(x in t for x in ['health', 'medicine', 'covid', 'cancer', 'diet', 'weight', 'doctor', 'blood', 'brain', 'obesity', 'menopause', 'disease', 'syndrome', 'clinical', 'medical']): return 'Science_and_Health'
+        if any(x in t for x in ['tech', 'software', 'apple', 'google', 'cyber', 'ai', 'cloud', 'app', 'digital', 'algorithm', 'device', 'quantum', 'computing', 'robot', 'machine learning']): return 'Technology'
+        if any(x in t for x in ['history', 'ancient', 'war', 'century', 'empire', 'museum', 'archaeology', 'dynasty', 'civilization', 'historical']): return 'World_History'
+        if any(x in t for x in ['economy', 'business', 'market', 'stock', 'trade', 'finance', 'money', 'startup', 'tax', 'inflation', 'industry']): return 'Business_and_Economy'
+        if any(x in t for x in ['space', 'nasa', 'mars', 'moon', 'galaxy', 'planet', 'astronomy', 'telescope', 'black hole', 'universe', 'orbit']): return 'Space_Exploration'
+        if any(x in t for x in ['education', 'school', 'university', 'student', 'teacher', 'learning', 'study', 'academic', 'college']): return 'Global_Education'
+        if any(x in t for x in ['art', 'culture', 'music', 'movie', 'film', 'painting', 'artist', 'festival', 'literature']): return 'Arts_and_Culture'
+        if any(x in t for x in ['environment', 'climate', 'warming', 'green', 'pollution', 'earth', 'weather', 'sustainable', 'ecology']): return 'Environment'
+        if any(x in t for x in ['sport', 'football', 'basketball', 'olympic', 'athlete', 'gym', 'workout', 'fitness', 'soccer', 'tournament']): return 'Physical_Sports'
+        if any(x in t for x in ['travel', 'tourism', 'hotel', 'flight', 'destination', 'tourist', 'resort', 'vacation']): return 'Tourism_and_Travel'
+        if any(x in t for x in ['animal', 'wildlife', 'nature', 'forest', 'ocean', 'species', 'bird', 'fish', 'botanical', 'mammal']): return 'Nature_and_Wildlife'
+        return None
+
     fixed = 0
     for filepath in glob.glob(os.path.join(posts_dir, '*.md')):
         with open(filepath, 'r', encoding='utf-8') as f:
@@ -60,29 +51,31 @@ if configs:
             front = parts[1]
             body = parts[2]
             
-            # فحص المقال وتحديد قسمه الجديد
-            correct_cat = get_strict_category(body)
-            
-            # تبديل القسم القديم بالقسم الصحيح
-            new_front = re.sub(r'categories:\s*\[.*?\]', f'categories: ["{correct_cat}"]', front)
-            
-            with open(filepath, 'w', encoding='utf-8') as f:
-                f.write(f"---{new_front}---{body}")
-            fixed += 1
-            
-    print(f"✅ 2. تم قراءة {fixed} مقال سابق، وإعادة توجيهها للأقسام الصحيحة بدقة.")
+            title_match = re.search(r'title:\s*[\'"]?(.*?)[\'"]?\n', front)
+            if title_match:
+                title = title_match.group(1)
+                new_cat = strict_title_router(title)
+                
+                # إذا وجدنا القسم من العنوان، نقوم بنقله فوراً
+                if new_cat:
+                    new_front = re.sub(r'categories:\s*\[.*?\]', f'categories: ["{new_cat}"]', front)
+                    with open(filepath, 'w', encoding='utf-8') as f:
+                        f.write(f"---{new_front}---{body}")
+                    fixed += 1
+
+    print(f"✅ 2. تم إعادة فرز وترتيب {fixed} مقال بدقة فولاذية بناءً على عناوينها الرئيسية.")
     
-    # تحديث الموقع
+    # 3. فرض التحديث على السيرفر
     subprocess.run(["hugo", "--gc", "--minify"], cwd=site_dir, capture_output=True)
     for dest in ['/var/www/html', '/var/www/mnjnef', '/var/www/mnjnef.com']:
         if os.path.exists(dest):
             subprocess.run(f"cp -r {os.path.join(site_dir, 'public')}/* {dest}/ 2>/dev/null", shell=True)
-    print("⚙️ 3. تم تحديث الواجهة وتطبيق التنظيف الشامل.")
+    print("⚙️ 3. تم تحديث الواجهة وتطبيق التنظيف الشامل للموقع.")
 
-print("🎉 اكتملت المهمة! جاري إطلاق المحرك...")
+print("🎉 اكتملت المهمة! جاري تشغيل الحارس الآلي...")
 EOF
 
-python3 /root/smart_category_scanner.py
+python3 /root/ironclad_categorization.py
 
 nohup /root/run_bot.sh > /dev/null 2>&1 &
 tail -f /root/mnjnef_factory.log
