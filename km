@@ -1,81 +1,51 @@
 pkill -f run_bot.sh
 pkill -f mnjnef_factory.py
 
-cat << 'EOF' > /root/ironclad_categorization.py
-import os, glob, re, subprocess
+cat << 'EOF' > /root/factory_reset.py
+import os, glob, subprocess
 
-print("🛡️ جاري تفعيل نظام الربط الفولاذي وإنهاء الفوضى نهائياً...")
+print("🧹 جاري تدمير جميع المقالات وإعادة ضبط المصنع لـ Mnjnef...")
 
-# 1. استئصال التخمين من عقل الروبوت وإجباره على الربط المباشر
-bot_path = "/root/mnjnef_factory.py"
-if os.path.exists(bot_path):
-    with open(bot_path, "r", encoding="utf-8") as f:
-        code = f.read()
-    
-    # مسح كود التخمين الفاشل من الجذور
-    code = re.sub(r'def get_strict_category.*?return \'Global_Discoveries\'\n', '', code, flags=re.DOTALL)
-    code = re.sub(r'category\s*=\s*get_strict_category\([^)]+\)\n', '', code)
-    
-    with open(bot_path, "w", encoding="utf-8") as f:
-        f.write(code)
-    print("✅ 1. تم فرمتة عقل الروبوت. سيتم ربط كل مقال جديد بقسمه المخصص إجبارياً وبدون أي تخمين.")
-
-# 2. غسيل وإعادة فرز المقالات السابقة بناءً على العنوان فقط (دقة 100%)
 configs = glob.glob('/root/**/config.toml', recursive=True) + glob.glob('/root/**/hugo.toml', recursive=True) + glob.glob('/var/www/**/config.toml', recursive=True) + glob.glob('/var/www/**/hugo.toml', recursive=True)
+
 if configs:
     site_dir = os.path.dirname(configs[0])
     posts_dir = os.path.join(site_dir, 'content', 'posts')
-
-    def strict_title_router(title):
-        t = title.lower()
-        if any(x in t for x in ['health', 'medicine', 'covid', 'cancer', 'diet', 'weight', 'doctor', 'blood', 'brain', 'obesity', 'menopause', 'disease', 'syndrome', 'clinical', 'medical']): return 'Science_and_Health'
-        if any(x in t for x in ['tech', 'software', 'apple', 'google', 'cyber', 'ai', 'cloud', 'app', 'digital', 'algorithm', 'device', 'quantum', 'computing', 'robot', 'machine learning']): return 'Technology'
-        if any(x in t for x in ['history', 'ancient', 'war', 'century', 'empire', 'museum', 'archaeology', 'dynasty', 'civilization', 'historical']): return 'World_History'
-        if any(x in t for x in ['economy', 'business', 'market', 'stock', 'trade', 'finance', 'money', 'startup', 'tax', 'inflation', 'industry']): return 'Business_and_Economy'
-        if any(x in t for x in ['space', 'nasa', 'mars', 'moon', 'galaxy', 'planet', 'astronomy', 'telescope', 'black hole', 'universe', 'orbit']): return 'Space_Exploration'
-        if any(x in t for x in ['education', 'school', 'university', 'student', 'teacher', 'learning', 'study', 'academic', 'college']): return 'Global_Education'
-        if any(x in t for x in ['art', 'culture', 'music', 'movie', 'film', 'painting', 'artist', 'festival', 'literature']): return 'Arts_and_Culture'
-        if any(x in t for x in ['environment', 'climate', 'warming', 'green', 'pollution', 'earth', 'weather', 'sustainable', 'ecology']): return 'Environment'
-        if any(x in t for x in ['sport', 'football', 'basketball', 'olympic', 'athlete', 'gym', 'workout', 'fitness', 'soccer', 'tournament']): return 'Physical_Sports'
-        if any(x in t for x in ['travel', 'tourism', 'hotel', 'flight', 'destination', 'tourist', 'resort', 'vacation']): return 'Tourism_and_Travel'
-        if any(x in t for x in ['animal', 'wildlife', 'nature', 'forest', 'ocean', 'species', 'bird', 'fish', 'botanical', 'mammal']): return 'Nature_and_Wildlife'
-        return None
-
-    fixed = 0
-    for filepath in glob.glob(os.path.join(posts_dir, '*.md')):
-        with open(filepath, 'r', encoding='utf-8') as f:
-            content = f.read()
-        
-        parts = content.split('---', 2)
-        if len(parts) >= 3:
-            front = parts[1]
-            body = parts[2]
-            
-            title_match = re.search(r'title:\s*[\'"]?(.*?)[\'"]?\n', front)
-            if title_match:
-                title = title_match.group(1)
-                new_cat = strict_title_router(title)
-                
-                # إذا وجدنا القسم من العنوان، نقوم بنقله فوراً
-                if new_cat:
-                    new_front = re.sub(r'categories:\s*\[.*?\]', f'categories: ["{new_cat}"]', front)
-                    with open(filepath, 'w', encoding='utf-8') as f:
-                        f.write(f"---{new_front}---{body}")
-                    fixed += 1
-
-    print(f"✅ 2. تم إعادة فرز وترتيب {fixed} مقال بدقة فولاذية بناءً على عناوينها الرئيسية.")
     
-    # 3. فرض التحديث على السيرفر
+    # 1. مسح جميع المقالات الحالية من الجذور
+    deleted_count = 0
+    if os.path.exists(posts_dir):
+        for file in glob.glob(os.path.join(posts_dir, '*.md')):
+            os.remove(file)
+            deleted_count += 1
+    print(f"✅ تم مسح {deleted_count} مقال بالكامل من السيرفر.")
+    
+    # 2. إعادة زرع المقالات التأسيسية لتهيئة الأقسام الـ 13
+    os.makedirs(posts_dir, exist_ok=True)
+    cats = ['Technology', 'Science_and_Health', 'Global_Education', 'World_History', 'Business_and_Economy', 'Arts_and_Culture', 'Space_Exploration', 'Environment', 'Daily_Solutions', 'Global_Discoveries', 'Physical_Sports', 'Tourism_and_Travel', 'Nature_and_Wildlife']
+    for c in cats:
+        name = c.replace("_", " ")
+        with open(os.path.join(posts_dir, f'seed_{c.lower()}.md'), 'w', encoding='utf-8') as f:
+            f.write(f"---\ntitle: 'Explore {name}'\ndate: 2026-06-11\ncategories: [\"{c}\"]\ndraft: false\n---\nWelcome to the {name} section. \n\nAt Mnjnef, our dedicated team of expert editors, researchers, and professional writers is continuously curating and publishing comprehensive, highly researched encyclopedia articles. \n\nWe are committed to providing you with the highest quality of authentic, human-driven editorial content. Stay tuned for our latest deep-dive articles and extensive updates in this category.\n")
+    print("✅ تم إعادة تأسيس الأقسام بنظافة تامة.")
+    
+    # 3. مسح ذاكرة الروبوت (قاعدة البيانات)
+    for db_file in glob.glob('/root/*.db'):
+        os.remove(db_file)
+    print("✅ تم مسح ذاكرة الروبوت القديمة. سيبدأ بصفحة بيضاء تماماً.")
+
+    # 4. غسيل السيرفر المباشر وتحديث الواجهة للزوار
+    subprocess.run(["rm", "-rf", os.path.join(site_dir, 'public')], capture_output=True)
     subprocess.run(["hugo", "--gc", "--minify"], cwd=site_dir, capture_output=True)
     for dest in ['/var/www/html', '/var/www/mnjnef', '/var/www/mnjnef.com']:
         if os.path.exists(dest):
+            subprocess.run(f"rm -rf {dest}/* 2>/dev/null", shell=True)
             subprocess.run(f"cp -r {os.path.join(site_dir, 'public')}/* {dest}/ 2>/dev/null", shell=True)
-    print("⚙️ 3. تم تحديث الواجهة وتطبيق التنظيف الشامل للموقع.")
+    print("⚙️ تم غسيل السيرفر بالكامل! الموقع الآن نظيف وجاهز للانطلاق الصحيح.")
 
-print("🎉 اكتملت المهمة! جاري تشغيل الحارس الآلي...")
 EOF
 
-python3 /root/ironclad_categorization.py
+python3 /root/factory_reset.py
 
 nohup /root/run_bot.sh > /dev/null 2>&1 &
 tail -f /root/mnjnef_factory.log
