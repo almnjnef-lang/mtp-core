@@ -1,19 +1,53 @@
-# 1. استبدال الكلمات الرسمية بكلمات تدل على منصة حرة ومستقلة في كل أكواد السيرفر
-sed -i 's/Enterprise/Platform/g' /root/*.py 2>/dev/null
-sed -i 's/Editorial Board/Independent Research Team/g' /root/*.py 2>/dev/null
-sed -i 's/Encyclopedia Core/Open Knowledge Platform/g' /root/*.py 2>/dev/null
-sed -i 's/Academic Archives/Open Library/g' /root/*.py 2>/dev/null
+# 1. تحديث الكود في المحرك الأساسي ليطبق الترجمة الذكية على المقالات المستقبلية
+cat << 'REPLACE_SCRIPT' > /root/update_translator.py
+import os, re
 
-# 2. استبدال الكلمات في المقالات التي تم نشرها بالفعل لكي تتحدث الواجهة فوراً
-find /var/www/html /var/www/mnjnef.com -type f -name "*.html" -exec sed -i 's/Enterprise/Platform/g' {} + 2>/dev/null
-find /var/www/html /var/www/mnjnef.com -type f -name "*.html" -exec sed -i 's/Editorial Board/Independent Research Team/g' {} + 2>/dev/null
-find /var/www/html /var/www/mnjnef.com -type f -name "*.html" -exec sed -i 's/Encyclopedia Core/Open Knowledge Platform/g' {} + 2>/dev/null
-find /var/www/html /var/www/mnjnef.com -type f -name "*.html" -exec sed -i 's/Academic Archives/Open Library/g' {} + 2>/dev/null
+file_path = '/root/titan_seo_engine.py'
+if os.path.exists(file_path):
+    with open(file_path, 'r', encoding='utf-8') as f:
+        content = f.read()
 
-# 3. إزالة أي كلمة "AI" أو ذكاء اصطناعي متبقية في الإعدادات
-find /var/www/html /var/www/mnjnef.com -type f -name "*.html" -exec sed -i 's/ AI / /g' {} + 2>/dev/null
+    # الأداة الذكية العائمة مع اللغات العالمية فقط
+    new_translator = """
+                <!-- Floating Smart Translator -->
+                <div id="translator-widget" style="position: fixed; bottom: 20px; right: 20px; z-index: 9999; background: white; padding: 10px; border-radius: 50px; box-shadow: 0 4px 15px rgba(0,0,0,0.15); border: 2px solid #3182ce; transition: all 0.3s; overflow: hidden; max-height: 40px; display: flex; align-items: center; cursor: pointer;" onclick="this.style.maxHeight='200px'; this.style.borderRadius='15px'; this.onclick=null;">
+                    <span style="font-size: 24px; margin-right: 10px;">🌐</span>
+                    <div id="google_translate_element"></div>
+                </div>
+                <script type="text/javascript">
+                    function googleTranslateElementInit() {{
+                        // تحديد اللغات العالمية والمهمة فقط
+                        new google.translate.TranslateElement({{pageLanguage: 'en', includedLanguages: 'ar,es,fr,de,ru,zh-CN,hi,pt,ja,tr,it', layout: google.translate.TranslateElement.InlineLayout.SIMPLE}}, 'google_translate_element');
+                    }}
+                </script>
+                <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+    """
 
-# 4. إعادة تشغيل المحرك بهدوء ليطبق التعديلات على المقالات القادمة
+    # استبدال الأداة القديمة بالجديدة في كود المحرك
+    content = re.sub(r'<div class="translator">.*?</div>.*?<script.*?</script>', new_translator, content, flags=re.DOTALL)
+    
+    with open(file_path, 'w', encoding='utf-8') as f:
+        f.write(content)
+REPLACE_SCRIPT
+
+python3 /root/update_translator.py
+
+# 2. تحديث المقالات التي تم نشرها بالفعل في الموقع الآن
+echo "جاري تحديث المقالات القديمة لتعمل بنظام الترجمة العائم..."
+find /var/www/html /var/www/mnjnef.com -type f -name "*.html" -not -name "index.html" -exec sed -i -e '/<div class="translator">/,/<\/script>/c\
+                <!-- Floating Smart Translator -->\
+                <div id="translator-widget" style="position: fixed; bottom: 20px; right: 20px; z-index: 9999; background: white; padding: 10px; border-radius: 50px; box-shadow: 0 4px 15px rgba(0,0,0,0.15); border: 2px solid #3182ce; transition: all 0.3s; overflow: hidden; max-height: 40px; display: flex; align-items: center; cursor: pointer;" onclick="this.style.maxHeight='\''200px'\''; this.style.borderRadius='\''15px'\''; this.onclick=null;">\
+                    <span style="font-size: 24px; margin-right: 10px;">🌐</span>\
+                    <div id="google_translate_element"></div>\
+                </div>\
+                <script type="text/javascript">\
+                    function googleTranslateElementInit() {\
+                        new google.translate.TranslateElement({pageLanguage: '\''en'\'', includedLanguages: '\''ar,es,fr,de,ru,zh-CN,hi,pt,ja,tr,it'\'', layout: google.translate.TranslateElement.InlineLayout.SIMPLE}, '\''google_translate_element'\'');\
+                    }\
+                </script>\
+                <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>' {} +
+
+# 3. إعادة تشغيل المحرك
 systemctl restart mnjnef_direct 2>/dev/null
 
-echo "✅ تم تعديل المصطلحات بنجاح! الموقع الآن يظهر كمنصة حرة ومستقلة."
+echo "✅ تمت إضافة الزر العائم وتحديد اللغات العالمية بنجاح!"
