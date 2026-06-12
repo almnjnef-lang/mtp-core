@@ -1,152 +1,141 @@
-```bash
-# 1. إيقاف المحرك للتحديث
-systemctl stop mnjnef_direct 2>/dev/null
+```html.\n5. Tone
 
-# 2. تصميم الصفحة الرئيسية الفخمة (عرض مقالات متعددة قابلة للنقر)
-cat << 'HTML' > /var/www/html/index.html
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mnjnef Open Library - Global Knowledge</title>
-    <style>
-        body { font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f0f4f8; color: #2d3748; margin: 0; padding: 0; }
-        header { background: linear-gradient(135deg, #1a365d 0%, #2b6cb0 100%); color: white; padding: 40px 20px; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-        header h1 { margin: 0; font-size: 2.8em; font-weight: 800; letter-spacing: 1px; }
-        header p { font-size: 1.2em; color: #ebf8ff; margin-top: 10px; opacity: 0.9; }
-        .container { max-width: 1200px; margin: 40px auto; padding: 0 20px; }
-        .section-title { font-size: 1.8em; color: #2c5282; border-bottom: 3px solid #e2e8f0; padding-bottom: 10px; margin-bottom: 30px; }
-        
-        /* شبكة المقالات */
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 30px; }
-        .card { background: white; border-radius: 12px; padding: 25px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); transition: all 0.3s ease; display: flex; flex-direction: column; border-top: 5px solid #3182ce; text-decoration: none; color: inherit; height: 100%; box-sizing: border-box; }
-        .card:hover { transform: translateY(-7px); box-shadow: 0 12px 20px rgba(0,0,0,0.1); border-top-color: #2b6cb0; }
-        .card h3 { font-size: 1.4em; margin: 0 0 15px 0; color: #1a202c; line-height: 1.4; }
-        .card .badge { display: inline-block; background: #ebf8ff; color: #2b6cb0; padding: 5px 12px; border-radius: 20px; font-size: 0.85em; font-weight: 600; margin-bottom: 15px; width: fit-content; }
-        .card .date { font-size: 0.9em; color: #718096; margin-bottom: 20px; flex-grow: 1; }
-        .card .read-more { font-weight: bold; color: #3182ce; text-transform: uppercase; font-size: 0.9em; display: flex; align-items: center; }
-        .card .read-more::after { content: '→'; margin-left: 5px; transition: 0.2s; }
-        .card:hover .read-more::after { margin-left: 10px; }
-        
-        .loading { text-align: center; padding: 50px; color: #718096; font-size: 1.2em; }
-        footer { text-align: center; padding: 30px; margin-top: 50px; background: #2d3748; color: #a0aec0; }
-    </style>
-</head>
-<body>
-    <header>
-        <h1>Mnjnef Open Library</h1>
-        <p>Explore thousands of verified academic articles, researches, and global solutions.</p>
-    </header>
-    <div class="container">
-        <div class="section-title">Latest Archives</div>
-        <div id="loading" class="loading">Syncing database with recent publications...</div>
-        <div class="grid" id="articlesGrid"></div>
-    </div>
-    <footer>
-        <p>&copy; 2026 Mnjnef Open Knowledge Platform. All Rights Reserved.</p>
-    </footer>
+        url = "[https://api.mistral.ai/v1/chat/completions](https://api.mistral.ai/v1/chat/completions)"
+        headers = {"Content-Type": "application/json", "Authorization": f"Bearer {API_KEY}"}
+        data = json.dumps({"model": "mistral-large-latest", "messages": [{"role": "user", "content": prompt}], "temperature": 0.25}).encode('utf-8')
 
-    <script>
-        async function fetchArticles() {
-            try {
-                const response = await fetch('/recent.json?t=' + new Date().getTime());
-                const articles = await response.json();
-                const grid = document.getElementById('articlesGrid');
-                const loading = document.getElementById('loading');
+        req_ai = urllib.request.Request(url, data=data, headers=headers)
+        response = urllib.request.urlopen(req_ai)
+        text = json.loads(response.read().decode())['choices'][0]['message']['content']
+        
+        text = re.sub(r'#+\s*|```html|```', '', text)
+        clean_title = re.sub(r'[#*@]', '', actual_title).strip()
+        seo_date = get_seo_fake_date()
+        
+        file_name = clean_title.replace(" ", "_").lower()
+        file_name = re.sub(r'[^a-z0-9_]', '', file_name) + f"_{int(time.time())}.html"
+        article_url = f"/articles/{file_name}"
+
+        # بناء واجهة المقال النظيفة (بدون ترجمة ومع روابط حقيقية)
+        html_content = f"""
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>{clean_title} - Mnjnef Open Library</title>
+            <style>
+                body {{ font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.8; color: #333; background-color: #f8f9fa; margin: 0; padding: 0; }}
                 
-                if(articles.length > 0) {
-                    loading.style.display = 'none';
-                    grid.innerHTML = '';
-                    articles.forEach(art => {
-                        grid.innerHTML += `
-                            <a href="${art.url}" class="card">
-                                <div class="badge">${art.category}</div>
-                                <h3>${art.title}</h3>
-                                <div class="date">Published: ${art.date}</div>
-                                <div class="read-more">Read Article</div>
-                            </a>
-                        `;
-                    });
-                }
-            } catch (e) { console.error(e); }
-        }
-        fetchArticles();
-        setInterval(fetchArticles, 15000); // تحديث الصفحة الرئيسية ديناميكياً كل 15 ثانية
-    </script>
-</body>
-</html>
-HTML
-cp /var/www/html/index.html /var/www/mnjnef.com/index.html
+                header {{ background: linear-gradient(135deg, #1a365d 0%, #2b6cb0 100%); padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 100;}}
+                header a.logo {{ color: white; text-decoration: none; font-size: 1.5em; font-weight: bold; letter-spacing: 1px; }}
+                header a.home-btn {{ color: #1a365d; background: white; padding: 8px 16px; border-radius: 20px; text-decoration: none; font-weight: bold; font-size: 0.9em; transition: 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }}
+                header a.home-btn:hover {{ background: #ebf8ff; transform: translateY(-2px); }}
+                
+                .container {{ max-width: 900px; margin: 40px auto; background: white; padding: 50px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); }}
+                h1 {{ color: #1a202c; font-size: 2.5em; margin-bottom: 15px; line-height: 1.2; }}
+                h2 {{ color: #2b6cb0; margin-top: 40px; border-bottom: 2px solid #edf2f7; padding-bottom: 10px; }}
+                p {{ font-size: 1.15em; margin-bottom: 20px; color: #4a5568; }}
+                
+                .meta-info {{ background: #f7fafc; padding: 15px 20px; border-radius: 8px; color: #718096; font-size: 0.95em; margin-bottom: 40px; display: flex; flex-wrap: wrap; gap: 20px; border-left: 4px solid #3182ce; }}
+                .meta-info strong {{ color: #2d3748; }}
+                
+                /* تنسيق مواضيع ذات صلة الحقيقية */
+                .related-section {{ margin-top: 60px; padding-top: 30px; border-top: 3px solid #e2e8f0; }}
+                .related-section h2 {{ color: #2d3748; border: none; padding: 0; margin-bottom: 25px; }}
+                .related-grid {{ display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; }}
+                
+                .related-card {{ display: block; background: #ffffff; border: 1px solid #e2e8f0; padding: 20px; border-radius: 10px; text-decoration: none; color: inherit; transition: all 0.2s ease; border-bottom: 4px solid #cbd5e0; }}
+                .related-card:hover {{ transform: translateY(-5px); border-bottom-color: #3182ce; box-shadow: 0 10px 15px rgba(0,0,0,0.05); background: #fcfcfc; }}
+                .related-card h4 {{ margin: 0 0 10px 0; color: #1a365d; font-size: 1.1em; line-height: 1.4; }}
+                .related-card span {{ font-size: 0.85em; color: #718096; background: #edf2f7; padding: 4px 10px; border-radius: 15px; }}
+                
+                footer {{ text-align: center; margin-top: 50px; padding: 30px; color: #a0aec0; background: #f8f9fa; border-top: 1px solid #edf2f7; }}
+                @media (max-width: 600px) {{ .container {{ padding: 25px; margin: 20px auto; }} h1 {{ font-size: 2em; }} }}
+            </style>
+        </head>
+        <body>
+            <header>
+                <a href="/" class="logo">Mnjnef</a>
+                <a href="/" class="home-btn">🏠 Main Library</a>
+            </header>
+            
+            <div class="container">
+                <h1>{clean_title}</h1>
+                <div class="meta-info">
+                    <span><strong>Published:</strong> {seo_date}</span>
+                    <span><strong>Category:</strong> {cat.replace('_', ' ')}</span>
+                    <span><strong>By:</strong> Independent Research Team</span>
+                </div>
+                
+                <div class="article-body">
+                    {text}
+                </div>
+                
+                <!-- مواضيع ذات صلة الديناميكية الحقيقية -->
+                <div class="related-section">
+                    <h2>📚 Discover More Topics</h2>
+                    <div class="related-grid" id="related-container">
+                        <!-- Javascript will inject real clickable cards here -->
+                    </div>
+                </div>
+            </div>
+            
+            <footer>
+                <p>&copy; Mnjnef Open Knowledge Platform. Dedicated to universal education.</p>
+            </footer>
+            
+            <script>
+                // كود جلب المقالات الحقيقية ووضعها كأزرار قابلة للنقر
+                fetch('/recent.json?t=' + new Date().getTime())
+                    .then(response => response.json())
+                    .then(articles => {{
+                        const container = document.getElementById('related-container');
+                        // استبعاد المقال الحالي من القائمة
+                        const otherArticles = articles.filter(a => !a.url.includes('{file_name}'));
+                        // خلط المقالات عشوائياً واختيار 6
+                        const shuffled = otherArticles.sort(() => 0.5 - Math.random());
+                        const selected = shuffled.slice(0, 6);
+                        
+                        if(selected.length > 0) {{
+                            selected.forEach(art => {{
+                                container.innerHTML += `
+                                    <a href="${{art.url}}" class="related-card">
+                                        <h4>${{art.title}}</h4>
+                                        <span>${{art.category}}</span>
+                                    </a>
+                                `;
+                            }});
+                        }} else {{
+                            container.innerHTML = "<p>More academic entries are being processed...</p>";
+                        }}
+                    }})
+                    .catch(e => console.log('Syncing related topics...'));
+            </script>
+        </body>
+        </html>
+        """
 
-# 3. بناء المحرك الجديد (بدون ترجمة + روابط داخلية حقيقية 100%)
-cat << 'EOF' > /root/titan_seo_engine.py
-import os, time, random, json, re, sys
-import urllib.request
-from urllib.parse import quote
-from datetime import datetime, timedelta
-
-API_KEY = "HKxK4S2UrTBt8ja93wkndgltN1W3UaHD"
-
-CATS = {
-    "Education_and_Academia": ["Modern Pedagogy", "Distance Learning", "Neuroplasticity", "Special Education", "Educational Technology", "Curriculum Design"],
-    "Psychology_and_Solutions": ["Behavioral Economics", "Emotional Intelligence", "Stress Management", "Cognitive Behavioral Therapy"],
-    "Problem_Solving": ["Time Management Hacks", "Effective Communication", "Critical Thinking Skills", "Financial Literacy"],
-    "Technology_and_Science": ["Quantum Computing", "Cybersecurity", "Astrophysics", "Renewable Energy"],
-    "Culture_and_Arts": ["Renaissance Art", "Cultural Anthropology", "Classical Architecture"],
-    "Tourism_and_Travel": ["Sustainable Ecotourism", "Cultural Heritage Sites", "Luxury Travel Trends"],
-    "Culinary_Arts": ["Molecular Gastronomy", "Traditional Fermentation", "Plant-Based Cuisine"],
-    "Nature_Environment": ["Forest Conservation", "Climate Change Solutions", "Oceanography"],
-    "Sports_Science": ["Biomechanics in Sports", "Sports Nutrition", "Endurance Training"],
-    "Business_Finance": ["Macroeconomics", "Supply Chain Management", "Investment Strategies"]
-}
-
-def get_seo_fake_date():
-    start_date = datetime(2018, 1, 1)
-    end_date = datetime.now()
-    random_days = random.randrange((end_date - start_date).days)
-    return (start_date + timedelta(days=random_days)).strftime('%Y-%m-%d')
-
-def update_recent_json(title, url, category, fake_date):
-    json_path = "/var/www/html/recent.json"
-    try:
-        if os.path.exists(json_path):
-            with open(json_path, "r", encoding="utf-8") as f: data = json.load(f)
-        else: data = []
-    except: data = []
+        with open(f"/var/www/html{article_url}", "w", encoding="utf-8") as f: f.write(html_content)
         
-    new_entry = {"title": title, "url": url, "category": category.replace('_', ' '), "date": fake_date}
-    data.insert(0, new_entry)
-    data = data[:100] # نحتفظ بـ 100 مقال لتنويع خيارات "مواضيع ذات صلة"
-    
-    with open(json_path, "w", encoding="utf-8") as f: json.dump(data, f)
-    os.system("cp /var/www/html/recent.json /var/www/mnjnef.com/recent.json 2>/dev/null")
-
-def append_to_sitemap(url):
-    sitemap_path = "/var/www/html/sitemap.xml"
-    if not os.path.exists(sitemap_path):
-        with open(sitemap_path, "w") as f: f.write('<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n</urlset>')
-    with open(sitemap_path, "r") as f: content = f.read()
-    content = content.replace("</urlset>", f"  <url>\n    <loc>https://mnjnef.com{url}</loc>\n    <changefreq>monthly</changefreq>\n  </url>\n</urlset>")
-    with open(sitemap_path, "w") as f: f.write(content)
-
-def generate_article():
-    cat = random.choice(list(CATS.keys()))
-    topic = random.choice(CATS[cat])
-
-    try:
-        search_url = f"https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch={quote(topic)}&utf8=&format=json"
-        req = urllib.request.Request(search_url, headers={'User-Agent': 'Mozilla/5.0'})
-        res = json.loads(urllib.request.urlopen(req).read().decode())
+        update_recent_json(clean_title, article_url, cat, seo_date)
+        append_to_sitemap(article_url)
+        os.system("chown -R www-data:www-data /var/www/html /var/www/mnjnef.com")
         
-        if not res.get('query', {}).get('search'): return
-        actual_title = res['query']['search'][0]['title']
+        print(f"✅ [PUBLISHED] {clean_title} - {seo_date}", flush=True)
 
-        ext_url = f"https://en.wikipedia.org/w/api.php?action=query&prop=extracts&exlimit=1&titles={quote(actual_title)}&explaintext=1&format=json"
-        req2 = urllib.request.Request(ext_url, headers={'User-Agent': 'Mozilla/5.0'})
-        context = list(json.loads(urllib.request.urlopen(req2).read().decode())['query']['pages'].values())[0].get('extract', '')[:1500]
+    except Exception as e:
+        pass
 
-        # أمر صارم بعدم كتابة مواضيع ذات صلة من خيال الذكاء الاصطناعي
-        prompt = f"ACT AS: Senior Board of Mnjnef Open Library. Write a MASSIVE, profound educational dissertation about '{actual_title}'. RULES: No politics. Fact-based only. English only. Format with standard HTML tags (<h2>, <p>, <ul>). STRICTLY NO '#' SYMBOLS. DO NOT wrap in 
+while True:
+    time.sleep(random.uniform(25.0, 45.0))
+    generate_article()
+EOF
+
+# 4. إعادة إطلاق المحرك وتصحيح الصلاحيات
+chown -R www-data:www-data /var/www/html /var/www/mnjnef.com
+systemctl restart mnjnef_direct
+echo "✅ تم التحديث بنجاح الإمبراطورية V9!"
+
 
 ```
