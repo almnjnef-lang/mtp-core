@@ -1,73 +1,14 @@
-```html.\n5. Tone
+pkill -f python3
+systemctl stop mnjnef_titan 2>/dev/null
+> /root/titan_mistral_core.py
+nano /root/titan_mistral_core.py
 
-        print("🧠 2. Sending prompt to Mistral AI...", flush=True)
-        url = "[https://api.mistral.ai/v1/chat/completions](https://api.mistral.ai/v1/chat/completions)"
-        headers = {"Content-Type": "application/json", "Authorization": f"Bearer {API_KEY}"}
-        data = json.dumps({"model": "mistral-large-latest", "messages": [{"role": "user", "content": prompt}], "temperature": 0.25}).encode('utf-8')
+**الخطوة الثانية:** - ستفتح لك شاشة التعديل `nano`. 
+- انسخ الكود الموجود في المربع الأعلى بالكامل والصقه بهدوء.
+- اضغط `Ctrl + X`، ثم اضغط حرف `Y`، ثم `Enter` للحفظ.
 
-        req_ai = urllib.request.Request(url, data=data, headers=headers)
-        
-        try:
-            response = urllib.request.urlopen(req_ai)
-            resp_data = response.read().decode()
-        except urllib.error.HTTPError as e:
-            print(f"❌ MISTRAL API REJECTED REQUEST (HTTP {e.code}):", flush=True)
-            print(e.read().decode('utf-8'), flush=True)
-            return
-        except Exception as e:
-            print(f"❌ MISTRAL CONNECTION ERROR: {e}", flush=True)
-            return
-            
-        text = json.loads(resp_data)['choices'][0]['message']['content']
-        print("✅ 3. Mistral generated content successfully!", flush=True)
+**الخطوة الثالثة:** إطلاق المحرك ومراقبة كسر الـ 403 الفوري:
+```bash
+systemctl restart mnjnef_titan && journalctl -u mnjnef_titan -f
 
-        # تنظيف صارم لأي علامة هاشتاج أو كود ماركداون
-        text = re.sub(r'#+\s*', '', text)
-        text = re.sub(r'```html', '', text)
-        text = re.sub(r'```', '', text)
-
-        clean_title = re.sub(r'[#*@]', '', actual_title).strip()
-        date_str = datetime.now().strftime('%Y-%m-%dT%H:%M:%S')
-
-        # أداة الترجمة الفورية لجميع اللغات
-        translator = "<div id='google_translate_element' style='margin: 20px 0; padding: 15px; background: #fdfdfd; border-radius: 8px; border-left: 5px solid #2c3e50;'><strong>🌐 Translate this Encyclopedia Article:</strong></div><script type='text/javascript'>function googleTranslateElementInit() { new google.translate.TranslateElement({pageLanguage: 'en', layout: google.translate.TranslateElement.InlineLayout.SIMPLE}, 'google_translate_element'); }</script><script type='text/javascript' src='//[translate.google.com/translate_a/element.js?cb=googleTranslateElementInit](https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit)'></script>"
-        
-        markdown = f"---\ntitle: \"{clean_title}\"\ndate: {date_str}\ncategories: [\"{cat.replace('_', ' ')}\"]\n---\n{translator}\n\n{text}\n\n<br><p style='text-align:center; color:#7f8c8d; border-top: 1px solid #eee; padding-top: 10px;'>Curated by the Mnjnef Global Educational Encyclopedia Core.</p>"
-
-        site_dirs = ["/var/www/mnjnef.com", "/var/www/html", "/root/mnjnef_site"]
-        active_dir = next((d for d in site_dirs if os.path.exists(os.path.join(d, "config.toml")) or os.path.exists(os.path.join(d, "hugo.toml"))), None)
-        
-        if not active_dir: 
-            print("❌ CRITICAL ERROR: Hugo website directory (config.toml) not found! Cannot save article.", flush=True)
-            return
-
-        print(f"📁 4. Saving to folder {active_dir}...", flush=True)
-        post_path = os.path.join(active_dir, 'content', 'posts', f"mnjnef_{int(time.time())}.md")
-        os.makedirs(os.path.dirname(post_path), exist_ok=True)
-        with open(post_path, "w", encoding="utf-8") as f: f.write(markdown)
-
-        print("⚙️ 5. Compiling Hugo site & Updating Web Server...", flush=True)
-        subprocess.run(["hugo", "--gc", "--minify"], cwd=active_dir, capture_output=True)
-        subprocess.run(f"cp -r {active_dir}/public/* /var/www/html/ 2>/dev/null", shell=True)
-        subprocess.run(f"cp -r {active_dir}/public/* /var/www/[mnjnef.com/](https://mnjnef.com/) 2>/dev/null", shell=True)
-        
-        # كسر قفل 403 للأبد بتصحيح الصلاحيات بعد النشر الفعلي
-        subprocess.run("chown -R www-data:www-data /var/www/html /var/www/mnjnef.com 2>/dev/null", shell=True)
-        
-        print(f"✅ [PUBLISHED] '{clean_title}' is now live on your site!", flush=True)
-
-    except Exception as e:
-        print(f"❌ FATAL UNCAUGHT ERROR: {e}", flush=True)
-
-# تشغيل المقال الأول الفعلي فوراً لكسر الشاشة البيضاء
-generate_article()
-
-# حلقة النشر العشوائي (بين 22 و 30 ثانية)
-while True:
-    delay = random.uniform(22.0, 30.0)
-    print(f"⏳ [Anti-Ban System] Waiting {delay:.1f} seconds...", flush=True)
-    time.sleep(delay)
-    generate_article()
-
-
-```
+الآن سيقوم السيرفر بسحب مقال حقيقي (بدون أي ترحيب)، يكتبه عن طريق Mistral، ويقوم بنشره. بمجرد أن ترى كلمة `✅ [PUBLISHED]`، اعمل تحديث لموقعك وستختفي الشاشة البيضاء ويظهر المقال الأول لموسوعتك!
