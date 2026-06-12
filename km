@@ -1,464 +1,59 @@
-```bash
-#!/bin/bash
-# ==============================================================================
-# MNJNEF GLOBAL ENTERPRISE INFRASTRUCTURE & AI CORE - V6 TITANIUM
-# DESIGNED FOR: MILLIONS OF CONCURRENT VISITORS, MAXIMUM SECURITY, ZERO DOWNTIME
-# ==============================================================================
-
-# ------------------------------------------------------------------------------
-# 1. KERNEL & NETWORK STACK OPTIMIZATION (MILLION CONCURRENT CONNECTIONS)
-# ------------------------------------------------------------------------------
-echo "[1/5] Securing and Optimizing Linux Kernel for Massive Traffic..."
-
-cat << 'SYS' > /etc/security/limits.conf
-* soft nofile 2000000
-* hard nofile 2000000
-root soft nofile 2000000
-root hard nofile 2000000
-* soft nproc 1048576
-* hard nproc 1048576
-root soft nproc 1048576
-root hard nproc 1048576
-SYS
-
-cat << 'SYS' > /etc/sysctl.d/99-mnjnef-enterprise.conf
-fs.file-max = 2097152
-fs.inotify.max_user_watches = 1048576
-net.core.somaxconn = 65535
-net.core.netdev_max_backlog = 262144
-net.core.rmem_max = 33554432
-net.core.wmem_max = 33554432
-net.ipv4.tcp_max_syn_backlog = 65535
-net.ipv4.tcp_fin_timeout = 10
-net.ipv4.tcp_tw_reuse = 1
-net.ipv4.tcp_rmem = 4096 87380 33554432
-net.ipv4.tcp_wmem = 4096 65536 33554432
-net.ipv4.ip_local_port_range = 1024 65535
-net.ipv4.tcp_fastopen = 3
-net.ipv4.tcp_max_tw_buckets = 2000000
-net.ipv4.tcp_syncookies = 1
-net.ipv4.conf.all.rp_filter = 1
-net.ipv4.conf.default.rp_filter = 1
-net.ipv4.conf.all.accept_source_route = 0
-net.ipv4.conf.default.accept_source_route = 0
-SYS
-sysctl --system > /dev/null 2>&1
-
-# ------------------------------------------------------------------------------
-# 2. ANTI-HACKING & FIREWALL SECURITY (UFW & FAIL2BAN)
-# ------------------------------------------------------------------------------
-echo "[2/5] Deploying Military-Grade Security Protocols..."
-apt-get update -y > /dev/null 2>&1
-apt-get install -y ufw fail2ban > /dev/null 2>&1
-
-ufw --force reset > /dev/null 2>&1
-ufw default deny incoming > /dev/null 2>&1
-ufw default allow outgoing > /dev/null 2>&1
-ufw allow 22/tcp > /dev/null 2>&1
-ufw allow 80/tcp > /dev/null 2>&1
-ufw allow 443/tcp > /dev/null 2>&1
-ufw --force enable > /dev/null 2>&1
-
-cat << 'F2B' > /etc/fail2ban/jail.local
-[DEFAULT]
-bantime = 86400
-findtime = 600
-maxretry = 5
-
-[sshd]
-enabled = true
-port = 22
-filter = sshd
-logpath = /var/log/auth.log
-maxretry = 3
-
-[nginx-http-auth]
-enabled = true
-filter = nginx-http-auth
-port = http,https
-logpath = /var/log/nginx/error.log
-
-[nginx-botsearch]
-enabled = true
-filter = nginx-botsearch
-port = http,https
-logpath = /var/log/nginx/access.log
-maxretry = 2
-F2B
-systemctl restart fail2ban > /dev/null 2>&1
-
-# ------------------------------------------------------------------------------
-# 3. HIGH-PERFORMANCE WEB SERVER CONFIGURATION (NGINX)
-# ------------------------------------------------------------------------------
-echo "[3/5] Configuring Nginx to handle multi-million requests..."
-if [ -d "/etc/nginx" ]; then
-cat << 'NGX' > /etc/nginx/nginx.conf
-user www-data;
-worker_processes auto;
-worker_rlimit_nofile 2000000;
-pid /run/nginx.pid;
-events {
-    worker_connections 100000;
-    use epoll;
-    multi_accept on;
-}
-http {
-    sendfile on;
-    tcp_nopush on;
-    tcp_nodelay on;
-    keepalive_timeout 65;
-    keepalive_requests 200000;
-    types_hash_max_size 2048;
-    server_tokens off;
-    include /etc/nginx/mime.types;
-    default_type application/octet-stream;
-    access_log off;
-    error_log /var/log/nginx/error.log crit;
-    gzip on;
-    gzip_disable "msie6";
-    gzip_vary on;
-    gzip_proxied any;
-    gzip_comp_level 6;
-    gzip_buffers 16 8k;
-    gzip_http_version 1.1;
-    gzip_types text/plain text/css application/json application/javascript text/xml application/xml application/xml+rss text/javascript;
-    open_file_cache max=500000 inactive=20s;
-    open_file_cache_valid 30s;
-    open_file_cache_min_uses 2;
-    open_file_cache_errors on;
-    client_body_buffer_size 128k;
-    client_max_body_size 10m;
-    client_header_buffer_size 1k;
-    large_client_header_buffers 4 4k;
-    output_buffers 1 32k;
-    postpone_output 1460;
-    include /etc/nginx/conf.d/*.conf;
-    include /etc/nginx/sites-enabled/*;
-}
-NGX
-systemctl restart nginx > /dev/null 2>&1
-fi
-
-# ------------------------------------------------------------------------------
-# 4. MISTRAL AI AUTOMATED ENGINE (WITH BUILT-IN KEY AND EXTENSIVE MATRICES)
-# ------------------------------------------------------------------------------
-echo "[4/5] Compiling Mnjnef Titan Core with Mistral Key Integration..."
-
-pkill -f python3
-systemctl stop mnjnef_titan 2>/dev/null
-
-cat << 'EOF' > /root/titan_mistral_core.py
-import os, sys, time, random, json, re, subprocess, logging
-from urllib.request import urlopen, Request
+```python
+import os, time, random, json, subprocess, re, sys
+import urllib.request
+import urllib.error
 from urllib.parse import quote
-from urllib.error import HTTPError, URLError
 from datetime import datetime
 
-# ======================================================================
-# SECURE CREDENTIALS INJECTION
-# ======================================================================
+# مفتاحك مدمج وجاهز للعمل
 API_KEY = "HKxK4S2UrTBt8ja93wkndgltN1W3UaHD"
 
-# Logging configuration for absolute transparency
-logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(message)s', handlers=[logging.StreamHandler(sys.stdout)])
+print("==================================================", flush=True)
+print("🚀 [Mnjnef Global Enterprise] 100% TRANSPARENT MODE", flush=True)
+print("==================================================", flush=True)
 
-logging.info("==================================================")
-logging.info("🚀 Mnjnef Global Enterprise AI Engine Started")
-logging.info("🛡️ Core: Transparency, Anti-Ban, Academic Excellence")
-logging.info("==================================================")
-
-# ======================================================================
-# MASSIVE GLOBAL KNOWLEDGE MATRIX (MILLIONS OF VECTORS)
-# ======================================================================
-KNOWLEDGE_MATRIX = {
-    # ---------------- EDUCATION & ACADEMIA (HEAVILY WEIGHTED) ----------------
-    "Education_and_Academia": [
-        "Cognitive Load Theory in Distance Learning", "Neuroplasticity and Adult Learning", "Flipped Classroom Methodologies",
-        "Constructivist Pedagogy", "Montessori Educational Philosophy", "Gamification in Higher Education", 
-        "Special Education and Inclusive Classrooms", "Formative vs Summative Assessment", "Metacognition Strategies",
-        "Problem-Based Learning Networks", "Socratic Questioning in Modern Schools", "Andragogy vs Pedagogy",
-        "Digital Literacy in Primary Education", "Bilingualism and Cognitive Development", "Standardized Testing Efficacy",
-        "STEM Education Integration", "Vocational Training Innovations", "Autism Spectrum Disorder Educational Strategies",
-        "Peer-Assisted Learning", "Educational Psychology Frameworks", "Instructional Scaffolding Techniques",
-        "Vygotsky's Zone of Proximal Development", "Bloom's Taxonomy Applications", "Differentiated Instruction",
-        "Waldorf Education Principles", "Experiential Learning Cycles", "Universal Design for Learning (UDL)",
-        "Social-Emotional Learning (SEL)", "Microlearning Architectures", "Asynchronous Learning Dynamics",
-        "EdTech AI Integration", "Educational Neuroscience", "Literacy Acquisition Models", "Dyslexia Intervention Strategies"
-    ],
-    # ---------------- PROBLEM SOLVING & HUMAN SOLUTIONS ----------------
-    "Problem_Solving_and_Solutions": [
-        "Root Cause Analysis Frameworks", "Six Sigma Methodologies", "Design Thinking Processes",
-        "Conflict Resolution Tactics", "Time Management and Pomodoro Matrix", "Overcoming Imposter Syndrome",
-        "Financial Literacy and Debt Management", "Effective Interpersonal Communication", "Critical Thinking Biases",
-        "Decision Fatigue Mitigation", "Stress Management Protocols", "Navigating Corporate Hierarchies",
-        "Personal Branding and Career Growth", "Cognitive Behavioral Therapy Techniques", "Building Resilience",
-        "Negotiation Strategies", "Mindfulness and Anxiety Reduction", "Habit Loop Engineering",
-        "Procrastination Eradication Models", "Emotional Intelligence in Leadership", "Crisis Management Strategy",
-        "Lean Startup Methodology", "Agile Project Management", "Pareto Principle Economics",
-        "Grief Counseling Mechanisms", "Substance Abuse Recovery Frameworks", "Cyberbullying Prevention"
-    ],
-    # ---------------- PSYCHOLOGY & HUMAN MIND ----------------
-    "Psychology_and_Mind": [
-        "Behavioral Economics", "The Psychology of Persuasion", "Maslow's Hierarchy of Needs",
-        "Carl Jung's Archetypes", "Classical and Operant Conditioning", "Attachment Theory Patterns",
-        "Neurobiology of Addiction", "Memory Consolidation Processes", "Sleep Deprivation Psychology",
-        "The Dunning-Kruger Effect", "Evolutionary Psychology Constraints", "Psychopathology of Narcissism",
-        "Bystander Effect Dynamics", "Stanford Prison Experiment Analysis", "Milgram Shock Experiment Ethics",
-        "Cognitive Dissonance Theory", "Placebo and Nocebo Effects", "Psycholinguistics",
-        "Personality Trait Psychology (Big Five)", "The Neurochemistry of Love", "Lucid Dreaming Mechanics"
-    ],
-    # ---------------- TECHNOLOGY & ADVANCED SCIENCE ----------------
-    "Technology_and_Science": [
-        "Quantum Cryptography", "Artificial General Intelligence (AGI)", "CRISPR-Cas9 Gene Editing",
-        "Nanomedicine Applications", "Nuclear Fusion Reactors (Tokamak)", "Dark Matter and Astrophysics",
-        "Blockchain Decentralized Finance", "Autonomous Vehicle Sensor Fusion", "Graphene Material Science",
-        "Neuromorphic Computing", "Epigenetics and Gene Expression", "Exoplanet Atmosphere Spectrometry",
-        "Machine Learning Neural Networks", "Augmented Reality Spatial Computing", "Biometric Authentication",
-        "String Theory and Multiverses", "Stringent Cybersecurity Protocols", "Aerospace Propulsion Systems",
-        "Synthetic Biology", "Bioluminescence Mechanisms", "Superconductor Magnetic Levitation"
-    ],
-    # ---------------- TOURISM, TRAVEL & EXPLORATION ----------------
-    "Tourism_and_Travel": [
-        "Sustainable Ecotourism Models", "Impact of Overtourism on Heritage Sites", "Cultural Assimilation in Travel",
-        "History of the Silk Road", "Deep Sea Exploration Technologies", "Space Tourism Economics",
-        "Anthropology of Nomadic Tribes", "The Grand Tour of Europe History", "Architectural Tourism",
-        "Agritourism and Rural Development", "Dark Tourism Ethics", "Polar Expedition Logistics",
-        "Culinary Tourism Demographics", "Voluntourism Efficacy", "Digital Nomad Infrastructure",
-        "UNESCO World Heritage Criteria", "High-Altitude Mountaineering Physiology", "Aviation Routing Algorithms"
-    ],
-    # ---------------- CULINARY ARTS & GASTRONOMY ----------------
-    "Culinary_Arts_and_Cooking": [
-        "Molecular Gastronomy Spherification", "Maillard Reaction Kinetics", "History of Fermentation",
-        "Lactic Acid Bacteria in Food", "Gluten Network Formation", "Umami Receptor Biochemistry",
-        "Food Preservation Techniques", "Vegan Protein Synthesis", "The Anthropology of Spices",
-        "Oenology and Wine Terroir", "Crystallization of Sugar in Confectionery", "Emulsion Stability in Sauces",
-        "Sous-vide Thermodynamics", "Indigenous Culinary Traditions", "Zero-Waste Kitchen Economics",
-        "Psychology of Food Plating", "Gut Microbiome and Diet", "Aquaponics and Urban Farming"
-    ],
-    # ---------------- NATURE & ENVIRONMENT ----------------
-    "Nature_and_Environment": [
-        "Coral Reef Bleaching Dynamics", "Mycorrhizal Networks in Forests", "Atmospheric Carbon Sequestration",
-        "Glacial Retreat and Sea Level Rise", "Keystone Species Ecological Impact", "Desertification Reversal Methods",
-        "Oceanic Acidification Chemistry", "Meteorological Forecasting Models", "Permaculture Design Principles",
-        "Plastic Micro-Pollution Dispersal", "Biodiversity Hotspot Conservation", "Tectonic Plate Dynamics",
-        "Volcanology and Pyroclastic Flows", "Hydrological Cycle Disruptions", "Tidal Energy Conversion",
-        "Symbiotic Relationships in Ecosystems", "Avian Migration Navigation Systems", "Geothermal Energy Production"
-    ],
-    # ---------------- SPORTS & PHYSICAL CONDITIONING ----------------
-    "Physical_Sports": [
-        "Biomechanics of the Sprinting Stride", "Hypertrophy and Muscle Fiber Recruitment", "VO2 Max Optimization",
-        "Sports Psychology and Flow State", "Kinesiology of Joint Articulation", "Anaerobic Alactic Energy System",
-        "History of the Olympic Games", "Sabermetrics in Baseball", "Aerodynamics in Formula 1",
-        "Nutrition Timing for Endurance Athletes", "Concussion Protocols in Contact Sports", "High-Altitude Acclimatization",
-        "Fascia Tissue Elasticity", "Motor Skill Acquisition Phases", "Thermoregulation in Extreme Sports"
-    ],
-    # ---------------- BUSINESS, FINANCE & LEADERSHIP ----------------
-    "Business_and_Finance": [
-        "Macroeconomic Monetary Policy", "Venture Capital Due Diligence", "Supply Chain Risk Management",
-        "Corporate Governance Frameworks", "Blue Ocean Strategy", "Quantitative Algorithmic Trading",
-        "Sovereign Wealth Funds", "Intellectual Property Patent Law", "Mergers and Acquisitions Dynamics",
-        "Fractional Reserve Banking", "Cryptocurrency Tokenomics", "Organizational Change Management",
-        "Consumer Behavior Analytics", "B2B Sales Funnel Optimization", "Ethical Leadership Principles"
-    ]
+CATEGORIES = {
+    "Education_and_Academia": ["Modern Pedagogy", "Distance Learning", "Neuroplasticity", "Cognitive Load Theory", "Special Education", "Early Childhood Development", "Educational Technology", "Curriculum Design", "Linguistics"],
+    "Psychology_and_Solutions": ["Behavioral Economics", "Emotional Intelligence", "Overcoming Procrastination", "Stress Management", "Conflict Resolution", "Cognitive Behavioral Therapy", "Motivation Mechanics"],
+    "Problem_Solving": ["Time Management Hacks", "Effective Communication", "Critical Thinking Skills", "Personal Productivity", "Decision Making Models", "Financial Literacy"],
+    "Technology_and_Science": ["Quantum Computing", "AI Ethics", "Cybersecurity", "Nanotechnology", "Astrophysics", "Marine Biology", "Renewable Energy"],
+    "Culture_and_Arts": ["Renaissance Art", "Cultural Anthropology", "Classical Architecture", "World Music History", "Modern Abstract Art"],
+    "Tourism_and_Travel": ["Sustainable Ecotourism", "Historical Landmarks", "Cultural Heritage Sites", "Backpacking Routes", "Luxury Travel Trends"],
+    "Culinary_Arts_and_Cooking": ["Molecular Gastronomy", "Traditional Fermentation", "Culinary History", "Baking Chemistry", "Plant-Based Cuisine"],
+    "Nature_and_Environment": ["Forest Conservation", "Climate Change Solutions", "Desert Ecosystems", "Biodiversity", "Oceanography"],
+    "Physical_Sports": ["Biomechanics in Sports", "Sports Nutrition", "Olympic History", "Endurance Training", "Kinesiology"],
+    "Business_and_Finance": ["Startup Ecosystems", "Macroeconomics", "Supply Chain Management", "Investment Strategies", "Global Trade"]
 }
 
-# ======================================================================
-# ANTI-BAN: DYNAMIC USER-AGENT ROTATION
-# ======================================================================
-USER_AGENTS = [
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/125.0.0.0 Safari/537.36",
-    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 Version/17.5",
-    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/124.0.0.0",
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:126.0) Gecko/20100101 Firefox/126.0",
-    "Mozilla/5.0 (iPad; CPU OS 17_5 like Mac OS X) AppleWebKit/605.1.15",
-    "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15"
-]
+AGENTS = ["Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124.0.0.0 Safari/537.36"]
 
-def generate_academic_article():
-    logging.info("--------------------------------------------------")
-    
-    # HEAVY WEIGHTING TOWARDS EDUCATION & SOLUTIONS
-    weighted_categories = (
-        ["Education_and_Academia"] * 10 + 
-        ["Problem_Solving_and_Solutions"] * 6 + 
-        ["Psychology_and_Mind"] * 4 + 
-        list(KNOWLEDGE_MATRIX.keys())
-    )
-    
-    category = random.choice(weighted_categories)
-    topic_seed = random.choice(KNOWLEDGE_MATRIX[category])
+def generate_article():
+    print("\n--------------------------------------------------", flush=True)
+    weighted_cats = ["Education_and_Academia"] * 6 + ["Problem_Solving"] * 4 + ["Psychology_and_Solutions"] * 3 + list(CATEGORIES.keys())
+    cat = random.choice(weighted_cats)
+    topic = random.choice(CATEGORIES[cat])
 
     try:
-        logging.info(f"🌍 1. Interfacing with Global DB for: '{topic_seed}'")
-        search_url = f"https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch={quote(topic_seed)}&utf8=&format=json"
-        req = Request(search_url, headers={'User-Agent': random.choice(USER_AGENTS)})
+        print(f"🌍 1. Fetching knowledge base for: '{topic}'...", flush=True)
+        search_url = f"https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch={quote(topic)}&utf8=&format=json"
+        req = urllib.request.Request(search_url, headers={'User-Agent': random.choice(AGENTS)})
         
         try:
-            res_data = json.loads(urlopen(req, timeout=15).read().decode())
+            res = json.loads(urllib.request.urlopen(req).read().decode())
         except Exception as e:
-            logging.error(f"❌ Wikipedia Search Failed: {e}")
+            print(f"❌ ERROR: Wikipedia network failed: {e}", flush=True)
             return
 
-        if not res_data.get('query', {}).get('search'): 
-            logging.error("❌ No valid results found in global DB.")
-            return
-            
-        verified_title = res_data['query']['search'][0]['title']
-
-        ext_url = f"https://en.wikipedia.org/w/api.php?action=query&prop=extracts&exlimit=1&titles={quote(verified_title)}&explaintext=1&format=json"
-        req2 = Request(ext_url, headers={'User-Agent': random.choice(USER_AGENTS)})
-        context_data = list(json.loads(urlopen(req2, timeout=15).read().decode())['query']['pages'].values())[0].get('extract', '')[:2000]
-
-        # ------------------------------------------------------------------
-        # STRICT EDITORIAL PROMPT (ENFORCING LAWS & PREVENTING FAKE NEWS)
-        # ------------------------------------------------------------------
-        prompt = f"""ACT AS: The Chief Academic Editor of the Mnjnef Global Encyclopedia.
-TASK: Write a MASSIVE, highly intellectual, and exhaustively detailed educational encyclopedia article about '{verified_title}'.
-
-STRICT EDITORIAL LAWS (ABSOLUTE COMPLIANCE REQUIRED):
-1. NO POLITICS, NO DAILY NEWS, NO LIES, NO FAKE EXPERIMENTS. 
-2. Content must be 100% timeless, factual, scientifically/historically verified knowledge.
-3. Provide immense educational value and practical problem-solving insights where applicable.
-4. LENGTH: Must be an extremely long, deep academic dissertation. DO NOT write a short summary.
-5. FORMAT: Use ONLY native HTML tags (<h2>, <h3>, <p>, <ul>, <li>, <strong>) to structure the document elegantly. 
-6. FORBIDDEN CHARACTERS: You are STRICTLY FORBIDDEN from using the '#' symbol for headers or formatting. You are STRICTLY FORBIDDEN from wrapping the output in ```html or ``` blocks. Just output the raw text with HTML tags.
-7. LANGUAGE: Strictly Academic English. Do NOT say 'As an AI'.
-8. ENGAGEMENT MODULE: At the very end of the article, output an <h2> element titled "📚 Related Encyclopedia Concepts", followed by an HTML <ul> list of 3 highly related academic topics with brief descriptions to keep readers exploring.
-
-Seed Context for Expansion: {context_data}"""
-
-        logging.info("🧠 2. Engaging Mistral AI Core...")
-        url = "https://api.mistral.ai/v1/chat/completions"
-        headers = {
-            "Content-Type": "application/json", 
-            "Authorization": f"Bearer {API_KEY}"
-        }
-        data = json.dumps({
-            "model": "mistral-large-latest", 
-            "messages": [{"role": "user", "content": prompt}], 
-            "temperature": 0.22 # Low temp for factual accuracy
-        }).encode('utf-8')
-
-        req_ai = Request(url, data=data, headers=headers)
-        
-        try:
-            response = urlopen(req_ai, timeout=60)
-            resp_data = response.read().decode()
-        except HTTPError as e:
-            logging.error(f"❌ MISTRAL API REJECTED REQUEST (HTTP {e.code}):\n{e.read().decode('utf-8')}")
-            return
-        except Exception as e:
-            logging.error(f"❌ MISTRAL CONNECTION TIMEOUT/ERROR: {e}")
+        if not res.get('query', {}).get('search'): 
+            print("❌ ERROR: No results found on Wikipedia.", flush=True)
             return
             
-        generated_html = json.loads(resp_data)['choices'][0]['message']['content']
-        logging.info("✅ 3. Mistral Neural Generation Complete.")
+        actual_title = res['query']['search'][0]['title']
 
-        # ------------------------------------------------------------------
-        # SANITIZATION LAYER (REMOVING HASHTAGS & MARKDOWN ARTIFACTS)
-        # ------------------------------------------------------------------
-        generated_html = re.sub(r'#+\s*', '', generated_html)
-        generated_html = re.sub(r'```html', '', generated_html)
-        generated_html = re.sub(r'```', '', generated_html)
-        
-        # Strip invalid characters from title for the file name
-        clean_title = re.sub(r'[#*@\"\'\:\;\/\\\?\!\.]', '', verified_title).strip()
-        date_str = datetime.now().strftime('%Y-%m-%dT%H:%M:%S')
+        ext_url = f"https://en.wikipedia.org/w/api.php?action=query&prop=extracts&exlimit=1&titles={quote(actual_title)}&explaintext=1&format=json"
+        req2 = urllib.request.Request(ext_url, headers={'User-Agent': random.choice(AGENTS)})
+        context = list(json.loads(urllib.request.urlopen(req2).read().decode())['query']['pages'].values())[0].get('extract', '')[:1800]
 
-        # ------------------------------------------------------------------
-        # UNIVERSAL TRANSLATION WIDGET INJECTION
-        # ------------------------------------------------------------------
-        translation_widget = """
-<div id="google_translate_element" style="margin: 20px 0; padding: 15px; background: #ffffff; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border-left: 5px solid #2980b9;">
-    <strong style="color: #2c3e50; font-family: sans-serif; display: block; margin-bottom: 10px;">🌐 Read this Academic Article in any language:</strong>
-</div>
-<script type="text/javascript">
-function googleTranslateElementInit() {
-  new google.translate.TranslateElement({pageLanguage: 'en', layout: google.translate.TranslateElement.InlineLayout.SIMPLE}, 'google_translate_element');
-}
-</script>
-<script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
-"""
-        
-        markdown_content = f"---\ntitle: \"{clean_title}\"\ndate: {date_str}\ncategories: [\"{category.replace('_', ' ')}\"]\n---\n{translation_widget}\n\n{generated_html}\n\n<br><p style='text-align:center; color:#7f8c8d; border-top: 1px solid #eee; padding-top: 15px; font-size: 0.9em;'>Curated and Fact-Checked by the Mnjnef Global Educational Encyclopedia Core.</p>"
-
-        # Determine Hugo Directory
-        site_dirs = ["/var/www/mnjnef.com", "/var/www/html", "/root/mnjnef_site"]
-        active_dir = next((d for d in site_dirs if os.path.exists(os.path.join(d, "config.toml")) or os.path.exists(os.path.join(d, "hugo.toml"))), None)
-        
-        if not active_dir: 
-            logging.error("❌ CRITICAL: Hugo config directory not found on server!")
-            return
-
-        logging.info(f"📁 4. Writing data to volume: {active_dir}")
-        post_path = os.path.join(active_dir, 'content', 'posts', f"mnjnef_{int(time.time())}.md")
-        os.makedirs(os.path.dirname(post_path), exist_ok=True)
-        with open(post_path, "w", encoding="utf-8") as f: 
-            f.write(markdown_content)
-
-        logging.info("⚙️ 5. Triggering Hugo Compiler & Nginx Sync...")
-        try:
-            subprocess.run(["hugo", "--gc", "--minify"], cwd=active_dir, capture_output=True, check=True)
-            subprocess.run(f"cp -r {active_dir}/public/* /var/www/html/ 2>/dev/null", shell=True)
-            subprocess.run(f"cp -r {active_dir}/public/* /var/www/mnjnef.com/ 2>/dev/null", shell=True)
-            subprocess.run("chown -R www-data:www-data /var/www/html /var/www/mnjnef.com 2>/dev/null", shell=True)
-            subprocess.run("find /var/www/html /var/www/mnjnef.com -type d -exec chmod 755 {} + 2>/dev/null", shell=True)
-            subprocess.run("find /var/www/html /var/www/mnjnef.com -type f -exec chmod 644 {} + 2>/dev/null", shell=True)
-            
-            logging.info(f"✅ [PUBLISHED SUCCESSFULLY] '{clean_title}' is Live!")
-        except subprocess.CalledProcessError as e:
-            logging.error(f"❌ Hugo Compilation Failed: {e.stderr.decode()}")
-
-    except Exception as e:
-        logging.error(f"❌ UNCAUGHT KERNEL EXCEPTION: {e}")
-
-# Immediate initialization of the first article
-generate_academic_article()
-
-# Infinite Organic Publishing Loop (24/7)
-while True:
-    # Organic Anti-Bot Ban Jitter (22 to 30 seconds exactly as requested)
-    delay = random.uniform(22.0, 30.0)
-    logging.info(f"⏳ [ANTI-BAN SHIELD] Organic delay active. Next publication in {delay:.2f} seconds...")
-    time.sleep(delay)
-    generate_academic_article()
-EOF
-
-# ------------------------------------------------------------------------------
-# 5. INITIATE UNSTOPPABLE DAEMON SERVICE
-# ------------------------------------------------------------------------------
-echo "[5/5] Launching Mnjnef Titan Engine as an Immortal Background Service..."
-
-cat << 'SRV' > /etc/systemd/system/mnjnef_titan.service
-[Unit]
-Description=Mnjnef Enterprise Titan Core (Mistral AI)
-After=network.target
-
-[Service]
-Type=simple
-User=root
-ExecStart=/usr/bin/python3 /root/titan_mistral_core.py
-Restart=always
-RestartSec=5
-StandardOutput=journal
-StandardError=journal
-SyslogIdentifier=mnjnef_titan
-
-[Install]
-WantedBy=multi-user.target
-SRV
-
-systemctl daemon-reload
-systemctl enable mnjnef_titan > /dev/null 2>&1
-systemctl restart mnjnef_titan
-
-echo "================================================================="
-echo "✅ SERVER TUNED. SECURITY ACTIVE. AI CORE ONLINE."
-echo "================================================================="
-echo "Displaying Live Server Logs. Press Ctrl+C to exit log view."
-echo "The server will continue publishing 24/7 in the background."
-echo "================================================================="
-
-journalctl -u mnjnef_titan -f
+        prompt = f"ACT AS: Chief Editor of Mnjnef Encyclopedia.\nTASK: Write a MASSIVE, exhaustive educational article about '{actual_title}'.\nRULES:\n1. NO POLITICS, NO FAKE NEWS, NO LIES.\n2. Provide deep educational value.\n3. Format with HTML tags (<h2>, <p>, <ul>).\n4. STRICTLY NO '#' SYMBOLS. DO NOT wrap in 
 
 ```
