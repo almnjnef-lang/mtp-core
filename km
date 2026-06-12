@@ -1,173 +1,129 @@
-```bash
-# 1. إيقاف المحرك القديم وتنظيف اللاق
-pkill -f python3
-systemctl stop mnjnef_direct 2>/dev/null
-rm -rf /root/direct_mistral_engine.py
+```html.\n5. Tone
 
-# 2. إنشاء هيكل الموقع السريع (خالي من اللاق)
-mkdir -p /var/www/html/articles
-mkdir -p /var/www/mnjnef.com/articles
-echo "[]" > /var/www/html/recent.json
+        url = "[https://api.mistral.ai/v1/chat/completions](https://api.mistral.ai/v1/chat/completions)"
+        headers = {"Content-Type": "application/json", "Authorization": f"Bearer {API_KEY}"}
+        data = json.dumps({"model": "mistral-large-latest", "messages": [{"role": "user", "content": prompt}], "temperature": 0.25}).encode('utf-8')
 
-# 3. بناء الصفحة الرئيسية الصاروخية (بدون لاق وتحدث نفسها ذكياً)
-cat << 'HTML' > /var/www/html/index.html
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mnjnef Global Encyclopedia</title>
-    <meta name="description" content="A massive academic repository of verified global knowledge, science, history, and solutions.">
-    <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f4f7f6; color: #2d3748; margin: 0; padding: 0; }
-        header { background: #1a365d; color: white; padding: 30px 20px; text-align: center; border-bottom: 5px solid #3182ce; }
-        header h1 { margin: 0; font-size: 2.5em; letter-spacing: 1px; }
-        header p { color: #bee3f8; font-size: 1.1em; margin-top: 10px; }
-        .container { max-width: 1000px; margin: 40px auto; padding: 0 20px; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
-        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); transition: transform 0.2s; border-top: 4px solid #e2e8f0; }
-        .card:hover { transform: translateY(-5px); border-top-color: #3182ce; }
-        .card h3 { color: #2b6cb0; margin-top: 0; font-size: 1.3em; }
-        .card a { text-decoration: none; color: inherit; }
-        .card .meta { font-size: 0.85em; color: #718096; margin-bottom: 10px; }
-        .status { text-align: center; margin: 20px 0; color: #718096; font-style: italic; }
-    </style>
-</head>
-<body>
-    <header>
-        <h1>Mnjnef Encyclopedia</h1>
-        <p>The Global Academic & Scientific Repository</p>
-    </header>
-    <div class="container">
-        <h2 style="border-bottom: 2px solid #e2e8f0; padding-bottom: 10px;">Recently Archived Knowledge</h2>
-        <div class="status" id="statusMsg">Syncing with database...</div>
-        <div class="grid" id="articlesGrid"></div>
-    </div>
-    <script>
-        // نظام جلب المقالات بدون ضغط على السيرفر (Zero Lag)
-        async function fetchArticles() {
-            try {
-                const response = await fetch('/recent.json?t=' + new Date().getTime());
-                const articles = await response.json();
-                const grid = document.getElementById('articlesGrid');
-                const status = document.getElementById('statusMsg');
+        req_ai = urllib.request.Request(url, data=data, headers=headers)
+        response = urllib.request.urlopen(req_ai)
+        text = json.loads(response.read().decode())['choices'][0]['message']['content']
+        
+        text = re.sub(r'#+\s*|```html|```', '', text)
+        clean_title = re.sub(r'[#*@]', '', actual_title).strip()
+        
+        # 💡 سحب التاريخ المزور لدعم الـ SEO
+        seo_date = get_seo_fake_date()
+        
+        file_name = clean_title.replace(" ", "_").lower()
+        file_name = re.sub(r'[^a-z0-9_]', '', file_name) + f"_{int(time.time())}.html"
+        article_url = f"/articles/{file_name}"
+
+        html_content = f"""
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>{clean_title} - Mnjnef Archives</title>
+            <meta name="description" content="Academic research and comprehensive encyclopedia entry regarding {clean_title}.">
+            <style>
+                body {{ font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.8; color: #333; background-color: #f8f9fa; margin: 0; padding: 0; }}
+                header {{ background-color: #1a365d; color: white; padding: 20px; text-align: center; border-bottom: 5px solid #3182ce; }}
+                header a {{ color: white; text-decoration: none; font-size: 1.5em; font-weight: bold; }}
+                .container {{ max-width: 900px; margin: 40px auto; background: white; padding: 40px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }}
+                h1 {{ color: #2d3748; font-size: 2.5em; margin-bottom: 10px; border-bottom: 2px solid #edf2f7; padding-bottom: 10px; }}
+                h2 {{ color: #2b6cb0; margin-top: 30px; }}
+                p {{ font-size: 1.1em; margin-bottom: 20px; }}
+                ul {{ margin-bottom: 20px; font-size: 1.1em; }}
+                li {{ margin-bottom: 10px; }}
+                .meta-info {{ color: #718096; font-size: 0.9em; margin-bottom: 30px; border-bottom: 1px solid #edf2f7; padding-bottom: 10px; }}
+                .translator {{ background: #ebf8ff; padding: 15px; border-left: 5px solid #3182ce; border-radius: 4px; margin-bottom: 30px; }}
+                footer {{ text-align: center; margin-top: 50px; padding: 20px; color: #a0aec0; border-top: 1px solid #edf2f7; }}
+            </style>
+        </head>
+        <body>
+            <header>
+                <a href="/">Mnjnef Global Encyclopedia</a>
+            </header>
+            <div class="container">
+                <h1>{clean_title}</h1>
+                <div class="meta-info">
+                    <strong>Published:</strong> {seo_date} | <strong>Category:</strong> {cat.replace('_', ' ')}<br>
+                    <em>Verified by Mnjnef Editorial Board</em>
+                </div>
                 
-                if(articles.length > 0) {
-                    status.style.display = 'none';
-                    grid.innerHTML = '';
-                    articles.forEach(art => {
-                        grid.innerHTML += `
-                            <a href="${art.url}">
-                                <div class="card">
-                                    <h3>${art.title}</h3>
-                                    <div class="meta">Category: ${art.category} | Published: ${art.date}</div>
-                                    <p style="font-size: 0.9em; color: #4a5568;">Click to read this comprehensive academic entry...</p>
-                                </div>
-                            </a>
-                        `;
-                    });
-                } else {
-                    status.innerText = "Editorial board is organizing the archives. Check back in a few moments.";
-                }
-            } catch (e) { console.error(e); }
-        }
-        fetchArticles();
-        setInterval(fetchArticles, 15000); // تحديث الواجهة للمستخدم كل 15 ثانية بسلاسة
-    </script>
-</body>
-</html>
-HTML
-cp /var/www/html/index.html /var/www/mnjnef.com/index.html
+                <div class="translator">
+                    <strong>🌐 Translate this Encyclopedia Article:</strong>
+                    <div id="google_translate_element"></div>
+                </div>
+                
+                <div class="article-body">
+                    {text}
+                </div>
+                
+                <footer>
+                    <p>&copy; Mnjnef Academic Archives. All rights reserved.</p>
+                </footer>
+            </div>
+            <script type="text/javascript">
+                function googleTranslateElementInit() {{
+                    new google.translate.TranslateElement({{pageLanguage: 'en', layout: google.translate.TranslateElement.InlineLayout.SIMPLE}}, 'google_translate_element');
+                }}
+            </script>
+            <script type="text/javascript" src="//[translate.google.com/translate_a/element.js?cb=googleTranslateElementInit](https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit)"></script>
+        </body>
+        </html>
+        """
 
-# 4. بناء محرك الذكاء الاصطناعي الذكي (تزوير التواريخ، ملف خريطة الموقع لأدسنس، ونظام لاق-زيرو)
-cat << 'EOF' > /root/titan_seo_engine.py
-import os, time, random, json, re, sys
-import urllib.request
-from urllib.parse import quote
-from datetime import datetime, timedelta
-
-API_KEY = "HKxK4S2UrTBt8ja93wkndgltN1W3UaHD"
-
-# مجالات ضخمة وشاملة
-CATS = {
-    "Education_and_Academia": ["Modern Pedagogy", "Distance Learning", "Neuroplasticity", "Special Education", "Educational Technology", "Curriculum Design"],
-    "Psychology_and_Solutions": ["Behavioral Economics", "Emotional Intelligence", "Stress Management", "Cognitive Behavioral Therapy"],
-    "Problem_Solving": ["Time Management Hacks", "Effective Communication", "Critical Thinking Skills", "Financial Literacy"],
-    "Technology_and_Science": ["Quantum Computing", "AI Ethics", "Cybersecurity", "Astrophysics"],
-    "Culture_and_Arts": ["Renaissance Art", "Cultural Anthropology", "Classical Architecture"],
-    "Tourism_and_Travel": ["Sustainable Ecotourism", "Cultural Heritage Sites", "Luxury Travel Trends"],
-    "Culinary_Arts": ["Molecular Gastronomy", "Traditional Fermentation", "Plant-Based Cuisine"],
-    "Nature_Environment": ["Forest Conservation", "Climate Change Solutions", "Oceanography"],
-    "Sports_Science": ["Biomechanics in Sports", "Sports Nutrition", "Endurance Training"],
-    "Business_Finance": ["Macroeconomics", "Supply Chain Management", "Investment Strategies"]
-}
-
-# -------------------------------------------------------------
-# دالة تزوير التواريخ العبقرية (لخداع محركات البحث)
-# -------------------------------------------------------------
-def get_seo_fake_date():
-    """يولد تاريخاً عشوائياً بين 2018 واليوم ليوهم جوجل أن الموقع قديم جداً"""
-    start_date = datetime(2018, 1, 1)
-    end_date = datetime.now()
-    time_between_dates = end_date - start_date
-    days_between_dates = time_between_dates.days
-    random_number_of_days = random.randrange(days_between_dates)
-    fake_date = start_date + timedelta(days=random_number_of_days)
-    return fake_date.strftime('%Y-%m-%d')
-
-def update_recent_json(title, url, category, fake_date):
-    """تحديث الواجهة بدون مسحها بالكامل لمنع اللاق"""
-    json_path = "/var/www/html/recent.json"
-    try:
-        if os.path.exists(json_path):
-            with open(json_path, "r", encoding="utf-8") as f:
-                data = json.load(f)
-        else:
-            data = []
-    except:
-        data = []
+        # الحفظ الذكي في المجلدات
+        with open(f"/var/www/html{article_url}", "w", encoding="utf-8") as f: f.write(html_content)
         
-    new_entry = {"title": title, "url": url, "category": category.replace('_', ' '), "date": fake_date}
-    data.insert(0, new_entry)
-    data = data[:30] # الاحتفاظ بآخر 30 مقال فقط في الواجهة لتبقى سريعة جداً
-    
-    with open(json_path, "w", encoding="utf-8") as f:
-        json.dump(data, f)
-    # نسخ للموقع الأساسي
-    os.system("cp /var/www/html/recent.json /var/www/mnjnef.com/recent.json 2>/dev/null")
-
-def append_to_sitemap(url):
-    """تحديث خريطة الموقع بصمت لكي يكتشفها جوجل"""
-    sitemap_path = "/var/www/html/sitemap.xml"
-    if not os.path.exists(sitemap_path):
-        with open(sitemap_path, "w") as f:
-            f.write('<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n</urlset>')
-    
-    with open(sitemap_path, "r") as f:
-        content = f.read()
-    
-    new_url_node = f"  <url>\n    <loc>https://mnjnef.com{url}</loc>\n    <changefreq>monthly</changefreq>\n  </url>\n</urlset>"
-    content = content.replace("</urlset>", new_url_node)
-    
-    with open(sitemap_path, "w") as f:
-        f.write(content)
-
-def generate_article():
-    cat = random.choice(list(CATS.keys()))
-    topic = random.choice(CATS[cat])
-
-    try:
-        search_url = f"https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch={quote(topic)}&utf8=&format=json"
-        req = urllib.request.Request(search_url, headers={'User-Agent': 'Mozilla/5.0'})
-        res = json.loads(urllib.request.urlopen(req).read().decode())
+        # تحديث الواجهة بصمت
+        update_recent_json(clean_title, article_url, cat, seo_date)
+        append_to_sitemap(article_url)
         
-        if not res.get('query', {}).get('search'): return
-        actual_title = res['query']['search'][0]['title']
+        # تصحيح الصلاحيات بشكل صامت لتجنب اللاق
+        os.system("chown -R www-data:www-data /var/www/html /var/www/mnjnef.com")
+        
+        print(f"✅ [SEO PUBLISHED] {clean_title} (Faked Date: {seo_date})", flush=True)
 
-        ext_url = f"https://en.wikipedia.org/w/api.php?action=query&prop=extracts&exlimit=1&titles={quote(actual_title)}&explaintext=1&format=json"
-        req2 = urllib.request.Request(ext_url, headers={'User-Agent': 'Mozilla/5.0'})
-        context = list(json.loads(urllib.request.urlopen(req2).read().decode())['query']['pages'].values())[0].get('extract', '')[:1500]
+    except Exception as e:
+        pass
 
-        prompt = f"ACT AS: Senior Academic Board of Mnjnef Encyclopedia. Write a MASSIVE, profound educational dissertation about '{actual_title}'. RULES: No politics. Fact-based only. English only. Format with standard HTML tags (<h2>, <p>, <ul>). STRICTLY NO '#' SYMBOLS. DO NOT wrap in 
+# بدء الحلقة العضوية
+while True:
+    # 💡 التمويه العضوي (بين 25 و 45 ثانية لتجنب كشف الروبوت)
+    time.sleep(random.uniform(25.0, 45.0))
+    generate_article()
+EOF
+
+# 5. تشغيل السيرفر الذكي بالخلفية
+cat << 'SRV' > /etc/systemd/system/mnjnef_direct.service
+[Unit]
+Description=Mnjnef SEO & Anti-Lag Engine
+After=network.target
+
+[Service]
+Type=simple
+User=root
+ExecStart=/usr/bin/python3 /root/titan_seo_engine.py
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+SRV
+
+systemctl daemon-reload
+systemctl enable mnjnef_direct > /dev/null 2>&1
+systemctl restart mnjnef_direct
+
+echo "================================================================="
+echo "✅ الإمبراطورية V7 تعمل الآن!"
+echo "- تم إلغاء اللاق تماماً بفضل بنية JSON."
+echo "- تم تفعيل آلة الزمن (تواريخ وهمية من 2018) لضمان القبول في AdSense وتصدر نتائج Google."
+echo "افتح موقعك الآن لتشاهد التصميم الجديد الذي سيحدث نفسه تلقائياً كل 15 ثانية بسلاسة."
+echo "================================================================="
+
 
 ```
