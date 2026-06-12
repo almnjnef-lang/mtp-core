@@ -1,15 +1,2 @@
-# 1. مسح كلمة الذكاء الاصطناعي من المقالات التجريبية الحالية واستبدالها بعبارة احترافية
-find /var/www/html /var/www/mnjnef.com -type f -name "*.html" -exec sed -i 's/The AI engine is currently running in the background and will start replacing these demo articles with massive academic dissertations automatically every 30 seconds./Our independent research team is currently indexing the archives and will publish comprehensive academic dissertations shortly./g' {} +
-
-# 2. مسح أي كلمة ذكاء اصطناعي من كامل الموقع
-find /var/www/html /var/www/mnjnef.com -type f -name "*.html" -exec sed -i 's/AI engine/Editorial Board/gI' {} +
-find /var/www/html /var/www/mnjnef.com -type f -name "*.html" -exec sed -i 's/Artificial Intelligence/Independent Researchers/gI' {} +
-
-# 3. مسح الكلمات من المحرك نفسه لكي لا يكتبها في المستقبل
-sed -i 's/The AI engine is currently running in the background and will start replacing these demo articles with massive academic dissertations automatically every 30 seconds./Our independent research team is currently indexing the archives and will publish comprehensive academic dissertations shortly./g' /root/titan_seo_engine.py
-sed -i 's/AI engine/Editorial Board/gI' /root/titan_seo_engine.py
-
-# 4. إعادة التشغيل بهدوء لتطبيق التعديلات فوراً
 systemctl restart mnjnef_direct
-
-echo "✅ تم تدمير أي أثر لكلمة ذكاء اصطناعي! الموقع الآن يبدو وكأنه يدار بواسطة جيش من الأكاديميين."
+systemctl restart nginx
