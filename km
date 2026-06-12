@@ -1,88 +1,53 @@
-# 1. إيقاف المحرك الصامت مؤقتاً
+# 1. إيقاف المحرك مؤقتاً
 systemctl stop mnjnef_titan 2>/dev/null
 
-# 2. بناء سكريبت النشر الفوري الناطق (بدون كواتم أخطاء)
-cat << 'EOF' > /root/force_real_article.py
-import os, json, subprocess, re, sys
-from urllib.request import urlopen, Request
-from urllib.parse import quote
-from datetime import datetime
+# 2. بناء وتشغيل أداة الإصلاح الذكية
+cat << 'EOF' > /root/fix_key.py
+import urllib.request, json, sys, os, re
 
-print("=====================================================")
-print("🔍 جاري قراءة مفتاح الذكاء الاصطناعي من المحرك...")
+print("==================================================")
+print("🔑 أداة الإصلاح الذكية لمفتاح الذكاء الاصطناعي")
+print("==================================================")
 
-# استخراج المفتاح من الملف الأساسي
+# طلب المفتاح وتنظيفه من المسافات المخفية تلقائياً
+key = input("👉 الصق مفتاح Gemini الخاص بك هنا ثم اضغط Enter: ").strip()
+
+if not key or len(key) < 20:
+    print("❌ المفتاح قصير جداً أو فارغ. يرجى التأكد من نسخه بالكامل.")
+    sys.exit(1)
+
+print("⏳ جاري فحص المفتاح مع سيرفرات جوجل...")
 try:
-    with open('/root/titan_core.py', 'r') as f:
-        content = f.read()
-    match = re.search(r'API_KEY\s*=\s*"([^"]+)"', content)
-    if not match or match.group(1) == "ضع_مفتاحك_هنا" or match.group(1) == "API_KEY_NOT_FOUND":
-        print("❌ خطأ قاتل: مفتاح Gemini غير موجود أو مزيف! الرجاء وضع المفتاح الحقيقي.")
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={key}"
+    data = json.dumps({"contents": [{"parts": [{"text": "Hello"}]}]}).encode('utf-8')
+    req = urllib.request.Request(url, data=data, headers={'Content-Type': 'application/json'})
+    urllib.request.urlopen(req)
+    print("✅ المفتاح سليم 100% وتم قبوله من جوجل!")
+    
+    # حقن المفتاح في المحرك التيتاني
+    if os.path.exists('/root/titan_core.py'):
+        with open('/root/titan_core.py', 'r') as f:
+            content = f.read()
+        content = re.sub(r'API_KEY\s*=\s*"[^"]*"', f'API_KEY = "{key}"', content)
+        with open('/root/titan_core.py', 'w') as f:
+            f.write(content)
+        print("✅ تم زرع المفتاح النظيف في المحرك بنجاح.")
+    else:
+        print("❌ لم يتم العثور على المحرك التيتاني! يرجى تنفيذ كود التأسيس السابق أولاً.")
         sys.exit(1)
-    API_KEY = match.group(1)
-    print("✅ تم العثور على المفتاح بنجاح.")
-except Exception as e:
-    print(f"❌ فشل في قراءة الملف: {e}")
-    sys.exit(1)
-
-print("🌍 جاري سحب موضوع أكاديمي حقيقي من ويكيبيديا...")
-try:
-    req = Request("https://en.wikipedia.org/api/rest_v1/page/random/title", headers={'User-Agent': 'Mnjnef/5.0'})
-    actual_title = json.loads(urlopen(req).read().decode())['items'][0]['title']
-    print(f"✅ تم التقاط الموضوع: {actual_title.replace('_', ' ')}")
-    
-    ext_url = f"https://en.wikipedia.org/w/api.php?action=query&prop=extracts&exlimit=1&titles={quote(actual_title)}&explaintext=1&format=json"
-    req2 = Request(ext_url, headers={'User-Agent': 'Mnjnef/5.0'})
-    context = list(json.loads(urlopen(req2).read().decode())['query']['pages'].values())[0].get('extract', '')[:1500]
-except Exception as e:
-    print(f"❌ فشل الاتصال بويكيبيديا: {e}")
-    sys.exit(1)
-
-print("🧠 جاري إرسال البيانات للذكاء الاصطناعي (Gemini) لصياغة الموسوعة الطويلة...")
-try:
-    prompt = f"ACT AS: Chief Academic Editor of Mnjnef Global Encyclopedia.\nTASK: Write a MASSIVE, deeply educational encyclopedia article about '{actual_title}'.\nRULES: STRICTLY ENGLISH. NO POLITICS, NO LIES. Very long academic dissertation. Use proper HTML tags (<h2>, <p>). NO HASHTAGS (#). Tone: Authoritative. Context: {context}"
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={API_KEY}"
-    data = json.dumps({"contents": [{"parts": [{"text": prompt}]}]}).encode('utf-8')
-    req_ai = Request(url, data=data, headers={'Content-Type': 'application/json', 'User-Agent': 'Mnjnef/5.0'})
-    
-    response = urlopen(req_ai)
-    text = json.loads(response.read().decode())['candidates'][0]['content']['parts'][0]['text']
-    text = re.sub(r'#+\s*', '', text)
-    print("✅ الذكاء الاصطناعي كتب المقال بنجاح!")
-except Exception as e:
-    print(f"❌ فشل الذكاء الاصطناعي في الكتابة! السبب المباشر: {e}")
-    sys.exit(1)
-
-print("📝 جاري حفظ المقال في الموقع وبناء الواجهة...")
-try:
-    clean_title = re.sub(r'[#*@]', '', actual_title).strip()
-    date_str = datetime.now().strftime('%Y-%m-%dT%H:%M:%S')
-    markdown = f"---\ntitle: \"{clean_title}\"\ndate: {date_str}\ncategories: [\"Educational_Research\"]\n---\n{text}\n\n<br><p style='text-align:center; color:#7f8c8d; border-top: 1px solid #eee; padding-top: 10px;'>Curated by the Mnjnef Global Educational Encyclopedia Core.</p>"
-    
-    site_dirs = ["/var/www/mnjnef.com", "/var/www/html", "/root/mnjnef_site"]
-    active_dir = next((d for d in site_dirs if os.path.exists(os.path.join(d, "config.toml")) or os.path.exists(os.path.join(d, "hugo.toml"))), None)
-    
-    post_path = os.path.join(active_dir, 'content', 'posts', f"mnjnef_real_{int(time.time())}.md")
-    os.makedirs(os.path.dirname(post_path), exist_ok=True)
-    with open(post_path, "w", encoding="utf-8") as f:
-        f.write(markdown)
         
-    subprocess.run(["hugo", "--gc", "--minify"], cwd=active_dir, capture_output=True)
-    subprocess.run(f"cp -r {active_dir}/public/* /var/www/html/ 2>/dev/null", shell=True)
-    subprocess.run(f"cp -r {active_dir}/public/* /var/www/mnjnef.com/ 2>/dev/null", shell=True)
-    print("✅ تم بناء الموقع بنجاح!")
 except Exception as e:
-    print(f"❌ فشل في حفظ وبناء الموقع: {e}")
+    print(f"❌ جوجل ترفض المفتاح! السبب: {e}")
+    print("💡 يرجى التأكد من نسخ المفتاح الصحيح والفعّال من Google AI Studio.")
     sys.exit(1)
-
-print("=====================================================")
 EOF
 
-# 3. تشغيل الكود الفوري
-python3 /root/force_real_article.py
+python3 /root/fix_key.py
 
-# 4. إصلاح الصلاحيات لكسر خطأ 403 بناءً على المقال الحقيقي الذي تم نشره الآن
-chown -R www-data:www-data /var/www/html /var/www/mnjnef.com
-find /var/www/html /var/www/mnjnef.com -type d -exec chmod 755 {} \;
-find /var/www/html /var/www/mnjnef.com -type f -exec chmod 644 {} \;
-systemctl restart nginx 2>/dev/null || systemctl restart apache2 2>/dev/null
+# 3. إذا نجح الفحص، يتم إطلاق الإمبراطورية فوراً
+if [ $? -eq 0 ]; then
+    echo "🚀 جاري تشغيل المحرك التيتاني..."
+    systemctl start mnjnef_titan
+    echo "✅ المحرك يعمل الآن! جاري عرض البث المباشر (اضغط Ctrl+C للخروج من البث لاحقاً):"
+    journalctl -u mnjnef_titan -f
+fi
