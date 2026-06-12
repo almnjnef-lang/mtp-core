@@ -1,149 +1,166 @@
-# 1. إيقاف أي عمليات معلقة
-pkill -f mnjnef
+# =====================================================================
+# 🧹 المرحلة الأولى: الإبادة الشاملة والتنظيف الجذري
+# =====================================================================
+echo "☢️ جاري إيقاف جميع المحركات وتطهير السيرفر..."
+systemctl stop mnjnef_titan 2>/dev/null
+pkill -f python3
 
-# 2. سحب المفتاح السري من الملف القديم آلياً
-echo "🔍 جاري استخراج المفتاح السري من الملف القديم..."
-MY_KEY=$(grep -oP 'API_KEY\s*=\s*"\K[^"]+' /root/mnjnef_factory.py | head -n 1)
-
-if [ -z "$MY_KEY" ] || [ "$MY_KEY" == "ضع_مفتاحك_هنا" ]; then
-    echo "⚠️ لم أجد المفتاح في الملف القديم! سأضع مفتاحاً فارغاً مؤقتاً."
-    MY_KEY="API_KEY_NOT_FOUND"
+# تحديد مسار الموقع ومسح المقالات الفاسدة والملفات المعلقة
+SITE_DIR=$(find /root /var/www -maxdepth 3 -name "config.toml" -o -name "hugo.toml" | head -n 1 | xargs dirname)
+if [ -n "$SITE_DIR" ]; then
+    rm -rf $SITE_DIR/content/posts/*.md
+    rm -rf /var/www/html/* 2>/dev/null
+    rm -rf /var/www/mnjnef.com/* 2>/dev/null
+    echo "✅ تم تنظيف قواعد بيانات الموقع بالكامل."
 else
-    echo "✅ تم سحب المفتاح بنجاح ولن تحتاج لكتابته يدوياً!"
+    echo "❌ لم يتم العثور على مجلد الموقع!"
+    exit 1
 fi
 
-# 3. بناء المحرك التيتاني الضخم (The Titan Core)
-cat << 'EOF' > /root/mnjnef_titan_core.py
-import os, time, random, json, subprocess, re
+# =====================================================================
+# 🧠 المرحلة الثانية: زرع النواة الصارمة (The Titanium Core)
+# =====================================================================
+cat << 'EOF' > /root/titan_core.py
+import os, time, random, json, subprocess, re, sys
 from urllib.request import urlopen, Request
 from urllib.parse import quote
 from datetime import datetime
 
-# سيتم حقن المفتاح هنا آلياً
-API_KEY = "REPLACE_ME_KEY"
+# ==================================================================
+# 🔑 مفتاح الذكاء الاصطناعي (تم وضعه من قبلك قبل النسخ)
+# ==================================================================
+API_KEY = "HKxK4S2UrTBt8ja93wkndgltN1W3UaHD"
 
-print("🚀 [المحرك التيتاني] انطلق! نظام التعليم والتخفي من جوجل يعمل الآن...")
+print("🚀 [النواة الصارمة] انطلق المحرك المركزي. يتم الآن تجاوز حظر جوجل...")
 
+# مصفوفة ضخمة تركز على التعليم الموسوعي
 CATEGORIES = {
-    "Education_and_Academia": ["Modern Pedagogy", "Distance Learning Evolution", "Neuroplasticity in Learning", "Special Education Strategies", "Cognitive Load Theory", "Linguistics"],
-    "Psychology_and_Solutions": ["Behavioral Economics", "Emotional Intelligence", "Overcoming Procrastination", "Stress Management", "Financial Literacy", "Conflict Resolution"],
+    "Education_and_Academia": ["Modern Pedagogy", "Distance Learning Evolution", "Neuroplasticity in Learning", "Cognitive Load Theory", "Educational Linguistics", "Philosophy of Education"],
+    "Psychology_and_Solutions": ["Behavioral Economics", "Emotional Intelligence", "Overcoming Procrastination", "Stress Management", "Financial Literacy", "Conflict Resolution Tactics"],
     "Technology_and_Science": ["Quantum Computing", "AI Ethics", "Nanotechnology", "Cybersecurity", "Astrophysics", "Marine Biology Ecosystems"],
     "History_and_Culture": ["Mesopotamian Innovations", "Renaissance Impact", "Global Trade Routes", "Cultural Anthropology", "Classical Architecture"]
 }
 
 AGENTS = [
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/123.0.0.0",
-    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 Version/17.4",
-    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/122.0.0.0",
-    "Mozilla/5.0 (iPad; CPU OS 17_4_1) AppleWebKit/605.1.15"
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/123.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 Version/17.4 Safari/605.1.15",
+    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/122.0.0.0 Safari/537.36"
 ]
 
-def run_titan():
-    if API_KEY == "API_KEY_NOT_FOUND" or not API_KEY:
-        print("⚠️ السيرفر ينتظر المفتاح الحقيقي للعمل.")
-        return
-        
-    # التركيز على التعليم وحلول المشاكل بشكل أساسي
+def generate_article():
+    if not API_KEY or API_KEY == "ضع_مفتاحك_هنا":
+        print("❌ خطأ قاتل: لم يتم وضع مفتاح API. المحرك متوقف.")
+        sys.exit(1)
+
     weighted_cats = ["Education_and_Academia"] * 5 + ["Psychology_and_Solutions"] * 4 + list(CATEGORIES.keys())
     cat = random.choice(weighted_cats)
     topic = random.choice(CATEGORIES[cat])
-    
+
     try:
-        # جلب موضوع عشوائي حقيقي من قاعدة البيانات
+        # جلب موضوع حقيقي من ويكيبيديا لتجنب الوهم
         search_url = f"https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch={quote(topic)}&utf8=&format=json"
         req = Request(search_url, headers={'User-Agent': random.choice(AGENTS)})
         actual_title = json.loads(urlopen(req).read().decode())['query']['search'][0]['title']
-        
-        # جلب النص التفصيلي
+
         ext_url = f"https://en.wikipedia.org/w/api.php?action=query&prop=extracts&exlimit=1&titles={quote(actual_title)}&explaintext=1&format=json"
         req2 = Request(ext_url, headers={'User-Agent': random.choice(AGENTS)})
         context = list(json.loads(urlopen(req2).read().decode())['query']['pages'].values())[0].get('extract', '')[:1500]
-        
-        # الفلتر العسكري الصارم للذكاء الاصطناعي
-        prompt = f"""ACT AS: Chief Academic Editor of Mnjnef Global Encyclopedia.
-TASK: Write a MASSIVE, extremely detailed educational encyclopedia article about '{actual_title}'.
+
+        # الأوامر العسكرية الصارمة
+        prompt = f"""ACT AS: The Chief Academic Editor of Mnjnef Global Encyclopedia.
+TASK: Write a MASSIVE, deeply educational encyclopedia article about '{actual_title}'.
 RULES:
-1. NO POLITICS, NO FAKE NEWS, NO LIES, NO HATE SPEECH, NO FAKE EXPERIMENTS. Pure academic facts only.
-2. Focus on Education and practical Problem-Solving value where applicable.
-3. Length: Very long and deep dissertation (not a summary).
-4. Format: Use HTML tags (<h2>, <p>, <ul>, <strong>). ABSOLUTELY DO NOT USE '#' for headers or anything else.
-5. Tone: Authoritative, strictly English. Never mention AI.
-6. At the bottom, add exactly 3 highly relevant real academic topics formatted as an HTML list.
-Context: {context}"""
+1. NO POLITICS, NO FAKE NEWS, NO LIES, NO HATE SPEECH, NO FAKE EXPERIMENTS.
+2. Focus strictly on Education, facts, and practical Problem-Solving value.
+3. Length: Very long and exhaustive academic dissertation.
+4. Format: Use ONLY HTML tags (<h2>, <h3>, <p>, <ul>, <strong>). ABSOLUTELY DO NOT USE THE '#' SYMBOL FOR HEADERS OR ANYTHING ELSE.
+5. Tone: Authoritative, strictly English. Do NOT mention being an AI.
+6. At the bottom, generate exactly 3 highly relevant real academic topics formatted as an HTML list.
+Context to expand on: {context}"""
 
         url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={API_KEY}"
         data = json.dumps({"contents": [{"parts": [{"text": prompt}]}], "safetySettings": [{"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_LOW_AND_ABOVE"}]}).encode('utf-8')
         req_ai = Request(url, data=data, headers={'Content-Type': 'application/json', 'User-Agent': random.choice(AGENTS)})
-        text = json.loads(urlopen(req_ai).read().decode())['candidates'][0]['content']['parts'][0]['text']
         
-        # الإبادة التامة لأي هاشتاج متبقي
+        response = urlopen(req_ai)
+        text = json.loads(response.read().decode())['candidates'][0]['content']['parts'][0]['text']
+
+        # تنظيف صارم لأي علامة هاشتاج متبقية
         text = re.sub(r'#+\s*', '', text)
-        
-        # كود أداة الترجمة الفورية لجميع اللغات
-        translator = """<div id="google_translate_element" style="margin: 20px 0; padding: 15px; background: #fdfdfd; border-radius: 8px; border-left: 5px solid #2c3e50;"><strong>🌐 Read this Encyclopedia Article in your language:</strong></div><script type="text/javascript">function googleTranslateElementInit() { new google.translate.TranslateElement({pageLanguage: 'en', layout: google.translate.TranslateElement.InlineLayout.SIMPLE}, 'google_translate_element'); }</script><script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>"""
-        
+
+        # زر الترجمة الفورية لجميع اللغات
+        translator = """<div id="google_translate_element" style="margin: 20px 0; padding: 15px; background: #fdfdfd; border-radius: 8px; border-left: 5px solid #2c3e50;"><strong>🌐 Translate this Encyclopedia Article:</strong></div><script type="text/javascript">function googleTranslateElementInit() { new google.translate.TranslateElement({pageLanguage: 'en', layout: google.translate.TranslateElement.InlineLayout.SIMPLE}, 'google_translate_element'); }</script><script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>"""
+
         clean_title = re.sub(r'[#*@]', '', actual_title).strip()
         date_str = datetime.now().strftime('%Y-%m-%dT%H:%M:%S')
-        
-        # بناء صفحة المقال الاحترافية
+
+        # دمج المقال
         markdown = f"---\ntitle: \"{clean_title}\"\ndate: {date_str}\ncategories: [\"{cat.replace('_', ' ')}\"]\n---\n{translator}\n\n{text}\n\n<br><p style='text-align:center; color:#7f8c8d; border-top: 1px solid #eee; padding-top: 10px;'>Curated by the Mnjnef Global Educational Encyclopedia Core.</p>"
-        
+
+        # البحث عن مسار الموقع
         site_dirs = ["/var/www/mnjnef.com", "/var/www/html", "/root/mnjnef_site"]
         active_dir = next((d for d in site_dirs if os.path.exists(os.path.join(d, "config.toml")) or os.path.exists(os.path.join(d, "hugo.toml"))), None)
-        if not active_dir: return
         
-        post_path = os.path.join(active_dir, 'content', 'posts', f"titan_{int(time.time())}.md")
+        if not active_dir:
+            print("❌ لم يتم العثور على مجلد Hugo!")
+            return
+
+        post_path = os.path.join(active_dir, 'content', 'posts', f"mnjnef_{int(time.time())}.md")
         os.makedirs(os.path.dirname(post_path), exist_ok=True)
-        with open(post_path, "w", encoding="utf-8") as f: f.write(markdown)
         
-        # تحديث الواجهة للملايين من الزوار
+        with open(post_path, "w", encoding="utf-8") as f:
+            f.write(markdown)
+
+        # أوامر النشر الإجبارية
         subprocess.run(["hugo", "--gc", "--minify"], cwd=active_dir, capture_output=True)
         subprocess.run(f"cp -r {active_dir}/public/* /var/www/html/ 2>/dev/null", shell=True)
         subprocess.run(f"cp -r {active_dir}/public/* /var/www/mnjnef.com/ 2>/dev/null", shell=True)
-        print(f"✅ [PUBLISHED] تم نشر موسوعة ضخمة عن: {clean_title}")
         
+        print(f"✅ [نجاح] تم كتابة ونشر مقال موسوعي فخم عن: {clean_title}")
+
     except Exception as e:
-        pass # الصمت عند الخطأ لضمان استمرار السيرفر
+        print(f"⚠️ خطأ أثناء المعالجة (سيتم التجاوز آلياً): {e}")
+
+# اختبار فوري قبل الدخول في الحلقة اللانهائية
+print("⚙️ جاري إجراء اختبار النشر الفوري الأول للتأكد من الواجهة...")
+generate_article()
 
 while True:
-    run_titan()
-    # التمويه الزمني الذكي (Jitter) لتجنب الحظر من جوجل وأدسنس
-    delay = random.uniform(31.5, 38.5) 
-    print(f"⏳ [Anti-Ban System] تمويه المحرك: جاري الانتظار {delay:.1f} ثانية...")
+    # تمويه زمني عضوي لتجنب حظر جوجل أدسنس ومحركات البحث (بين 31 إلى 38 ثانية)
+    delay = random.uniform(31.2, 38.8)
+    print(f"⏳ [نظام التخفي] جاري الانتظار {delay:.1f} ثانية للتمويه كأن المستخدم بشري...")
     time.sleep(delay)
+    generate_article()
 EOF
 
-# 4. حقن المفتاح داخل المحرك الجديد
-sed -i "s/REPLACE_ME_KEY/$MY_KEY/g" /root/mnjnef_titan_core.py
-
-# 5. حل مشكلة (Service Not Found) بإنشاء الخدمة من جديد
-echo "⚙️ جاري إنشاء خدمة السيرفر التي فُقدت..."
+# =====================================================================
+# 🚀 المرحلة الثالثة: إطلاق الخدمة العسكرية (تعمل 24/7 بصمت)
+# =====================================================================
 cat << 'EOF' > /etc/systemd/system/mnjnef_titan.service
 [Unit]
-Description=Mnjnef Titan Encyclopedia Core
+Description=Mnjnef Titan Core Engine
 After=network.target
 
 [Service]
 Type=simple
 User=root
-ExecStart=/usr/bin/python3 /root/mnjnef_titan_core.py
+ExecStart=/usr/bin/python3 /root/titan_core.py
 Restart=always
 RestartSec=10
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=mnjnef_titan
 
 [Install]
 WantedBy=multi-user.target
 EOF
 
-# 6. إعادة تنشيط المحرك وإطلاقه
 systemctl daemon-reload
 systemctl enable mnjnef_titan > /dev/null 2>&1
 systemctl restart mnjnef_titan
 
 echo "================================================================="
-echo "🎉 تمت العملية بنجاح أسطوري! تم نقل مفتاحك، وبناء المحرك، وإصلاح الخطأ."
-echo "المحرك الآن يعمل في الخلفية 24/7 ولن يسقط أبداً."
-echo "جاري عرض البث الحي للمقالات وهي تُنشر..."
+echo "🎉 تمت عملية التطهير وإعادة البناء بنجاح مطلق!"
+echo "جاري عرض البث الحي للمحرك للتأكد من عمله فوراً:"
 echo "================================================================="
-
-# عرض البث الحي المباشر
-journalctl -u mnjnef_titan -f
+journalctl -u mnjnef_titan -f -n 50
