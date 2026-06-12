@@ -1,53 +1,87 @@
-# 1. تحديث الكود في المحرك الأساسي ليطبق الترجمة الذكية على المقالات المستقبلية
-cat << 'REPLACE_SCRIPT' > /root/update_translator.py
-import os, re
+# 1. إيقاف المحرك للقيام بالتحديثات
+systemctl stop mnjnef_direct 2>/dev/null
 
-file_path = '/root/titan_seo_engine.py'
-if os.path.exists(file_path):
-    with open(file_path, 'r', encoding='utf-8') as f:
-        content = f.read()
+# 2. تحديث المحرك لإنتاج واجهة احترافية، ترجمة نظيفة، وروابط داخلية حقيقية
+cat << 'EOF' > /root/titan_seo_engine.py
+import os, time, random, json, re, sys
+import urllib.request
+from urllib.parse import quote
+from datetime import datetime, timedelta
 
-    # الأداة الذكية العائمة مع اللغات العالمية فقط
-    new_translator = """
-                <!-- Floating Smart Translator -->
-                <div id="translator-widget" style="position: fixed; bottom: 20px; right: 20px; z-index: 9999; background: white; padding: 10px; border-radius: 50px; box-shadow: 0 4px 15px rgba(0,0,0,0.15); border: 2px solid #3182ce; transition: all 0.3s; overflow: hidden; max-height: 40px; display: flex; align-items: center; cursor: pointer;" onclick="this.style.maxHeight='200px'; this.style.borderRadius='15px'; this.onclick=null;">
-                    <span style="font-size: 24px; margin-right: 10px;">🌐</span>
-                    <div id="google_translate_element"></div>
-                </div>
-                <script type="text/javascript">
-                    function googleTranslateElementInit() {{
-                        // تحديد اللغات العالمية والمهمة فقط
-                        new google.translate.TranslateElement({{pageLanguage: 'en', includedLanguages: 'ar,es,fr,de,ru,zh-CN,hi,pt,ja,tr,it', layout: google.translate.TranslateElement.InlineLayout.SIMPLE}}, 'google_translate_element');
-                    }}
-                </script>
-                <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
-    """
+API_KEY = "HKxK4S2UrTBt8ja93wkndgltN1W3UaHD"
 
-    # استبدال الأداة القديمة بالجديدة في كود المحرك
-    content = re.sub(r'<div class="translator">.*?</div>.*?<script.*?</script>', new_translator, content, flags=re.DOTALL)
+CATS = {
+    "Education_and_Academia": ["Modern Pedagogy", "Distance Learning", "Neuroplasticity", "Special Education", "Educational Technology", "Curriculum Design"],
+    "Psychology_and_Solutions": ["Behavioral Economics", "Emotional Intelligence", "Stress Management", "Cognitive Behavioral Therapy"],
+    "Problem_Solving": ["Time Management Hacks", "Effective Communication", "Critical Thinking Skills", "Financial Literacy"],
+    "Technology_and_Science": ["Quantum Computing", "Cybersecurity", "Astrophysics"],
+    "Culture_and_Arts": ["Renaissance Art", "Cultural Anthropology", "Classical Architecture"],
+    "Tourism_and_Travel": ["Sustainable Ecotourism", "Cultural Heritage Sites", "Luxury Travel Trends"],
+    "Culinary_Arts": ["Molecular Gastronomy", "Traditional Fermentation", "Plant-Based Cuisine"],
+    "Nature_Environment": ["Forest Conservation", "Climate Change Solutions", "Oceanography"],
+    "Sports_Science": ["Biomechanics in Sports", "Sports Nutrition", "Endurance Training"],
+    "Business_Finance": ["Macroeconomics", "Supply Chain Management", "Investment Strategies"]
+}
+
+def get_seo_fake_date():
+    start_date = datetime(2018, 1, 1)
+    end_date = datetime.now()
+    time_between_dates = end_date - start_date
+    random_number_of_days = random.randrange(time_between_dates.days)
+    return (start_date + timedelta(days=random_number_of_days)).strftime('%Y-%m-%d')
+
+def update_recent_json(title, url, category, fake_date):
+    json_path = "/var/www/html/recent.json"
+    try:
+        if os.path.exists(json_path):
+            with open(json_path, "r", encoding="utf-8") as f: data = json.load(f)
+        else: data = []
+    except: data = []
+        
+    new_entry = {"title": title, "url": url, "category": category.replace('_', ' '), "date": fake_date}
+    data.insert(0, new_entry)
+    data = data[:50] # زيادة عدد المقالات في الواجهة إلى 50
     
-    with open(file_path, 'w', encoding='utf-8') as f:
-        f.write(content)
-REPLACE_SCRIPT
+    with open(json_path, "w", encoding="utf-8") as f: json.dump(data, f)
+    os.system("cp /var/www/html/recent.json /var/www/mnjnef.com/recent.json 2>/dev/null")
 
-python3 /root/update_translator.py
+def append_to_sitemap(url):
+    sitemap_path = "/var/www/html/sitemap.xml"
+    if not os.path.exists(sitemap_path):
+        with open(sitemap_path, "w") as f: f.write('<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n</urlset>')
+    with open(sitemap_path, "r") as f: content = f.read()
+    content = content.replace("</urlset>", f"  <url>\n    <loc>https://mnjnef.com{url}</loc>\n    <changefreq>monthly</changefreq>\n  </url>\n</urlset>")
+    with open(sitemap_path, "w") as f: f.write(content)
 
-# 2. تحديث المقالات التي تم نشرها بالفعل في الموقع الآن
-echo "جاري تحديث المقالات القديمة لتعمل بنظام الترجمة العائم..."
-find /var/www/html /var/www/mnjnef.com -type f -name "*.html" -not -name "index.html" -exec sed -i -e '/<div class="translator">/,/<\/script>/c\
-                <!-- Floating Smart Translator -->\
-                <div id="translator-widget" style="position: fixed; bottom: 20px; right: 20px; z-index: 9999; background: white; padding: 10px; border-radius: 50px; box-shadow: 0 4px 15px rgba(0,0,0,0.15); border: 2px solid #3182ce; transition: all 0.3s; overflow: hidden; max-height: 40px; display: flex; align-items: center; cursor: pointer;" onclick="this.style.maxHeight='\''200px'\''; this.style.borderRadius='\''15px'\''; this.onclick=null;">\
-                    <span style="font-size: 24px; margin-right: 10px;">🌐</span>\
-                    <div id="google_translate_element"></div>\
-                </div>\
-                <script type="text/javascript">\
-                    function googleTranslateElementInit() {\
-                        new google.translate.TranslateElement({pageLanguage: '\''en'\'', includedLanguages: '\''ar,es,fr,de,ru,zh-CN,hi,pt,ja,tr,it'\'', layout: google.translate.TranslateElement.InlineLayout.SIMPLE}, '\''google_translate_element'\'');\
-                    }\
-                </script>\
-                <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>' {} +
+def generate_article():
+    cat = random.choice(list(CATS.keys()))
+    topic = random.choice(CATS[cat])
 
-# 3. إعادة تشغيل المحرك
-systemctl restart mnjnef_direct 2>/dev/null
+    try:
+        search_url = f"https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch={quote(topic)}&utf8=&format=json"
+        req = urllib.request.Request(search_url, headers={'User-Agent': 'Mozilla/5.0'})
+        res = json.loads(urllib.request.urlopen(req).read().decode())
+        
+        if not res.get('query', {}).get('search'): return
+        actual_title = res['query']['search'][0]['title']
 
-echo "✅ تمت إضافة الزر العائم وتحديد اللغات العالمية بنجاح!"
+        ext_url = f"https://en.wikipedia.org/w/api.php?action=query&prop=extracts&exlimit=1&titles={quote(actual_title)}&explaintext=1&format=json"
+        req2 = urllib.request.Request(ext_url, headers={'User-Agent': 'Mozilla/5.0'})
+        context = list(json.loads(urllib.request.urlopen(req2).read().decode())['query']['pages'].values())[0].get('extract', '')[:1500]
+
+        # 💡 تم تعديل الأمر: منعنا المحرك من كتابة "مواضيع ذات صلة" وهمية، لكي نضعها نحن برمجياً بشكل حقيقي
+        prompt = f"ACT AS: Senior Editorial Board of Mnjnef Open Library. Write a MASSIVE, profound educational dissertation about '{actual_title}'. RULES: No politics. Fact-based only. English only. Format with standard HTML tags (<h2>, <p>, <ul>). STRICTLY NO '#' SYMBOLS. DO NOT wrap in 
+http://googleusercontent.com/immersive_entry_chip/0
+
+### 🏆 ماذا سيتغير في المقالات الجديدة التي ستنشر الآن؟
+
+1. **الترجمة الفخمة (بدون تشويه):** - تم إخفاء الشريط العلوي الأبيض المزعج من جوجل نهائياً.
+   - تم وضع الترجمة في صندوق أنيق جداً وسط المقال، يحتوي على قائمة منسدلة نظيفة (Drop-down) تضم اللغات الأساسية فقط (العربية، الإسبانية، الفرنسية، إلخ).
+2. **شريط الانتقال العلوي (Header):**
+   - سيظهر شريط كحلي أنيق في أعلى الشاشة يظل ثابتاً، وفيه زر **"🏠 Main Library"** (المكتبة الرئيسية). إذا ضغط عليه الزائر يعود للصفحة الرئيسية للموقع ليتصفح باقي المقالات.
+3. **روابط حقيقية 100% (مواضيع ذات صلة):**
+   - في نهاية المقال، تم تصميم قسم "Discover More". السيرفر سيقوم بذكاء بسحب 6 مقالات حقيقية موجودة مسبقاً في موقعك وعرضها في مربعات أنيقة. بمجرد أن يضغط الزائر على أي منها سينتقل للمقال الحقيقي ولن يواجه أي رابط ميت بعد اليوم.
+4. **تعديل المسميات:**
+   - تم مسح كل كلمات "مؤسسة" والاعتماد على كلمات "Open Library" (مكتبة مفتوحة) و "Independent Research Team" (فريق بحث مستقل).
+
+انتظر نصف دقيقة حتى ينشر المحرك مقالاً جديداً، ثم ادخل الموقع وافتح المقال الجديد لتستمتع بالنتيجة المذهلة!
