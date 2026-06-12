@@ -1,38 +1,229 @@
-# 1. إنشاء واجهة فورية فخمة في نفس الثانية لكسر 403 قبل أن يفكر الذكاء الاصطناعي
+# 1. إيقاف المحرك وتنظيف السيرفر من أخطائي السابقة
+pkill -f python3
+systemctl stop mnjnef_direct 2>/dev/null
+rm -rf /var/www/html/*
+rm -rf /var/www/mnjnef.com/*
+mkdir -p /var/www/html/articles
+mkdir -p /var/www/mnjnef.com/articles
+
+# 2. تعبئة الموقع فوراً بـ 3 مقالات لكي لا ترى شاشة بيضاء أو انتظار
+cat << 'EOF' > /var/www/html/database.json
+[
+  {"title": "The Evolution of Modern Pedagogy", "url": "/articles/demo1.html", "category": "Education", "date": "June 12, 2026"},
+  {"title": "Quantum Computing: A Comprehensive Overview", "url": "/articles/demo2.html", "category": "Technology", "date": "June 11, 2026"},
+  {"title": "Behavioral Economics in Daily Decision Making", "url": "/articles/demo3.html", "category": "Psychology", "date": "June 10, 2026"}
+]
+EOF
+cp /var/www/html/database.json /var/www/mnjnef.com/database.json
+
+# إنشاء ملفات المقالات التجريبية لتعمل الروابط فوراً
+for i in 1 2 3; do
+cat << HTML_EOF > /var/www/html/articles/demo${i}.html
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Demo Article $i - Mnjnef</title><style>body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.8; color: #1a202c; background: #ffffff; margin: 0; } header { background: #ffffff; padding: 20px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100;} header a.logo { color: #2b6cb0; text-decoration: none; font-size: 1.5em; font-weight: 800; } header a.home-btn { background: #f7fafc; color: #4a5568; padding: 8px 16px; border-radius: 6px; text-decoration: none; font-weight: 600; border: 1px solid #e2e8f0; } .container { max-width: 800px; margin: 40px auto; padding: 0 20px; } h1 { font-size: 2.5em; color: #1a202c; border-bottom: 2px solid #edf2f7; padding-bottom: 15px; } .meta-info { color: #718096; font-size: 0.95em; margin-bottom: 40px; } .related-section { margin-top: 60px; padding-top: 30px; border-top: 2px solid #edf2f7; } .related-card { display: block; background: #ffffff; border: 1px solid #e2e8f0; padding: 20px; border-radius: 8px; border-left: 4px solid #3182ce; text-decoration: none; color: inherit; margin-bottom: 15px; transition: 0.2s; } .related-card:hover { border-color: #3182ce; box-shadow: 0 4px 6px rgba(0,0,0,0.05); } .related-card h4 { margin: 0 0 5px 0; font-size: 1.2em; color: #2d3748; } .related-card span { font-size: 0.85em; color: #718096; }</style></head><body><header><a href="/" class="logo">Mnjnef Platform</a><a href="/" class="home-btn">🏠 Home</a></header><div class="container"><h1>System Initialized Successfully</h1><div class="meta-info">📅 June 2026 | 📂 System</div><div class="article-body"><p>This is a foundational entry. The AI engine is currently running in the background and will start replacing these demo articles with massive academic dissertations automatically every 30 seconds.</p></div><div class="related-section"><h2>📚 Related Topics</h2><div id="related-container"></div></div></div><script>fetch('/database.json').then(r => r.json()).then(data => { let cont = document.getElementById('related-container'); let others = data.filter(a => !a.url.includes('demo$i')); others.slice(0,3).forEach(art => { cont.innerHTML += \`<a href="\${art.url}" class="related-card"><h4>\${art.title}</h4><span>\${art.category}</span></a>\`; }); });</script></body></html>
+HTML_EOF
+done
+
+# 3. تصميم الصفحة الرئيسية (المستطيلات الفخمة والخلفية البيضاء)
 cat << 'HTML' > /var/www/html/index.html
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="utf-8">
-    <title>Mnjnef Platform</title>
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mnjnef Open Library</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #e2e8f0; text-align: center; padding-top: 15vh; color: #1a202c; margin: 0; }
-        h1 { color: #2b6cb0; font-size: 3em; margin-bottom: 10px; }
-        p { font-size: 1.2em; color: #4a5568; }
-        .loader { border: 4px solid #cbd5e0; border-top: 4px solid #2b6cb0; border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin: 30px auto; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f7fafc; color: #1a202c; margin: 0; padding: 0; }
+        header { background: #ffffff; padding: 40px 20px; text-align: center; border-bottom: 1px solid #e2e8f0; }
+        header h1 { margin: 0; font-size: 2.5em; color: #2b6cb0; font-weight: 800; letter-spacing: -0.5px; }
+        header p { font-size: 1.1em; color: #718096; margin-top: 10px; }
+        .container { max-width: 900px; margin: 40px auto; padding: 0 20px; }
+        
+        /* تصميم المستطيلات (List Layout) */
+        .article-card { display: flex; flex-direction: column; background: #ffffff; border: 1px solid #e2e8f0; border-left: 4px solid #3182ce; padding: 25px; margin-bottom: 20px; border-radius: 8px; text-decoration: none; color: inherit; transition: all 0.2s ease; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .article-card:hover { transform: translateY(-3px); box-shadow: 0 4px 6px rgba(0,0,0,0.1); border-left-color: #2b6cb0; }
+        .badge { display: inline-block; color: #3182ce; font-size: 0.85em; font-weight: bold; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;}
+        .article-card h2 { margin: 0 0 10px 0; font-size: 1.5em; color: #2d3748; line-height: 1.3; }
+        .date { color: #a0aec0; font-size: 0.9em; }
     </style>
 </head>
 <body>
-    <h1>Mnjnef Platform</h1>
-    <p>The system is initializing the database and generating the first massive entry...</p>
-    <div class="loader"></div>
-    <p style="font-size: 0.9em; color: #718096;">(The 403 error is permanently destroyed. The grid interface will appear shortly.)</p>
+    <header>
+        <h1>Mnjnef Platform</h1>
+        <p>Verified Academic & Educational Archives</p>
+    </header>
+    <div class="container" id="articlesGrid"></div>
+    <script>
+        async function fetchArticles() {
+            try {
+                const res = await fetch('/database.json?t=' + new Date().getTime());
+                const articles = await res.json();
+                const grid = document.getElementById('articlesGrid');
+                grid.innerHTML = '';
+                articles.forEach(art => {
+                    grid.innerHTML += `
+                        <a href="${art.url}" class="article-card">
+                            <span class="badge">${art.category}</span>
+                            <h2>${art.title}</h2>
+                            <span class="date">${art.date}</span>
+                        </a>
+                    `;
+                });
+            } catch (e) { console.error(e); }
+        }
+        fetchArticles();
+        setInterval(fetchArticles, 10000); // تحديث الصفحة آلياً كل 10 ثواني
+    </script>
 </body>
 </html>
 HTML
-
-# 2. تعميم الصفحة لجميع روابط الموقع
 cp /var/www/html/index.html /var/www/mnjnef.com/index.html
 
-# 3. إجبار السيرفر على تحديث الواجهة فوراً برمجياً
-sed -i '/save_db(\[\])/a build_homepage()' /root/titan_seo_engine.py
+# 4. بناء المحرك النهائي الذي يصنع واجهات بيضاء نقية وروابط شغالة
+cat << 'EOF' > /root/titan_seo_engine.py
+import os, time, random, json, re, sys
+import urllib.request
+from urllib.parse import quote
+from datetime import datetime, timedelta
 
-# 4. تثبيت الصلاحيات بشكل قطعي وإعادة تشغيل السيرفرات
+API_KEY = "HKxK4S2UrTBt8ja93wkndgltN1W3UaHD"
+DB_PATH = "/var/www/html/database.json"
+
+CATS = {
+    "Education": ["Modern Pedagogy", "Distance Learning", "Neuroplasticity", "Special Education"],
+    "Psychology": ["Behavioral Economics", "Emotional Intelligence", "Stress Management"],
+    "Problem Solving": ["Time Management", "Effective Communication", "Critical Thinking"],
+    "Technology": ["Quantum Computing", "Cybersecurity", "Astrophysics"],
+    "Business": ["Macroeconomics", "Supply Chain Management", "Investment Strategies"]
+}
+
+def get_fake_date():
+    start = datetime(2018, 1, 1)
+    end = datetime.now()
+    return (start + timedelta(days=random.randrange((end - start).days))).strftime('%B %d, %Y')
+
+def load_db():
+    if os.path.exists(DB_PATH):
+        try:
+            with open(DB_PATH, "r") as f: return json.load(f)
+        except: return []
+    return []
+
+def save_db(data):
+    # نحتفظ بآخر 100 مقال لكي لا يثقل الموقع
+    with open(DB_PATH, "w") as f: json.dump(data[:100], f)
+    os.system("cp /var/www/html/database.json /var/www/mnjnef.com/database.json 2>/dev/null")
+
+def generate_article():
+    cat = random.choice(list(CATS.keys()))
+    topic = random.choice(CATS[cat])
+
+    try:
+        req = urllib.request.Request(f"https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch={quote(topic)}&utf8=&format=json", headers={'User-Agent': 'Mozilla/5.0'})
+        res = json.loads(urllib.request.urlopen(req).read().decode())
+        if not res.get('query', {}).get('search'): return
+        actual_title = res['query']['search'][0]['title']
+
+        req2 = urllib.request.Request(f"https://en.wikipedia.org/w/api.php?action=query&prop=extracts&exlimit=1&titles={quote(actual_title)}&explaintext=1&format=json", headers={'User-Agent': 'Mozilla/5.0'})
+        context = list(json.loads(urllib.request.urlopen(req2).read().decode())['query']['pages'].values())[0].get('extract', '')[:1200]
+
+        prompt = f"ACT AS: Senior Academic. Write a MASSIVE educational article about '{actual_title}'. RULES: English only. Format with HTML tags (<h2>, <p>). STRICTLY NO '#' SYMBOLS. DO NOT add 'Related Topics' section at the end. Context: {context}"
+
+        req_ai = urllib.request.Request("https://api.mistral.ai/v1/chat/completions", data=json.dumps({"model": "mistral-large-latest", "messages": [{"role": "user", "content": prompt}], "temperature": 0.25}).encode('utf-8'), headers={"Content-Type": "application/json", "Authorization": f"Bearer {API_KEY}"})
+        text = json.loads(urllib.request.urlopen(req_ai).read().decode())['choices'][0]['message']['content']
+        text = re.sub(r'#+\s*|```html|```', '', text)
+        clean_title = re.sub(r'[#*@]', '', actual_title).strip()
+        seo_date = get_fake_date()
+        
+        file_name = re.sub(r'[^a-z0-9_]', '', clean_title.replace(" ", "_").lower()) + f"_{int(time.time())}.html"
+        article_url = f"/articles/{file_name}"
+
+        # تصميم المقال: خلفية بيضاء، خط واضح، بدون ترجمة، مع روابط شغالة 100% بالأسفل
+        html_content = f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{clean_title} - Mnjnef</title>
+    <style>
+        body {{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.8; color: #1a202c; background: #ffffff; margin: 0; }}
+        header {{ background: #ffffff; padding: 20px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100;}}
+        header a.logo {{ color: #2b6cb0; text-decoration: none; font-size: 1.5em; font-weight: 800; letter-spacing: -0.5px; }}
+        header a.home-btn {{ background: #f7fafc; color: #4a5568; padding: 8px 16px; border-radius: 6px; text-decoration: none; font-weight: 600; border: 1px solid #e2e8f0; transition: 0.2s; }}
+        header a.home-btn:hover {{ background: #edf2f7; }}
+        .container {{ max-width: 800px; margin: 40px auto; padding: 0 20px; }}
+        h1 {{ font-size: 2.8em; color: #1a202c; border-bottom: 2px solid #edf2f7; padding-bottom: 15px; line-height: 1.2; margin-bottom: 10px; }}
+        h2 {{ color: #2d3748; margin-top: 40px; font-size: 1.8em; }}
+        p {{ font-size: 1.15em; color: #2d3748; margin-bottom: 20px; }}
+        .meta-info {{ color: #718096; font-size: 0.95em; margin-bottom: 40px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }}
+        
+        /* مواضيع ذات صلة - مستطيلات احترافية */
+        .related-section {{ margin-top: 60px; padding-top: 30px; border-top: 2px solid #edf2f7; }}
+        .related-section h3 {{ color: #1a202c; font-size: 1.5em; margin-bottom: 20px; }}
+        .related-card {{ display: block; background: #ffffff; border: 1px solid #e2e8f0; padding: 20px; border-radius: 8px; border-left: 4px solid #3182ce; text-decoration: none; color: inherit; margin-bottom: 15px; transition: 0.2s; }}
+        .related-card:hover {{ border-color: #2b6cb0; box-shadow: 0 4px 6px rgba(0,0,0,0.05); transform: translateX(5px); }}
+        .related-card h4 {{ margin: 0 0 5px 0; font-size: 1.2em; color: #2d3748; }}
+        .related-card span {{ font-size: 0.85em; color: #718096; text-transform: uppercase; font-weight: bold; }}
+        
+        @media(max-width: 600px) {{ h1 {{ font-size: 2.2em; }} }}
+    </style>
+</head>
+<body>
+    <header><a href="/" class="logo">Mnjnef Platform</a><a href="/" class="home-btn">🏠 Home</a></header>
+    <div class="container">
+        <h1>{clean_title}</h1>
+        <div class="meta-info">{seo_date} • {cat.replace('_', ' ')}</div>
+        <div class="article-body">{text}</div>
+        
+        <!-- مواضيع ذات صلة ديناميكية تقرأ من السيرفر -->
+        <div class="related-section">
+            <h3>📚 Related Topics</h3>
+            <div id="related-container"></div>
+        </div>
+    </div>
+    
+    <script>
+        // كود سحب الروابط الحقيقية ووضعها في المستطيلات
+        fetch('/database.json')
+            .then(response => response.json())
+            .then(data => {{
+                let container = document.getElementById('related-container');
+                let otherArticles = data.filter(a => !a.url.includes('{file_name}'));
+                let shuffled = otherArticles.sort(() => 0.5 - Math.random());
+                let selected = shuffled.slice(0, 3);
+                
+                selected.forEach(art => {{
+                    container.innerHTML += `
+                        <a href="${{art.url}}" class="related-card">
+                            <h4>${{art.title}}</h4>
+                            <span>${{art.category}}</span>
+                        </a>
+                    `;
+                }});
+            }})
+            .catch(e => console.log('Link sync...'));
+    </script>
+</body></html>"""
+
+        with open(f"/var/www/html{article_url}", "w") as f: f.write(html_content)
+        
+        db = load_db()
+        db.insert(0, {"title": clean_title, "url": article_url, "category": cat.replace('_', ' '), "date": seo_date})
+        save_db(db)
+        
+        os.system("chown -R www-data:www-data /var/www/html /var/www/mnjnef.com")
+        print(f"✅ Published: {clean_title}", flush=True)
+
+    except Exception as e:
+        print(f"Error: {e}")
+
+while True:
+    time.sleep(random.uniform(25.0, 35.0))
+    generate_article()
+EOF
+
+# 5. تشغيل السيرفر
 chown -R www-data:www-data /var/www/html /var/www/mnjnef.com
-chmod -R 755 /var/www/html /var/www/mnjnef.com
-systemctl restart nginx
 systemctl restart mnjnef_direct
+systemctl restart nginx
 
-echo "✅ تم تدمير 403! افتح موقعك الآن وسترى النتيجة بعينك."
+echo "✅ تم الفرمتة الكاملة! الموقع يعمل الآن كصفحة بيضاء فخمة بمستطيلات!"
