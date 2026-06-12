@@ -1,14 +1,65 @@
+# 1. تنظيف السيرفر من الأخطاء السابقة
 pkill -f python3
 systemctl stop mnjnef_titan 2>/dev/null
-> /root/titan_mistral_core.py
-nano /root/titan_mistral_core.py
+rm -f /root/titan_mistral_core.py
 
-**الخطوة الثانية:** - ستفتح لك شاشة التعديل `nano`. 
-- انسخ الكود الموجود في المربع الأعلى بالكامل والصقه بهدوء.
-- اضغط `Ctrl + X`، ثم اضغط حرف `Y`، ثم `Enter` للحفظ.
+# 2. بناء المحرك بأمان (هذا الأمر يكتب كود البايثون دون أن يختنق المتصفح)
+cat << 'EOF' > /root/titan_mistral_core.py
+import os, time, random, json, subprocess, re, sys
+import urllib.request
+import urllib.error
+from urllib.parse import quote
+from datetime import datetime
 
-**الخطوة الثالثة:** إطلاق المحرك ومراقبة كسر الـ 403 الفوري:
-```bash
-systemctl restart mnjnef_titan && journalctl -u mnjnef_titan -f
+API_KEY = "HKxK4S2UrTBt8ja93wkndgltN1W3UaHD"
 
-الآن سيقوم السيرفر بسحب مقال حقيقي (بدون أي ترحيب)، يكتبه عن طريق Mistral، ويقوم بنشره. بمجرد أن ترى كلمة `✅ [PUBLISHED]`، اعمل تحديث لموقعك وستختفي الشاشة البيضاء ويظهر المقال الأول لموسوعتك!
+print("==================================================", flush=True)
+print("🚀 [Mnjnef Global Enterprise] 100% TRANSPARENT MODE", flush=True)
+print("==================================================", flush=True)
+
+CATEGORIES = {
+    "Education_and_Academia": ["Modern Pedagogy", "Distance Learning", "Neuroplasticity", "Cognitive Load Theory", "Special Education", "Early Childhood Development", "Educational Technology", "Curriculum Design", "Linguistics"],
+    "Psychology_and_Solutions": ["Behavioral Economics", "Emotional Intelligence", "Overcoming Procrastination", "Stress Management", "Conflict Resolution", "Cognitive Behavioral Therapy", "Motivation Mechanics"],
+    "Problem_Solving": ["Time Management Hacks", "Effective Communication", "Critical Thinking Skills", "Personal Productivity", "Decision Making Models", "Financial Literacy"],
+    "Technology_and_Science": ["Quantum Computing", "AI Ethics", "Cybersecurity", "Nanotechnology", "Astrophysics", "Marine Biology", "Renewable Energy"],
+    "Culture_and_Arts": ["Renaissance Art", "Cultural Anthropology", "Classical Architecture", "World Music History", "Modern Abstract Art"],
+    "Tourism_and_Travel": ["Sustainable Ecotourism", "Historical Landmarks", "Cultural Heritage Sites", "Backpacking Routes", "Luxury Travel Trends"],
+    "Culinary_Arts_and_Cooking": ["Molecular Gastronomy", "Traditional Fermentation", "Culinary History", "Baking Chemistry", "Plant-Based Cuisine"],
+    "Nature_and_Environment": ["Forest Conservation", "Climate Change Solutions", "Desert Ecosystems", "Biodiversity", "Oceanography"],
+    "Physical_Sports": ["Biomechanics in Sports", "Sports Nutrition", "Olympic History", "Endurance Training", "Kinesiology"],
+    "Business_and_Finance": ["Startup Ecosystems", "Macroeconomics", "Supply Chain Management", "Investment Strategies", "Global Trade"]
+}
+
+AGENTS = ["Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124.0.0.0 Safari/537.36"]
+
+def generate_article():
+    print("\n--------------------------------------------------", flush=True)
+    weighted_cats = ["Education_and_Academia"] * 6 + ["Problem_Solving"] * 4 + ["Psychology_and_Solutions"] * 3 + list(CATEGORIES.keys())
+    cat = random.choice(weighted_cats)
+    topic = random.choice(CATEGORIES[cat])
+
+    try:
+        print(f"🌍 1. Fetching knowledge base for: '{topic}'...", flush=True)
+        search_url = f"https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch={quote(topic)}&utf8=&format=json"
+        req = urllib.request.Request(search_url, headers={'User-Agent': random.choice(AGENTS)})
+        
+        try:
+            res = json.loads(urllib.request.urlopen(req).read().decode())
+        except Exception as e:
+            print(f"❌ ERROR: Wikipedia network failed: {e}", flush=True)
+            return
+
+        if not res.get('query', {}).get('search'): 
+            print("❌ ERROR: No results found on Wikipedia.", flush=True)
+            return
+            
+        actual_title = res['query']['search'][0]['title']
+
+        ext_url = f"https://en.wikipedia.org/w/api.php?action=query&prop=extracts&exlimit=1&titles={quote(actual_title)}&explaintext=1&format=json"
+        req2 = urllib.request.Request(ext_url, headers={'User-Agent': random.choice(AGENTS)})
+        context = list(json.loads(urllib.request.urlopen(req2).read().decode())['query']['pages'].values())[0].get('extract', '')[:1800]
+
+        prompt = f"ACT AS: Chief Editor of Mnjnef Encyclopedia.\nTASK: Write a MASSIVE, exhaustive educational article about '{actual_title}'.\nRULES:\n1. NO POLITICS, NO FAKE NEWS, NO LIES.\n2. Provide deep educational value.\n3. Format with HTML tags (<h2>, <p>, <ul>).\n4. STRICTLY NO '#' SYMBOLS. DO NOT wrap in 
+http://googleusercontent.com/immersive_entry_chip/0
+
+مجرد أن تضغط Enter، سيتم تجهيز كل شيء آلياً، وستبدأ الشاشة بطباعة خطوات النشر. عندما تقرأ `✅ [PUBLISHED]`، اذهب وحدث موقعك واستمتع بموسوعتك الإمبراطورية العظيمة!
