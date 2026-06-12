@@ -1,35 +1,173 @@
-# 1. تغيير الواجهة الفاضحة فوراً بواجهة احترافية بشرية
+```bash
+# 1. إيقاف المحرك القديم وتنظيف اللاق
+pkill -f python3
+systemctl stop mnjnef_direct 2>/dev/null
+rm -rf /root/direct_mistral_engine.py
+
+# 2. إنشاء هيكل الموقع السريع (خالي من اللاق)
+mkdir -p /var/www/html/articles
+mkdir -p /var/www/mnjnef.com/articles
+echo "[]" > /var/www/html/recent.json
+
+# 3. بناء الصفحة الرئيسية الصاروخية (بدون لاق وتحدث نفسها ذكياً)
 cat << 'HTML' > /var/www/html/index.html
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mnjnef Global Encyclopedia</title>
+    <meta name="description" content="A massive academic repository of verified global knowledge, science, history, and solutions.">
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center; padding: 100px 20px; background: #f8f9fa; color: #2d3748; }
-        h1 { font-size: 2.8em; color: #1a365d; margin-bottom: 20px; }
-        p { font-size: 1.2em; color: #4a5568; line-height: 1.6; max-width: 600px; margin: 0 auto; }
-        .loader { border: 4px solid #e2e8f0; border-top: 4px solid #3182ce; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 40px auto; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f4f7f6; color: #2d3748; margin: 0; padding: 0; }
+        header { background: #1a365d; color: white; padding: 30px 20px; text-align: center; border-bottom: 5px solid #3182ce; }
+        header h1 { margin: 0; font-size: 2.5em; letter-spacing: 1px; }
+        header p { color: #bee3f8; font-size: 1.1em; margin-top: 10px; }
+        .container { max-width: 1000px; margin: 40px auto; padding: 0 20px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
+        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); transition: transform 0.2s; border-top: 4px solid #e2e8f0; }
+        .card:hover { transform: translateY(-5px); border-top-color: #3182ce; }
+        .card h3 { color: #2b6cb0; margin-top: 0; font-size: 1.3em; }
+        .card a { text-decoration: none; color: inherit; }
+        .card .meta { font-size: 0.85em; color: #718096; margin-bottom: 10px; }
+        .status { text-align: center; margin: 20px 0; color: #718096; font-style: italic; }
     </style>
 </head>
 <body>
-    <h1>Mnjnef Encyclopedia</h1>
-    <p>Our editorial team is currently updating the global knowledge database with new academic research. The platform will be fully accessible shortly.</p>
-    <div class="loader"></div>
+    <header>
+        <h1>Mnjnef Encyclopedia</h1>
+        <p>The Global Academic & Scientific Repository</p>
+    </header>
+    <div class="container">
+        <h2 style="border-bottom: 2px solid #e2e8f0; padding-bottom: 10px;">Recently Archived Knowledge</h2>
+        <div class="status" id="statusMsg">Syncing with database...</div>
+        <div class="grid" id="articlesGrid"></div>
+    </div>
+    <script>
+        // نظام جلب المقالات بدون ضغط على السيرفر (Zero Lag)
+        async function fetchArticles() {
+            try {
+                const response = await fetch('/recent.json?t=' + new Date().getTime());
+                const articles = await response.json();
+                const grid = document.getElementById('articlesGrid');
+                const status = document.getElementById('statusMsg');
+                
+                if(articles.length > 0) {
+                    status.style.display = 'none';
+                    grid.innerHTML = '';
+                    articles.forEach(art => {
+                        grid.innerHTML += `
+                            <a href="${art.url}">
+                                <div class="card">
+                                    <h3>${art.title}</h3>
+                                    <div class="meta">Category: ${art.category} | Published: ${art.date}</div>
+                                    <p style="font-size: 0.9em; color: #4a5568;">Click to read this comprehensive academic entry...</p>
+                                </div>
+                            </a>
+                        `;
+                    });
+                } else {
+                    status.innerText = "Editorial board is organizing the archives. Check back in a few moments.";
+                }
+            } catch (e) { console.error(e); }
+        }
+        fetchArticles();
+        setInterval(fetchArticles, 15000); // تحديث الواجهة للمستخدم كل 15 ثانية بسلاسة
+    </script>
 </body>
 </html>
 HTML
-
-# 2. تعميم الواجهة الاحترافية على كل المجلدات
 cp /var/www/html/index.html /var/www/mnjnef.com/index.html
-chown -R www-data:www-data /var/www/html /var/www/mnjnef.com
 
-# 3. تنظيف ملفات السيرفر من أي كلمة تفضح الذكاء الاصطناعي
-sed -i 's/The AI Engine is currently generating/Our editorial team is currently preparing/g' /root/direct_mistral_engine.py 2>/dev/null
-sed -i 's/AI Core/Editorial Board/g' /root/direct_mistral_engine.py 2>/dev/null
+# 4. بناء محرك الذكاء الاصطناعي الذكي (تزوير التواريخ، ملف خريطة الموقع لأدسنس، ونظام لاق-زيرو)
+cat << 'EOF' > /root/titan_seo_engine.py
+import os, time, random, json, re, sys
+import urllib.request
+from urllib.parse import quote
+from datetime import datetime, timedelta
 
-# 4. إعادة إطلاق السيرفر بصمت
-systemctl restart mnjnef_direct 2>/dev/null
+API_KEY = "HKxK4S2UrTBt8ja93wkndgltN1W3UaHD"
 
-echo "✅ تم مسح الفضيحة! افتح موقعك الآن ستجده احترافياً جداً وخالياً من أي ذكر للذكاء الاصطناعي."
+# مجالات ضخمة وشاملة
+CATS = {
+    "Education_and_Academia": ["Modern Pedagogy", "Distance Learning", "Neuroplasticity", "Special Education", "Educational Technology", "Curriculum Design"],
+    "Psychology_and_Solutions": ["Behavioral Economics", "Emotional Intelligence", "Stress Management", "Cognitive Behavioral Therapy"],
+    "Problem_Solving": ["Time Management Hacks", "Effective Communication", "Critical Thinking Skills", "Financial Literacy"],
+    "Technology_and_Science": ["Quantum Computing", "AI Ethics", "Cybersecurity", "Astrophysics"],
+    "Culture_and_Arts": ["Renaissance Art", "Cultural Anthropology", "Classical Architecture"],
+    "Tourism_and_Travel": ["Sustainable Ecotourism", "Cultural Heritage Sites", "Luxury Travel Trends"],
+    "Culinary_Arts": ["Molecular Gastronomy", "Traditional Fermentation", "Plant-Based Cuisine"],
+    "Nature_Environment": ["Forest Conservation", "Climate Change Solutions", "Oceanography"],
+    "Sports_Science": ["Biomechanics in Sports", "Sports Nutrition", "Endurance Training"],
+    "Business_Finance": ["Macroeconomics", "Supply Chain Management", "Investment Strategies"]
+}
+
+# -------------------------------------------------------------
+# دالة تزوير التواريخ العبقرية (لخداع محركات البحث)
+# -------------------------------------------------------------
+def get_seo_fake_date():
+    """يولد تاريخاً عشوائياً بين 2018 واليوم ليوهم جوجل أن الموقع قديم جداً"""
+    start_date = datetime(2018, 1, 1)
+    end_date = datetime.now()
+    time_between_dates = end_date - start_date
+    days_between_dates = time_between_dates.days
+    random_number_of_days = random.randrange(days_between_dates)
+    fake_date = start_date + timedelta(days=random_number_of_days)
+    return fake_date.strftime('%Y-%m-%d')
+
+def update_recent_json(title, url, category, fake_date):
+    """تحديث الواجهة بدون مسحها بالكامل لمنع اللاق"""
+    json_path = "/var/www/html/recent.json"
+    try:
+        if os.path.exists(json_path):
+            with open(json_path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+        else:
+            data = []
+    except:
+        data = []
+        
+    new_entry = {"title": title, "url": url, "category": category.replace('_', ' '), "date": fake_date}
+    data.insert(0, new_entry)
+    data = data[:30] # الاحتفاظ بآخر 30 مقال فقط في الواجهة لتبقى سريعة جداً
+    
+    with open(json_path, "w", encoding="utf-8") as f:
+        json.dump(data, f)
+    # نسخ للموقع الأساسي
+    os.system("cp /var/www/html/recent.json /var/www/mnjnef.com/recent.json 2>/dev/null")
+
+def append_to_sitemap(url):
+    """تحديث خريطة الموقع بصمت لكي يكتشفها جوجل"""
+    sitemap_path = "/var/www/html/sitemap.xml"
+    if not os.path.exists(sitemap_path):
+        with open(sitemap_path, "w") as f:
+            f.write('<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n</urlset>')
+    
+    with open(sitemap_path, "r") as f:
+        content = f.read()
+    
+    new_url_node = f"  <url>\n    <loc>https://mnjnef.com{url}</loc>\n    <changefreq>monthly</changefreq>\n  </url>\n</urlset>"
+    content = content.replace("</urlset>", new_url_node)
+    
+    with open(sitemap_path, "w") as f:
+        f.write(content)
+
+def generate_article():
+    cat = random.choice(list(CATS.keys()))
+    topic = random.choice(CATS[cat])
+
+    try:
+        search_url = f"https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch={quote(topic)}&utf8=&format=json"
+        req = urllib.request.Request(search_url, headers={'User-Agent': 'Mozilla/5.0'})
+        res = json.loads(urllib.request.urlopen(req).read().decode())
+        
+        if not res.get('query', {}).get('search'): return
+        actual_title = res['query']['search'][0]['title']
+
+        ext_url = f"https://en.wikipedia.org/w/api.php?action=query&prop=extracts&exlimit=1&titles={quote(actual_title)}&explaintext=1&format=json"
+        req2 = urllib.request.Request(ext_url, headers={'User-Agent': 'Mozilla/5.0'})
+        context = list(json.loads(urllib.request.urlopen(req2).read().decode())['query']['pages'].values())[0].get('extract', '')[:1500]
+
+        prompt = f"ACT AS: Senior Academic Board of Mnjnef Encyclopedia. Write a MASSIVE, profound educational dissertation about '{actual_title}'. RULES: No politics. Fact-based only. English only. Format with standard HTML tags (<h2>, <p>, <ul>). STRICTLY NO '#' SYMBOLS. DO NOT wrap in 
+
+```
