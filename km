@@ -1,129 +1,19 @@
-```html.\n5. Tone
+# 1. استبدال الكلمات الرسمية بكلمات تدل على منصة حرة ومستقلة في كل أكواد السيرفر
+sed -i 's/Enterprise/Platform/g' /root/*.py 2>/dev/null
+sed -i 's/Editorial Board/Independent Research Team/g' /root/*.py 2>/dev/null
+sed -i 's/Encyclopedia Core/Open Knowledge Platform/g' /root/*.py 2>/dev/null
+sed -i 's/Academic Archives/Open Library/g' /root/*.py 2>/dev/null
 
-        url = "[https://api.mistral.ai/v1/chat/completions](https://api.mistral.ai/v1/chat/completions)"
-        headers = {"Content-Type": "application/json", "Authorization": f"Bearer {API_KEY}"}
-        data = json.dumps({"model": "mistral-large-latest", "messages": [{"role": "user", "content": prompt}], "temperature": 0.25}).encode('utf-8')
+# 2. استبدال الكلمات في المقالات التي تم نشرها بالفعل لكي تتحدث الواجهة فوراً
+find /var/www/html /var/www/mnjnef.com -type f -name "*.html" -exec sed -i 's/Enterprise/Platform/g' {} + 2>/dev/null
+find /var/www/html /var/www/mnjnef.com -type f -name "*.html" -exec sed -i 's/Editorial Board/Independent Research Team/g' {} + 2>/dev/null
+find /var/www/html /var/www/mnjnef.com -type f -name "*.html" -exec sed -i 's/Encyclopedia Core/Open Knowledge Platform/g' {} + 2>/dev/null
+find /var/www/html /var/www/mnjnef.com -type f -name "*.html" -exec sed -i 's/Academic Archives/Open Library/g' {} + 2>/dev/null
 
-        req_ai = urllib.request.Request(url, data=data, headers=headers)
-        response = urllib.request.urlopen(req_ai)
-        text = json.loads(response.read().decode())['choices'][0]['message']['content']
-        
-        text = re.sub(r'#+\s*|```html|```', '', text)
-        clean_title = re.sub(r'[#*@]', '', actual_title).strip()
-        
-        # 💡 سحب التاريخ المزور لدعم الـ SEO
-        seo_date = get_seo_fake_date()
-        
-        file_name = clean_title.replace(" ", "_").lower()
-        file_name = re.sub(r'[^a-z0-9_]', '', file_name) + f"_{int(time.time())}.html"
-        article_url = f"/articles/{file_name}"
+# 3. إزالة أي كلمة "AI" أو ذكاء اصطناعي متبقية في الإعدادات
+find /var/www/html /var/www/mnjnef.com -type f -name "*.html" -exec sed -i 's/ AI / /g' {} + 2>/dev/null
 
-        html_content = f"""
-        <!DOCTYPE html>
-        <html lang="en">
-        <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>{clean_title} - Mnjnef Archives</title>
-            <meta name="description" content="Academic research and comprehensive encyclopedia entry regarding {clean_title}.">
-            <style>
-                body {{ font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.8; color: #333; background-color: #f8f9fa; margin: 0; padding: 0; }}
-                header {{ background-color: #1a365d; color: white; padding: 20px; text-align: center; border-bottom: 5px solid #3182ce; }}
-                header a {{ color: white; text-decoration: none; font-size: 1.5em; font-weight: bold; }}
-                .container {{ max-width: 900px; margin: 40px auto; background: white; padding: 40px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }}
-                h1 {{ color: #2d3748; font-size: 2.5em; margin-bottom: 10px; border-bottom: 2px solid #edf2f7; padding-bottom: 10px; }}
-                h2 {{ color: #2b6cb0; margin-top: 30px; }}
-                p {{ font-size: 1.1em; margin-bottom: 20px; }}
-                ul {{ margin-bottom: 20px; font-size: 1.1em; }}
-                li {{ margin-bottom: 10px; }}
-                .meta-info {{ color: #718096; font-size: 0.9em; margin-bottom: 30px; border-bottom: 1px solid #edf2f7; padding-bottom: 10px; }}
-                .translator {{ background: #ebf8ff; padding: 15px; border-left: 5px solid #3182ce; border-radius: 4px; margin-bottom: 30px; }}
-                footer {{ text-align: center; margin-top: 50px; padding: 20px; color: #a0aec0; border-top: 1px solid #edf2f7; }}
-            </style>
-        </head>
-        <body>
-            <header>
-                <a href="/">Mnjnef Global Encyclopedia</a>
-            </header>
-            <div class="container">
-                <h1>{clean_title}</h1>
-                <div class="meta-info">
-                    <strong>Published:</strong> {seo_date} | <strong>Category:</strong> {cat.replace('_', ' ')}<br>
-                    <em>Verified by Mnjnef Editorial Board</em>
-                </div>
-                
-                <div class="translator">
-                    <strong>🌐 Translate this Encyclopedia Article:</strong>
-                    <div id="google_translate_element"></div>
-                </div>
-                
-                <div class="article-body">
-                    {text}
-                </div>
-                
-                <footer>
-                    <p>&copy; Mnjnef Academic Archives. All rights reserved.</p>
-                </footer>
-            </div>
-            <script type="text/javascript">
-                function googleTranslateElementInit() {{
-                    new google.translate.TranslateElement({{pageLanguage: 'en', layout: google.translate.TranslateElement.InlineLayout.SIMPLE}}, 'google_translate_element');
-                }}
-            </script>
-            <script type="text/javascript" src="//[translate.google.com/translate_a/element.js?cb=googleTranslateElementInit](https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit)"></script>
-        </body>
-        </html>
-        """
+# 4. إعادة تشغيل المحرك بهدوء ليطبق التعديلات على المقالات القادمة
+systemctl restart mnjnef_direct 2>/dev/null
 
-        # الحفظ الذكي في المجلدات
-        with open(f"/var/www/html{article_url}", "w", encoding="utf-8") as f: f.write(html_content)
-        
-        # تحديث الواجهة بصمت
-        update_recent_json(clean_title, article_url, cat, seo_date)
-        append_to_sitemap(article_url)
-        
-        # تصحيح الصلاحيات بشكل صامت لتجنب اللاق
-        os.system("chown -R www-data:www-data /var/www/html /var/www/mnjnef.com")
-        
-        print(f"✅ [SEO PUBLISHED] {clean_title} (Faked Date: {seo_date})", flush=True)
-
-    except Exception as e:
-        pass
-
-# بدء الحلقة العضوية
-while True:
-    # 💡 التمويه العضوي (بين 25 و 45 ثانية لتجنب كشف الروبوت)
-    time.sleep(random.uniform(25.0, 45.0))
-    generate_article()
-EOF
-
-# 5. تشغيل السيرفر الذكي بالخلفية
-cat << 'SRV' > /etc/systemd/system/mnjnef_direct.service
-[Unit]
-Description=Mnjnef SEO & Anti-Lag Engine
-After=network.target
-
-[Service]
-Type=simple
-User=root
-ExecStart=/usr/bin/python3 /root/titan_seo_engine.py
-Restart=always
-RestartSec=5
-
-[Install]
-WantedBy=multi-user.target
-SRV
-
-systemctl daemon-reload
-systemctl enable mnjnef_direct > /dev/null 2>&1
-systemctl restart mnjnef_direct
-
-echo "================================================================="
-echo "✅ الإمبراطورية V7 تعمل الآن!"
-echo "- تم إلغاء اللاق تماماً بفضل بنية JSON."
-echo "- تم تفعيل آلة الزمن (تواريخ وهمية من 2018) لضمان القبول في AdSense وتصدر نتائج Google."
-echo "افتح موقعك الآن لتشاهد التصميم الجديد الذي سيحدث نفسه تلقائياً كل 15 ثانية بسلاسة."
-echo "================================================================="
-
-
-```
+echo "✅ تم تعديل المصطلحات بنجاح! الموقع الآن يظهر كمنصة حرة ومستقلة."
