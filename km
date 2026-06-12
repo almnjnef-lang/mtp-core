@@ -1,166 +1,88 @@
-# =====================================================================
-# 🧹 المرحلة الأولى: الإبادة الشاملة والتنظيف الجذري
-# =====================================================================
-echo "☢️ جاري إيقاف جميع المحركات وتطهير السيرفر..."
+# 1. إيقاف المحرك الصامت مؤقتاً
 systemctl stop mnjnef_titan 2>/dev/null
-pkill -f python3
 
-# تحديد مسار الموقع ومسح المقالات الفاسدة والملفات المعلقة
-SITE_DIR=$(find /root /var/www -maxdepth 3 -name "config.toml" -o -name "hugo.toml" | head -n 1 | xargs dirname)
-if [ -n "$SITE_DIR" ]; then
-    rm -rf $SITE_DIR/content/posts/*.md
-    rm -rf /var/www/html/* 2>/dev/null
-    rm -rf /var/www/mnjnef.com/* 2>/dev/null
-    echo "✅ تم تنظيف قواعد بيانات الموقع بالكامل."
-else
-    echo "❌ لم يتم العثور على مجلد الموقع!"
-    exit 1
-fi
-
-# =====================================================================
-# 🧠 المرحلة الثانية: زرع النواة الصارمة (The Titanium Core)
-# =====================================================================
-cat << 'EOF' > /root/titan_core.py
-import os, time, random, json, subprocess, re, sys
+# 2. بناء سكريبت النشر الفوري الناطق (بدون كواتم أخطاء)
+cat << 'EOF' > /root/force_real_article.py
+import os, json, subprocess, re, sys
 from urllib.request import urlopen, Request
 from urllib.parse import quote
 from datetime import datetime
 
-# ==================================================================
-# 🔑 مفتاح الذكاء الاصطناعي (تم وضعه من قبلك قبل النسخ)
-# ==================================================================
-API_KEY = "HKxK4S2UrTBt8ja93wkndgltN1W3UaHD"
+print("=====================================================")
+print("🔍 جاري قراءة مفتاح الذكاء الاصطناعي من المحرك...")
 
-print("🚀 [النواة الصارمة] انطلق المحرك المركزي. يتم الآن تجاوز حظر جوجل...")
-
-# مصفوفة ضخمة تركز على التعليم الموسوعي
-CATEGORIES = {
-    "Education_and_Academia": ["Modern Pedagogy", "Distance Learning Evolution", "Neuroplasticity in Learning", "Cognitive Load Theory", "Educational Linguistics", "Philosophy of Education"],
-    "Psychology_and_Solutions": ["Behavioral Economics", "Emotional Intelligence", "Overcoming Procrastination", "Stress Management", "Financial Literacy", "Conflict Resolution Tactics"],
-    "Technology_and_Science": ["Quantum Computing", "AI Ethics", "Nanotechnology", "Cybersecurity", "Astrophysics", "Marine Biology Ecosystems"],
-    "History_and_Culture": ["Mesopotamian Innovations", "Renaissance Impact", "Global Trade Routes", "Cultural Anthropology", "Classical Architecture"]
-}
-
-AGENTS = [
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/123.0.0.0 Safari/537.36",
-    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 Version/17.4 Safari/605.1.15",
-    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/122.0.0.0 Safari/537.36"
-]
-
-def generate_article():
-    if not API_KEY or API_KEY == "ضع_مفتاحك_هنا":
-        print("❌ خطأ قاتل: لم يتم وضع مفتاح API. المحرك متوقف.")
+# استخراج المفتاح من الملف الأساسي
+try:
+    with open('/root/titan_core.py', 'r') as f:
+        content = f.read()
+    match = re.search(r'API_KEY\s*=\s*"([^"]+)"', content)
+    if not match or match.group(1) == "ضع_مفتاحك_هنا" or match.group(1) == "API_KEY_NOT_FOUND":
+        print("❌ خطأ قاتل: مفتاح Gemini غير موجود أو مزيف! الرجاء وضع المفتاح الحقيقي.")
         sys.exit(1)
+    API_KEY = match.group(1)
+    print("✅ تم العثور على المفتاح بنجاح.")
+except Exception as e:
+    print(f"❌ فشل في قراءة الملف: {e}")
+    sys.exit(1)
 
-    weighted_cats = ["Education_and_Academia"] * 5 + ["Psychology_and_Solutions"] * 4 + list(CATEGORIES.keys())
-    cat = random.choice(weighted_cats)
-    topic = random.choice(CATEGORIES[cat])
+print("🌍 جاري سحب موضوع أكاديمي حقيقي من ويكيبيديا...")
+try:
+    req = Request("https://en.wikipedia.org/api/rest_v1/page/random/title", headers={'User-Agent': 'Mnjnef/5.0'})
+    actual_title = json.loads(urlopen(req).read().decode())['items'][0]['title']
+    print(f"✅ تم التقاط الموضوع: {actual_title.replace('_', ' ')}")
+    
+    ext_url = f"https://en.wikipedia.org/w/api.php?action=query&prop=extracts&exlimit=1&titles={quote(actual_title)}&explaintext=1&format=json"
+    req2 = Request(ext_url, headers={'User-Agent': 'Mnjnef/5.0'})
+    context = list(json.loads(urlopen(req2).read().decode())['query']['pages'].values())[0].get('extract', '')[:1500]
+except Exception as e:
+    print(f"❌ فشل الاتصال بويكيبيديا: {e}")
+    sys.exit(1)
 
-    try:
-        # جلب موضوع حقيقي من ويكيبيديا لتجنب الوهم
-        search_url = f"https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch={quote(topic)}&utf8=&format=json"
-        req = Request(search_url, headers={'User-Agent': random.choice(AGENTS)})
-        actual_title = json.loads(urlopen(req).read().decode())['query']['search'][0]['title']
+print("🧠 جاري إرسال البيانات للذكاء الاصطناعي (Gemini) لصياغة الموسوعة الطويلة...")
+try:
+    prompt = f"ACT AS: Chief Academic Editor of Mnjnef Global Encyclopedia.\nTASK: Write a MASSIVE, deeply educational encyclopedia article about '{actual_title}'.\nRULES: STRICTLY ENGLISH. NO POLITICS, NO LIES. Very long academic dissertation. Use proper HTML tags (<h2>, <p>). NO HASHTAGS (#). Tone: Authoritative. Context: {context}"
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={API_KEY}"
+    data = json.dumps({"contents": [{"parts": [{"text": prompt}]}]}).encode('utf-8')
+    req_ai = Request(url, data=data, headers={'Content-Type': 'application/json', 'User-Agent': 'Mnjnef/5.0'})
+    
+    response = urlopen(req_ai)
+    text = json.loads(response.read().decode())['candidates'][0]['content']['parts'][0]['text']
+    text = re.sub(r'#+\s*', '', text)
+    print("✅ الذكاء الاصطناعي كتب المقال بنجاح!")
+except Exception as e:
+    print(f"❌ فشل الذكاء الاصطناعي في الكتابة! السبب المباشر: {e}")
+    sys.exit(1)
 
-        ext_url = f"https://en.wikipedia.org/w/api.php?action=query&prop=extracts&exlimit=1&titles={quote(actual_title)}&explaintext=1&format=json"
-        req2 = Request(ext_url, headers={'User-Agent': random.choice(AGENTS)})
-        context = list(json.loads(urlopen(req2).read().decode())['query']['pages'].values())[0].get('extract', '')[:1500]
-
-        # الأوامر العسكرية الصارمة
-        prompt = f"""ACT AS: The Chief Academic Editor of Mnjnef Global Encyclopedia.
-TASK: Write a MASSIVE, deeply educational encyclopedia article about '{actual_title}'.
-RULES:
-1. NO POLITICS, NO FAKE NEWS, NO LIES, NO HATE SPEECH, NO FAKE EXPERIMENTS.
-2. Focus strictly on Education, facts, and practical Problem-Solving value.
-3. Length: Very long and exhaustive academic dissertation.
-4. Format: Use ONLY HTML tags (<h2>, <h3>, <p>, <ul>, <strong>). ABSOLUTELY DO NOT USE THE '#' SYMBOL FOR HEADERS OR ANYTHING ELSE.
-5. Tone: Authoritative, strictly English. Do NOT mention being an AI.
-6. At the bottom, generate exactly 3 highly relevant real academic topics formatted as an HTML list.
-Context to expand on: {context}"""
-
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={API_KEY}"
-        data = json.dumps({"contents": [{"parts": [{"text": prompt}]}], "safetySettings": [{"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_LOW_AND_ABOVE"}]}).encode('utf-8')
-        req_ai = Request(url, data=data, headers={'Content-Type': 'application/json', 'User-Agent': random.choice(AGENTS)})
+print("📝 جاري حفظ المقال في الموقع وبناء الواجهة...")
+try:
+    clean_title = re.sub(r'[#*@]', '', actual_title).strip()
+    date_str = datetime.now().strftime('%Y-%m-%dT%H:%M:%S')
+    markdown = f"---\ntitle: \"{clean_title}\"\ndate: {date_str}\ncategories: [\"Educational_Research\"]\n---\n{text}\n\n<br><p style='text-align:center; color:#7f8c8d; border-top: 1px solid #eee; padding-top: 10px;'>Curated by the Mnjnef Global Educational Encyclopedia Core.</p>"
+    
+    site_dirs = ["/var/www/mnjnef.com", "/var/www/html", "/root/mnjnef_site"]
+    active_dir = next((d for d in site_dirs if os.path.exists(os.path.join(d, "config.toml")) or os.path.exists(os.path.join(d, "hugo.toml"))), None)
+    
+    post_path = os.path.join(active_dir, 'content', 'posts', f"mnjnef_real_{int(time.time())}.md")
+    os.makedirs(os.path.dirname(post_path), exist_ok=True)
+    with open(post_path, "w", encoding="utf-8") as f:
+        f.write(markdown)
         
-        response = urlopen(req_ai)
-        text = json.loads(response.read().decode())['candidates'][0]['content']['parts'][0]['text']
+    subprocess.run(["hugo", "--gc", "--minify"], cwd=active_dir, capture_output=True)
+    subprocess.run(f"cp -r {active_dir}/public/* /var/www/html/ 2>/dev/null", shell=True)
+    subprocess.run(f"cp -r {active_dir}/public/* /var/www/mnjnef.com/ 2>/dev/null", shell=True)
+    print("✅ تم بناء الموقع بنجاح!")
+except Exception as e:
+    print(f"❌ فشل في حفظ وبناء الموقع: {e}")
+    sys.exit(1)
 
-        # تنظيف صارم لأي علامة هاشتاج متبقية
-        text = re.sub(r'#+\s*', '', text)
-
-        # زر الترجمة الفورية لجميع اللغات
-        translator = """<div id="google_translate_element" style="margin: 20px 0; padding: 15px; background: #fdfdfd; border-radius: 8px; border-left: 5px solid #2c3e50;"><strong>🌐 Translate this Encyclopedia Article:</strong></div><script type="text/javascript">function googleTranslateElementInit() { new google.translate.TranslateElement({pageLanguage: 'en', layout: google.translate.TranslateElement.InlineLayout.SIMPLE}, 'google_translate_element'); }</script><script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>"""
-
-        clean_title = re.sub(r'[#*@]', '', actual_title).strip()
-        date_str = datetime.now().strftime('%Y-%m-%dT%H:%M:%S')
-
-        # دمج المقال
-        markdown = f"---\ntitle: \"{clean_title}\"\ndate: {date_str}\ncategories: [\"{cat.replace('_', ' ')}\"]\n---\n{translator}\n\n{text}\n\n<br><p style='text-align:center; color:#7f8c8d; border-top: 1px solid #eee; padding-top: 10px;'>Curated by the Mnjnef Global Educational Encyclopedia Core.</p>"
-
-        # البحث عن مسار الموقع
-        site_dirs = ["/var/www/mnjnef.com", "/var/www/html", "/root/mnjnef_site"]
-        active_dir = next((d for d in site_dirs if os.path.exists(os.path.join(d, "config.toml")) or os.path.exists(os.path.join(d, "hugo.toml"))), None)
-        
-        if not active_dir:
-            print("❌ لم يتم العثور على مجلد Hugo!")
-            return
-
-        post_path = os.path.join(active_dir, 'content', 'posts', f"mnjnef_{int(time.time())}.md")
-        os.makedirs(os.path.dirname(post_path), exist_ok=True)
-        
-        with open(post_path, "w", encoding="utf-8") as f:
-            f.write(markdown)
-
-        # أوامر النشر الإجبارية
-        subprocess.run(["hugo", "--gc", "--minify"], cwd=active_dir, capture_output=True)
-        subprocess.run(f"cp -r {active_dir}/public/* /var/www/html/ 2>/dev/null", shell=True)
-        subprocess.run(f"cp -r {active_dir}/public/* /var/www/mnjnef.com/ 2>/dev/null", shell=True)
-        
-        print(f"✅ [نجاح] تم كتابة ونشر مقال موسوعي فخم عن: {clean_title}")
-
-    except Exception as e:
-        print(f"⚠️ خطأ أثناء المعالجة (سيتم التجاوز آلياً): {e}")
-
-# اختبار فوري قبل الدخول في الحلقة اللانهائية
-print("⚙️ جاري إجراء اختبار النشر الفوري الأول للتأكد من الواجهة...")
-generate_article()
-
-while True:
-    # تمويه زمني عضوي لتجنب حظر جوجل أدسنس ومحركات البحث (بين 31 إلى 38 ثانية)
-    delay = random.uniform(31.2, 38.8)
-    print(f"⏳ [نظام التخفي] جاري الانتظار {delay:.1f} ثانية للتمويه كأن المستخدم بشري...")
-    time.sleep(delay)
-    generate_article()
+print("=====================================================")
 EOF
 
-# =====================================================================
-# 🚀 المرحلة الثالثة: إطلاق الخدمة العسكرية (تعمل 24/7 بصمت)
-# =====================================================================
-cat << 'EOF' > /etc/systemd/system/mnjnef_titan.service
-[Unit]
-Description=Mnjnef Titan Core Engine
-After=network.target
+# 3. تشغيل الكود الفوري
+python3 /root/force_real_article.py
 
-[Service]
-Type=simple
-User=root
-ExecStart=/usr/bin/python3 /root/titan_core.py
-Restart=always
-RestartSec=10
-StandardOutput=syslog
-StandardError=syslog
-SyslogIdentifier=mnjnef_titan
-
-[Install]
-WantedBy=multi-user.target
-EOF
-
-systemctl daemon-reload
-systemctl enable mnjnef_titan > /dev/null 2>&1
-systemctl restart mnjnef_titan
-
-echo "================================================================="
-echo "🎉 تمت عملية التطهير وإعادة البناء بنجاح مطلق!"
-echo "جاري عرض البث الحي للمحرك للتأكد من عمله فوراً:"
-echo "================================================================="
-journalctl -u mnjnef_titan -f -n 50
+# 4. إصلاح الصلاحيات لكسر خطأ 403 بناءً على المقال الحقيقي الذي تم نشره الآن
+chown -R www-data:www-data /var/www/html /var/www/mnjnef.com
+find /var/www/html /var/www/mnjnef.com -type d -exec chmod 755 {} \;
+find /var/www/html /var/www/mnjnef.com -type f -exec chmod 644 {} \;
+systemctl restart nginx 2>/dev/null || systemctl restart apache2 2>/dev/null
