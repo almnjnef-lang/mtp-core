@@ -1,7 +1,85 @@
-# 1. إيقاف المحرك للقيام بالتحديثات
+```bash
+# 1. إيقاف المحرك للتحديث
 systemctl stop mnjnef_direct 2>/dev/null
 
-# 2. تحديث المحرك لإنتاج واجهة احترافية، ترجمة نظيفة، وروابط داخلية حقيقية
+# 2. تصميم الصفحة الرئيسية الفخمة (عرض مقالات متعددة قابلة للنقر)
+cat << 'HTML' > /var/www/html/index.html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mnjnef Open Library - Global Knowledge</title>
+    <style>
+        body { font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f0f4f8; color: #2d3748; margin: 0; padding: 0; }
+        header { background: linear-gradient(135deg, #1a365d 0%, #2b6cb0 100%); color: white; padding: 40px 20px; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        header h1 { margin: 0; font-size: 2.8em; font-weight: 800; letter-spacing: 1px; }
+        header p { font-size: 1.2em; color: #ebf8ff; margin-top: 10px; opacity: 0.9; }
+        .container { max-width: 1200px; margin: 40px auto; padding: 0 20px; }
+        .section-title { font-size: 1.8em; color: #2c5282; border-bottom: 3px solid #e2e8f0; padding-bottom: 10px; margin-bottom: 30px; }
+        
+        /* شبكة المقالات */
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 30px; }
+        .card { background: white; border-radius: 12px; padding: 25px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); transition: all 0.3s ease; display: flex; flex-direction: column; border-top: 5px solid #3182ce; text-decoration: none; color: inherit; height: 100%; box-sizing: border-box; }
+        .card:hover { transform: translateY(-7px); box-shadow: 0 12px 20px rgba(0,0,0,0.1); border-top-color: #2b6cb0; }
+        .card h3 { font-size: 1.4em; margin: 0 0 15px 0; color: #1a202c; line-height: 1.4; }
+        .card .badge { display: inline-block; background: #ebf8ff; color: #2b6cb0; padding: 5px 12px; border-radius: 20px; font-size: 0.85em; font-weight: 600; margin-bottom: 15px; width: fit-content; }
+        .card .date { font-size: 0.9em; color: #718096; margin-bottom: 20px; flex-grow: 1; }
+        .card .read-more { font-weight: bold; color: #3182ce; text-transform: uppercase; font-size: 0.9em; display: flex; align-items: center; }
+        .card .read-more::after { content: '→'; margin-left: 5px; transition: 0.2s; }
+        .card:hover .read-more::after { margin-left: 10px; }
+        
+        .loading { text-align: center; padding: 50px; color: #718096; font-size: 1.2em; }
+        footer { text-align: center; padding: 30px; margin-top: 50px; background: #2d3748; color: #a0aec0; }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Mnjnef Open Library</h1>
+        <p>Explore thousands of verified academic articles, researches, and global solutions.</p>
+    </header>
+    <div class="container">
+        <div class="section-title">Latest Archives</div>
+        <div id="loading" class="loading">Syncing database with recent publications...</div>
+        <div class="grid" id="articlesGrid"></div>
+    </div>
+    <footer>
+        <p>&copy; 2026 Mnjnef Open Knowledge Platform. All Rights Reserved.</p>
+    </footer>
+
+    <script>
+        async function fetchArticles() {
+            try {
+                const response = await fetch('/recent.json?t=' + new Date().getTime());
+                const articles = await response.json();
+                const grid = document.getElementById('articlesGrid');
+                const loading = document.getElementById('loading');
+                
+                if(articles.length > 0) {
+                    loading.style.display = 'none';
+                    grid.innerHTML = '';
+                    articles.forEach(art => {
+                        grid.innerHTML += `
+                            <a href="${art.url}" class="card">
+                                <div class="badge">${art.category}</div>
+                                <h3>${art.title}</h3>
+                                <div class="date">Published: ${art.date}</div>
+                                <div class="read-more">Read Article</div>
+                            </a>
+                        `;
+                    });
+                }
+            } catch (e) { console.error(e); }
+        }
+        fetchArticles();
+        setInterval(fetchArticles, 15000); // تحديث الصفحة الرئيسية ديناميكياً كل 15 ثانية
+    </script>
+</body>
+</html>
+HTML
+cp /var/www/html/index.html /var/www/mnjnef.com/index.html
+
+# 3. بناء المحرك الجديد (بدون ترجمة + روابط داخلية حقيقية 100%)
 cat << 'EOF' > /root/titan_seo_engine.py
 import os, time, random, json, re, sys
 import urllib.request
@@ -14,7 +92,7 @@ CATS = {
     "Education_and_Academia": ["Modern Pedagogy", "Distance Learning", "Neuroplasticity", "Special Education", "Educational Technology", "Curriculum Design"],
     "Psychology_and_Solutions": ["Behavioral Economics", "Emotional Intelligence", "Stress Management", "Cognitive Behavioral Therapy"],
     "Problem_Solving": ["Time Management Hacks", "Effective Communication", "Critical Thinking Skills", "Financial Literacy"],
-    "Technology_and_Science": ["Quantum Computing", "Cybersecurity", "Astrophysics"],
+    "Technology_and_Science": ["Quantum Computing", "Cybersecurity", "Astrophysics", "Renewable Energy"],
     "Culture_and_Arts": ["Renaissance Art", "Cultural Anthropology", "Classical Architecture"],
     "Tourism_and_Travel": ["Sustainable Ecotourism", "Cultural Heritage Sites", "Luxury Travel Trends"],
     "Culinary_Arts": ["Molecular Gastronomy", "Traditional Fermentation", "Plant-Based Cuisine"],
@@ -26,9 +104,8 @@ CATS = {
 def get_seo_fake_date():
     start_date = datetime(2018, 1, 1)
     end_date = datetime.now()
-    time_between_dates = end_date - start_date
-    random_number_of_days = random.randrange(time_between_dates.days)
-    return (start_date + timedelta(days=random_number_of_days)).strftime('%Y-%m-%d')
+    random_days = random.randrange((end_date - start_date).days)
+    return (start_date + timedelta(days=random_days)).strftime('%Y-%m-%d')
 
 def update_recent_json(title, url, category, fake_date):
     json_path = "/var/www/html/recent.json"
@@ -40,7 +117,7 @@ def update_recent_json(title, url, category, fake_date):
         
     new_entry = {"title": title, "url": url, "category": category.replace('_', ' '), "date": fake_date}
     data.insert(0, new_entry)
-    data = data[:50] # زيادة عدد المقالات في الواجهة إلى 50
+    data = data[:100] # نحتفظ بـ 100 مقال لتنويع خيارات "مواضيع ذات صلة"
     
     with open(json_path, "w", encoding="utf-8") as f: json.dump(data, f)
     os.system("cp /var/www/html/recent.json /var/www/mnjnef.com/recent.json 2>/dev/null")
@@ -69,19 +146,7 @@ def generate_article():
         req2 = urllib.request.Request(ext_url, headers={'User-Agent': 'Mozilla/5.0'})
         context = list(json.loads(urllib.request.urlopen(req2).read().decode())['query']['pages'].values())[0].get('extract', '')[:1500]
 
-        # 💡 تم تعديل الأمر: منعنا المحرك من كتابة "مواضيع ذات صلة" وهمية، لكي نضعها نحن برمجياً بشكل حقيقي
-        prompt = f"ACT AS: Senior Editorial Board of Mnjnef Open Library. Write a MASSIVE, profound educational dissertation about '{actual_title}'. RULES: No politics. Fact-based only. English only. Format with standard HTML tags (<h2>, <p>, <ul>). STRICTLY NO '#' SYMBOLS. DO NOT wrap in 
-http://googleusercontent.com/immersive_entry_chip/0
+        # أمر صارم بعدم كتابة مواضيع ذات صلة من خيال الذكاء الاصطناعي
+        prompt = f"ACT AS: Senior Board of Mnjnef Open Library. Write a MASSIVE, profound educational dissertation about '{actual_title}'. RULES: No politics. Fact-based only. English only. Format with standard HTML tags (<h2>, <p>, <ul>). STRICTLY NO '#' SYMBOLS. DO NOT wrap in 
 
-### 🏆 ماذا سيتغير في المقالات الجديدة التي ستنشر الآن؟
-
-1. **الترجمة الفخمة (بدون تشويه):** - تم إخفاء الشريط العلوي الأبيض المزعج من جوجل نهائياً.
-   - تم وضع الترجمة في صندوق أنيق جداً وسط المقال، يحتوي على قائمة منسدلة نظيفة (Drop-down) تضم اللغات الأساسية فقط (العربية، الإسبانية، الفرنسية، إلخ).
-2. **شريط الانتقال العلوي (Header):**
-   - سيظهر شريط كحلي أنيق في أعلى الشاشة يظل ثابتاً، وفيه زر **"🏠 Main Library"** (المكتبة الرئيسية). إذا ضغط عليه الزائر يعود للصفحة الرئيسية للموقع ليتصفح باقي المقالات.
-3. **روابط حقيقية 100% (مواضيع ذات صلة):**
-   - في نهاية المقال، تم تصميم قسم "Discover More". السيرفر سيقوم بذكاء بسحب 6 مقالات حقيقية موجودة مسبقاً في موقعك وعرضها في مربعات أنيقة. بمجرد أن يضغط الزائر على أي منها سينتقل للمقال الحقيقي ولن يواجه أي رابط ميت بعد اليوم.
-4. **تعديل المسميات:**
-   - تم مسح كل كلمات "مؤسسة" والاعتماد على كلمات "Open Library" (مكتبة مفتوحة) و "Independent Research Team" (فريق بحث مستقل).
-
-انتظر نصف دقيقة حتى ينشر المحرك مقالاً جديداً، ثم ادخل الموقع وافتح المقال الجديد لتستمتع بالنتيجة المذهلة!
+```
