@@ -1,1 +1,134 @@
+# 1. إيقاف ومسح كل الأكواد الفاسدة السابقة
+pkill -f python3
+systemctl stop mnjnef_titan 2>/dev/null
+> /root/titan_mistral_core.py
+
+# 2. كتابة المحرك التيتاني الصافي داخل السيرفر مباشرة (لحماية الكود من أخطاء اللصق)
+cat << 'EOF' > /root/titan_mistral_core.py
+import os, time, random, json, subprocess, re, sys
+from urllib.request import urlopen, Request
+from urllib.parse import quote
+from datetime import datetime
+
+API_KEY = "REPLACE_WITH_MISTRAL_KEY"
+
+print("==================================================", flush=True)
+print("🚀 [Mnjnef Global Enterprise] Core Online & Connected to Mistral AI", flush=True)
+print("==================================================", flush=True)
+
+# مصفوفة عملاقة ترتكز على التعليم وحل المشاكل وكافة المجالات المطلوبة
+CATEGORIES = {
+    "Education_and_Academia": ["Modern Pedagogy", "Distance Learning", "Neuroplasticity", "Cognitive Load Theory", "Special Education", "Early Childhood Development", "Educational Technology", "Curriculum Design", "Linguistics"],
+    "Psychology_and_Solutions": ["Behavioral Economics", "Emotional Intelligence", "Overcoming Procrastination", "Stress Management", "Conflict Resolution", "Cognitive Behavioral Therapy", "Motivation Mechanics"],
+    "Problem_Solving": ["Time Management Hacks", "Effective Communication", "Critical Thinking Skills", "Personal Productivity", "Decision Making Models", "Financial Literacy"],
+    "Technology_and_Science": ["Quantum Computing", "AI Ethics", "Cybersecurity", "Nanotechnology", "Astrophysics", "Marine Biology", "Renewable Energy"],
+    "Culture_and_Arts": ["Renaissance Art", "Cultural Anthropology", "Classical Architecture", "World Music History", "Modern Abstract Art"],
+    "Tourism_and_Travel": ["Sustainable Ecotourism", "Historical Landmarks", "Cultural Heritage Sites", "Backpacking Routes", "Luxury Travel Trends"],
+    "Culinary_Arts_and_Cooking": ["Molecular Gastronomy", "Traditional Fermentation", "Culinary History", "Baking Chemistry", "Plant-Based Cuisine"],
+    "Nature_and_Environment": ["Forest Conservation", "Climate Change Solutions", "Desert Ecosystems", "Biodiversity", "Oceanography"],
+    "Physical_Sports": ["Biomechanics in Sports", "Sports Nutrition", "Olympic History", "Endurance Training", "Kinesiology"],
+    "Business_and_Finance": ["Startup Ecosystems", "Macroeconomics", "Supply Chain Management", "Investment Strategies", "Global Trade"]
+}
+
+AGENTS = [
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 Version/17.4.1",
+    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/123.0.0.0"
+]
+
+def generate_article():
+    if not API_KEY or API_KEY == "REPLACE_WITH_MISTRAL_KEY":
+        print("❌ Error: Mistral API key missing.", flush=True)
+        sys.exit(1)
+
+    # التركيز بنسبة ضخمة على التعليم وحل المشاكل
+    weighted_cats = ["Education_and_Academia"] * 6 + ["Problem_Solving"] * 4 + ["Psychology_and_Solutions"] * 3 + list(CATEGORIES.keys())
+    cat = random.choice(weighted_cats)
+    topic = random.choice(CATEGORIES[cat])
+
+    try:
+        print(f"🌍 Fetching knowledge base for: '{topic}'...", flush=True)
+        search_url = f"https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch={quote(topic)}&utf8=&format=json"
+        req = Request(search_url, headers={'User-Agent': random.choice(AGENTS)})
+        res = json.loads(urlopen(req).read().decode())
+        
+        if not res['query']['search']: return
+        actual_title = res['query']['search'][0]['title']
+
+        ext_url = f"https://en.wikipedia.org/w/api.php?action=query&prop=extracts&exlimit=1&titles={quote(actual_title)}&explaintext=1&format=json"
+        req2 = Request(ext_url, headers={'User-Agent': random.choice(AGENTS)})
+        context = list(json.loads(urlopen(req2).read().decode())['query']['pages'].values())[0].get('extract', '')[:1800]
+
+        prompt = f"""ACT AS: Chief Editor of Mnjnef Encyclopedia.
+TASK: Write a MASSIVE, exhaustive educational article about '{actual_title}'.
+RULES:
+1. NO POLITICS, NO FAKE NEWS, NO LIES, NO FAKE EXPERIMENTS. Fact-based only.
+2. Provide deep educational value and real problem-solving insights.
+3. Very long academic structure. Format with HTML tags (<h2>, <p>, <ul>).
+4. STRICTLY NO '#' SYMBOLS. DO NOT wrap in ```html.
+5. Tone: English, Authoritative, Objective.
+6. At the bottom, include <h2>📚 Related Encyclopedia Topics</h2> followed by an HTML list of 3 highly related concepts to keep readers engaged.
+Context: {context}"""
+
+        url = "[https://api.mistral.ai/v1/chat/completions](https://api.mistral.ai/v1/chat/completions)"
+        headers = {"Content-Type": "application/json", "Authorization": f"Bearer {API_KEY}"}
+        data = json.dumps({"model": "mistral-large-latest", "messages": [{"role": "user", "content": prompt}], "temperature": 0.25}).encode('utf-8')
+
+        req_ai = Request(url, data=data, headers=headers)
+        response = json.loads(urlopen(req_ai).read().decode())
+        text = response['choices'][0]['message']['content']
+
+        # تطهير النص من أي رموز ماركداون أو هاشتاجات
+        text = re.sub(r'#+\s*', '', text)
+        text = re.sub(r'```html', '', text)
+        text = re.sub(r'```', '', text)
+
+        clean_title = re.sub(r'[#*@]', '', actual_title).strip()
+        date_str = datetime.now().strftime('%Y-%m-%dT%H:%M:%S')
+
+        translator = """<div id="google_translate_element" style="margin: 20px 0; padding: 15px; background: #fdfdfd; border-radius: 8px; border-left: 5px solid #2c3e50;"><strong>🌐 Translate this Encyclopedia Article:</strong></div><script type="text/javascript">function googleTranslateElementInit() { new google.translate.TranslateElement({pageLanguage: 'en', layout: google.translate.TranslateElement.InlineLayout.SIMPLE}, 'google_translate_element'); }</script><script type="text/javascript" src="//[translate.google.com/translate_a/element.js?cb=googleTranslateElementInit](https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit)"></script>"""
+        
+        markdown = f"---\ntitle: \"{clean_title}\"\ndate: {date_str}\ncategories: [\"{cat.replace('_', ' ')}\"]\n---\n{translator}\n\n{text}\n\n<br><p style='text-align:center; color:#7f8c8d; border-top: 1px solid #eee; padding-top: 10px;'>Curated by the Mnjnef Global Educational Encyclopedia Core.</p>"
+
+        site_dirs = ["/var/www/mnjnef.com", "/var/www/html", "/root/mnjnef_site"]
+        active_dir = next((d for d in site_dirs if os.path.exists(os.path.join(d, "config.toml")) or os.path.exists(os.path.join(d, "hugo.toml"))), None)
+        
+        if not active_dir: return
+
+        post_path = os.path.join(active_dir, 'content', 'posts', f"mnjnef_{int(time.time())}.md")
+        os.makedirs(os.path.dirname(post_path), exist_ok=True)
+        with open(post_path, "w", encoding="utf-8") as f: f.write(markdown)
+
+        subprocess.run(["hugo", "--gc", "--minify"], cwd=active_dir, capture_output=True)
+        subprocess.run(f"cp -r {active_dir}/public/* /var/www/html/ 2>/dev/null", shell=True)
+        subprocess.run(f"cp -r {active_dir}/public/* /var/www/[mnjnef.com/](https://mnjnef.com/) 2>/dev/null", shell=True)
+        
+        # كسر قفل 403 للأبد بتصحيح الصلاحيات بعد النشر
+        subprocess.run("chown -R www-data:www-data /var/www/html /var/www/mnjnef.com 2>/dev/null", shell=True)
+        
+        print(f"✅ [PUBLISHED] {clean_title}", flush=True)
+
+    except Exception as e:
+        if hasattr(e, 'read'):
+            print(f"❌ Mistral API Error:\n{e.read().decode()}", flush=True)
+        else:
+            pass
+
+generate_article()
+
+while True:
+    # نشر عشوائي مكثف بين 22 و 30 ثانية لتجنب الحظر
+    delay = random.uniform(22.0, 30.0)
+    print(f"\n⏳ [Anti-Ban System] Waiting {delay:.1f} seconds...", flush=True)
+    time.sleep(delay)
+    generate_article()
+EOF
+
+# 3. خطوة التشغيل الآلية: طلب المفتاح وإطلاق السيرفر أمامك
+echo "=================================================="
+read -p "👉 الصق مفتاح Mistral الخاص بك هنا (يبدأ بـ HKx) واضغط Enter: " MY_MISTRAL_KEY
+MY_MISTRAL_KEY=$(echo "$MY_MISTRAL_KEY" | xargs)
+sed -i "s/REPLACE_WITH_MISTRAL_KEY/$MY_MISTRAL_KEY/g" /root/titan_mistral_core.py
+
+echo "🚀 جاري إطلاق محرك Mnjnef..."
 python3 /root/titan_mistral_core.py
