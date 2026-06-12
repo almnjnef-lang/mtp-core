@@ -1,22 +1,22 @@
-# 1. إيقاف ومسح كل الأكواد الفاسدة السابقة
+# 1. تنظيف السيرفر من الملفات المعطوبة بسبب أخطاء اللصق السابقة
 pkill -f python3
 systemctl stop mnjnef_titan 2>/dev/null
 > /root/titan_mistral_core.py
 
-# 2. كتابة المحرك التيتاني الصافي داخل السيرفر مباشرة (لحماية الكود من أخطاء اللصق)
+# 2. بناء المحرك التيتاني (ومفتاحك مدمج داخله مسبقاً لحمايته من أخطاء الشاشة)
 cat << 'EOF' > /root/titan_mistral_core.py
 import os, time, random, json, subprocess, re, sys
 from urllib.request import urlopen, Request
 from urllib.parse import quote
 from datetime import datetime
 
-API_KEY = "REPLACE_WITH_MISTRAL_KEY"
+# مفتاحك مدمج هنا وجاهز للعمل فوراً
+API_KEY = "HKxK4S2UrTBt8ja93wkndgltN1W3UaHD"
 
 print("==================================================", flush=True)
 print("🚀 [Mnjnef Global Enterprise] Core Online & Connected to Mistral AI", flush=True)
 print("==================================================", flush=True)
 
-# مصفوفة عملاقة ترتكز على التعليم وحل المشاكل وكافة المجالات المطلوبة
 CATEGORIES = {
     "Education_and_Academia": ["Modern Pedagogy", "Distance Learning", "Neuroplasticity", "Cognitive Load Theory", "Special Education", "Early Childhood Development", "Educational Technology", "Curriculum Design", "Linguistics"],
     "Psychology_and_Solutions": ["Behavioral Economics", "Emotional Intelligence", "Overcoming Procrastination", "Stress Management", "Conflict Resolution", "Cognitive Behavioral Therapy", "Motivation Mechanics"],
@@ -41,7 +41,6 @@ def generate_article():
         print("❌ Error: Mistral API key missing.", flush=True)
         sys.exit(1)
 
-    # التركيز بنسبة ضخمة على التعليم وحل المشاكل
     weighted_cats = ["Education_and_Academia"] * 6 + ["Problem_Solving"] * 4 + ["Psychology_and_Solutions"] * 3 + list(CATEGORIES.keys())
     cat = random.choice(weighted_cats)
     topic = random.choice(CATEGORIES[cat])
@@ -78,7 +77,6 @@ Context: {context}"""
         response = json.loads(urlopen(req_ai).read().decode())
         text = response['choices'][0]['message']['content']
 
-        # تطهير النص من أي رموز ماركداون أو هاشتاجات
         text = re.sub(r'#+\s*', '', text)
         text = re.sub(r'```html', '', text)
         text = re.sub(r'```', '', text)
@@ -103,7 +101,6 @@ Context: {context}"""
         subprocess.run(f"cp -r {active_dir}/public/* /var/www/html/ 2>/dev/null", shell=True)
         subprocess.run(f"cp -r {active_dir}/public/* /var/www/[mnjnef.com/](https://mnjnef.com/) 2>/dev/null", shell=True)
         
-        # كسر قفل 403 للأبد بتصحيح الصلاحيات بعد النشر
         subprocess.run("chown -R www-data:www-data /var/www/html /var/www/mnjnef.com 2>/dev/null", shell=True)
         
         print(f"✅ [PUBLISHED] {clean_title}", flush=True)
@@ -117,18 +114,12 @@ Context: {context}"""
 generate_article()
 
 while True:
-    # نشر عشوائي مكثف بين 22 و 30 ثانية لتجنب الحظر
     delay = random.uniform(22.0, 30.0)
     print(f"\n⏳ [Anti-Ban System] Waiting {delay:.1f} seconds...", flush=True)
     time.sleep(delay)
     generate_article()
 EOF
 
-# 3. خطوة التشغيل الآلية: طلب المفتاح وإطلاق السيرفر أمامك
-echo "=================================================="
-read -p "👉 الصق مفتاح Mistral الخاص بك هنا (يبدأ بـ HKx) واضغط Enter: " MY_MISTRAL_KEY
-MY_MISTRAL_KEY=$(echo "$MY_MISTRAL_KEY" | xargs)
-sed -i "s/REPLACE_WITH_MISTRAL_KEY/$MY_MISTRAL_KEY/g" /root/titan_mistral_core.py
-
-echo "🚀 جاري إطلاق محرك Mnjnef..."
-python3 /root/titan_mistral_core.py
+# 3. تشغيل الخدمة بشكل آمن في الخلفية وعرض البث المباشر
+systemctl restart mnjnef_titan
+journalctl -u mnjnef_titan -f
