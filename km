@@ -1,63 +1,18 @@
-# 1. إيقاف كل العمليات العمياء في الخلفية
-pkill -f mnjnef
+# 1. إيقاف السيرفر مؤقتاً لزرع المفتاح
+systemctl stop mnjnef_titan 2>/dev/null
 
-# 2. بناء كشاف الأعطال الناطق
-cat << 'EOF' > /root/mnjnef_diagnostic.py
-import os, time, json, subprocess
-from urllib.request import urlopen, Request
-from urllib.parse import quote
+# 2. حقن المفتاح السري داخل المحرك التيتاني
+read -p "🎯 الصق مفتاح Gemini السري الخاص بك هنا واضغط Enter: " MY_KEY
+sed -i "s/API_KEY = \"ضع_مفتاحك_هنا\"/API_KEY = \"$MY_KEY\"/g" /root/mnjnef_titan_core.py
+sed -i "s/API_KEY = \"\"/API_KEY = \"$MY_KEY\"/g" /root/mnjnef_titan_core.py
 
-# 🔑 المفتاح (حتى لو كان فارغاً، سيفحص الكود بقية المكونات)
-API_KEY = "ضع_مفتاحك_هنا"
+# 3. إعادة تشغيل المحرك التيتاني بكامل قوته
+systemctl start mnjnef_titan
 
-print("🔍 [كشاف الأعطال] جاري الفحص العميق لمعرفة سبب توقف السيرفر خلال الـ 24 ساعة الماضية...")
-print("-" * 60)
+echo "================================================================="
+echo "✅ تم حقن المفتاح بنجاح! المحرك التيتاني يتصل الآن بالعقل المدبر."
+echo "جاري عرض البث المباشر لعمليات النشر (اضغط Ctrl+C للخروج من البث لاحقاً)"
+echo "================================================================="
 
-# 1. فحص الاتصال بقواعد البيانات (ويكيبيديا)
-try:
-    req = Request("https://en.wikipedia.org/api/rest_v1/page/random/title", headers={'User-Agent': 'Mozilla/5.0'})
-    res = urlopen(req)
-    title = json.loads(res.read().decode())['items'][0]['title']
-    print(f"✅ [1/4] الاتصال بقواعد البيانات العالمية سليم. (تم التقاط موضوع: {title})")
-except Exception as e:
-    print(f"❌ [1/4] فشل الاتصال بقواعد البيانات! السبب: {e}")
-
-# 2. فحص مفتاح الذكاء الاصطناعي (Gemini)
-if API_KEY == "ضع_مفتاحك_هنا":
-    print("❌ [2/4] خطأ قاتل: أنت لم تضع مفتاح الذكاء الاصطناعي (API_KEY) داخل الكود! السيرفر لا يستطيع الكتابة.")
-else:
-    try:
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={API_KEY}"
-        data = json.dumps({"contents": [{"parts": [{"text": "Hello"}]}]}).encode('utf-8')
-        req_ai = Request(url, data=data, headers={'Content-Type': 'application/json'})
-        urlopen(req_ai)
-        print("✅ [2/4] مفتاح الذكاء الاصطناعي سليم ويعمل بكفاءة.")
-    except Exception as e:
-        print(f"❌ [2/4] فشل في مفتاح الذكاء الاصطناعي! (تأكد من صلاحية المفتاح). السبب: {e}")
-
-# 3. فحص مسار موقع Mnjnef (Hugo)
-site_dirs = ["/var/www/mnjnef.com", "/var/www/html", "/root/mnjnef_site"]
-active_dir = next((d for d in site_dirs if os.path.exists(os.path.join(d, "config.toml")) or os.path.exists(os.path.join(d, "hugo.toml"))), None)
-
-if not active_dir:
-    print("❌ [3/4] خطأ قاتل: لم أتمكن من العثور على مجلد الموقع الأساسي! السيرفر يكتب المقالات ولا يعرف أين يضعها.")
-else:
-    print(f"✅ [3/4] تم العثور على مجلد الموقع بنجاح في: {active_dir}")
-    
-    # 4. فحص محرك النشر (Hugo Builder)
-    print("⏳ جاري تجربة النشر الفعلي...")
-    try:
-        result = subprocess.run(["hugo"], cwd=active_dir, capture_output=True, text=True)
-        if result.returncode != 0:
-            print(f"❌ [4/4] فشل محرك Hugo في النشر! هناك خطأ في ملفات الموقع الداخلية:\n{result.stderr}")
-        else:
-            print("✅ [4/4] محرك النشر (Hugo) يعمل بشكل سليم 100%.")
-    except Exception as e:
-        print(f"❌ [4/4] لم يتمكن السيرفر من تشغيل أمر hugo! السبب: {e}")
-
-print("-" * 60)
-print("🛑 انتهى الفحص.")
-EOF
-
-# 3. تشغيل الكشاف أمام عينيك فوراً
-python3 /root/mnjnef_diagnostic.py
+# 4. عرض البث الحي لعملية النشر
+journalctl -u mnjnef_titan -f
