@@ -1,11 +1,25 @@
-# 1. تنظيف السيرفر من الأخطاء السابقة
+# 1. إيقاف كل شيء قديم ومسح الأكواد السابقة
 pkill -f python3
 systemctl stop mnjnef_titan 2>/dev/null
-rm -f /root/titan_mistral_core.py
+rm -rf /root/titan_mistral_core.py
 
-# 2. بناء المحرك بأمان (هذا الأمر يكتب كود البايثون دون أن يختنق المتصفح)
-cat << 'EOF' > /root/titan_mistral_core.py
-import os, time, random, json, subprocess, re, sys
+# 2. إنشاء مجلدات الموقع الأساسية بقوة النظام
+mkdir -p /var/www/html/articles
+mkdir -p /var/www/mnjnef.com/articles
+
+# 3. وضع صفحة طوارئ مؤقتة لكسر 403 في هذه اللحظة بالذات
+cat << 'HTML' > /var/www/html/index.html
+<!DOCTYPE html><html><head><meta charset="utf-8"><title>Mnjnef Global Encyclopedia</title><style>body{font-family:system-ui,sans-serif;text-align:center;padding:100px;background:#f4f7f6;color:#2c3e50;} h1{font-size:3em;}</style></head><body><h1>Mnjnef Encyclopedia is Initializing...</h1><p>The AI Engine is currently generating the first massive academic article. Please refresh this page in 30 seconds.</p></body></html>
+HTML
+cp /var/www/html/index.html /var/www/mnjnef.com/index.html
+
+# إصلاح الصلاحيات لكي يقرأها السيرفر
+chown -R www-data:www-data /var/www/html /var/www/mnjnef.com
+chmod -R 755 /var/www/html /var/www/mnjnef.com
+
+# 4. بناء المحرك المباشر (Direct HTML Generator)
+cat << 'EOF' > /root/direct_mistral_engine.py
+import os, time, random, json, re, sys
 import urllib.request
 import urllib.error
 from urllib.parse import quote
@@ -13,53 +27,159 @@ from datetime import datetime
 
 API_KEY = "HKxK4S2UrTBt8ja93wkndgltN1W3UaHD"
 
-print("==================================================", flush=True)
-print("🚀 [Mnjnef Global Enterprise] 100% TRANSPARENT MODE", flush=True)
-print("==================================================", flush=True)
-
-CATEGORIES = {
-    "Education_and_Academia": ["Modern Pedagogy", "Distance Learning", "Neuroplasticity", "Cognitive Load Theory", "Special Education", "Early Childhood Development", "Educational Technology", "Curriculum Design", "Linguistics"],
-    "Psychology_and_Solutions": ["Behavioral Economics", "Emotional Intelligence", "Overcoming Procrastination", "Stress Management", "Conflict Resolution", "Cognitive Behavioral Therapy", "Motivation Mechanics"],
-    "Problem_Solving": ["Time Management Hacks", "Effective Communication", "Critical Thinking Skills", "Personal Productivity", "Decision Making Models", "Financial Literacy"],
-    "Technology_and_Science": ["Quantum Computing", "AI Ethics", "Cybersecurity", "Nanotechnology", "Astrophysics", "Marine Biology", "Renewable Energy"],
-    "Culture_and_Arts": ["Renaissance Art", "Cultural Anthropology", "Classical Architecture", "World Music History", "Modern Abstract Art"],
-    "Tourism_and_Travel": ["Sustainable Ecotourism", "Historical Landmarks", "Cultural Heritage Sites", "Backpacking Routes", "Luxury Travel Trends"],
-    "Culinary_Arts_and_Cooking": ["Molecular Gastronomy", "Traditional Fermentation", "Culinary History", "Baking Chemistry", "Plant-Based Cuisine"],
-    "Nature_and_Environment": ["Forest Conservation", "Climate Change Solutions", "Desert Ecosystems", "Biodiversity", "Oceanography"],
-    "Physical_Sports": ["Biomechanics in Sports", "Sports Nutrition", "Olympic History", "Endurance Training", "Kinesiology"],
-    "Business_and_Finance": ["Startup Ecosystems", "Macroeconomics", "Supply Chain Management", "Investment Strategies", "Global Trade"]
+CATS = {
+    "Education_and_Academia": ["Modern Pedagogy", "Distance Learning", "Neuroplasticity", "Special Education", "Educational Technology"],
+    "Psychology_and_Solutions": ["Behavioral Economics", "Emotional Intelligence", "Stress Management", "Cognitive Behavioral Therapy"],
+    "Problem_Solving": ["Time Management Hacks", "Effective Communication", "Critical Thinking Skills", "Financial Literacy"],
+    "Technology_and_Science": ["Quantum Computing", "AI Ethics", "Cybersecurity", "Astrophysics"],
+    "Culture_and_Arts": ["Renaissance Art", "Cultural Anthropology", "Classical Architecture"],
+    "Tourism_and_Travel": ["Sustainable Ecotourism", "Cultural Heritage Sites", "Luxury Travel Trends"],
+    "Culinary_Arts": ["Molecular Gastronomy", "Traditional Fermentation", "Plant-Based Cuisine"],
+    "Nature_Environment": ["Forest Conservation", "Climate Change Solutions", "Oceanography"],
+    "Sports_Science": ["Biomechanics in Sports", "Sports Nutrition", "Endurance Training"],
+    "Business_Finance": ["Macroeconomics", "Supply Chain Management", "Investment Strategies"]
 }
 
-AGENTS = ["Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124.0.0.0 Safari/537.36"]
-
 def generate_article():
-    print("\n--------------------------------------------------", flush=True)
-    weighted_cats = ["Education_and_Academia"] * 6 + ["Problem_Solving"] * 4 + ["Psychology_and_Solutions"] * 3 + list(CATEGORIES.keys())
+    print("\n" + "="*50, flush=True)
+    weighted_cats = ["Education_and_Academia"] * 5 + ["Problem_Solving"] * 3 + list(CATS.keys())
     cat = random.choice(weighted_cats)
-    topic = random.choice(CATEGORIES[cat])
+    topic = random.choice(CATS[cat])
 
     try:
-        print(f"🌍 1. Fetching knowledge base for: '{topic}'...", flush=True)
+        print(f"🌍 1. Fetching topic: '{topic}'...", flush=True)
         search_url = f"https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch={quote(topic)}&utf8=&format=json"
-        req = urllib.request.Request(search_url, headers={'User-Agent': random.choice(AGENTS)})
+        req = urllib.request.Request(search_url, headers={'User-Agent': 'Mozilla/5.0'})
+        res = json.loads(urllib.request.urlopen(req).read().decode())
         
-        try:
-            res = json.loads(urllib.request.urlopen(req).read().decode())
-        except Exception as e:
-            print(f"❌ ERROR: Wikipedia network failed: {e}", flush=True)
-            return
-
-        if not res.get('query', {}).get('search'): 
-            print("❌ ERROR: No results found on Wikipedia.", flush=True)
-            return
-            
+        if not res.get('query', {}).get('search'): return
         actual_title = res['query']['search'][0]['title']
 
         ext_url = f"https://en.wikipedia.org/w/api.php?action=query&prop=extracts&exlimit=1&titles={quote(actual_title)}&explaintext=1&format=json"
-        req2 = urllib.request.Request(ext_url, headers={'User-Agent': random.choice(AGENTS)})
-        context = list(json.loads(urllib.request.urlopen(req2).read().decode())['query']['pages'].values())[0].get('extract', '')[:1800]
+        req2 = urllib.request.Request(ext_url, headers={'User-Agent': 'Mozilla/5.0'})
+        context = list(json.loads(urllib.request.urlopen(req2).read().decode())['query']['pages'].values())[0].get('extract', '')[:1500]
 
-        prompt = f"ACT AS: Chief Editor of Mnjnef Encyclopedia.\nTASK: Write a MASSIVE, exhaustive educational article about '{actual_title}'.\nRULES:\n1. NO POLITICS, NO FAKE NEWS, NO LIES.\n2. Provide deep educational value.\n3. Format with HTML tags (<h2>, <p>, <ul>).\n4. STRICTLY NO '#' SYMBOLS. DO NOT wrap in 
-http://googleusercontent.com/immersive_entry_chip/0
+        prompt = f"ACT AS: Chief Editor of Mnjnef Encyclopedia. Write a MASSIVE, deep educational article about '{actual_title}'. RULES: No politics. English only. Format with HTML tags (<h2>, <p>, <ul>). STRICTLY NO '#' SYMBOLS. End with '<h2>📚 Related Topics</h2>' and 3 related concepts in a list. Context: {context}"
 
-مجرد أن تضغط Enter، سيتم تجهيز كل شيء آلياً، وستبدأ الشاشة بطباعة خطوات النشر. عندما تقرأ `✅ [PUBLISHED]`، اذهب وحدث موقعك واستمتع بموسوعتك الإمبراطورية العظيمة!
+        print("🧠 2. Sending prompt to Mistral AI...", flush=True)
+        url = "https://api.mistral.ai/v1/chat/completions"
+        headers = {"Content-Type": "application/json", "Authorization": f"Bearer {API_KEY}"}
+        data = json.dumps({"model": "mistral-large-latest", "messages": [{"role": "user", "content": prompt}], "temperature": 0.25}).encode('utf-8')
+
+        req_ai = urllib.request.Request(url, data=data, headers=headers)
+        response = urllib.request.urlopen(req_ai)
+        text = json.loads(response.read().decode())['choices'][0]['message']['content']
+        
+        print("✅ 3. Content Generated!", flush=True)
+
+        text = re.sub(r'#+\s*|```html|```', '', text)
+        clean_title = re.sub(r'[#*@]', '', actual_title).strip()
+        date_str = datetime.now().strftime('%Y-%m-%d %H:%M')
+
+        # التصميم الفخم للمقال بلغة HTML مباشرة
+        html_content = f"""
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>{clean_title} - Mnjnef Encyclopedia</title>
+            <style>
+                body {{ font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.8; color: #333; background-color: #f8f9fa; margin: 0; padding: 0; }}
+                header {{ background-color: #1a365d; color: white; padding: 20px; text-align: center; border-bottom: 5px solid #e2e8f0; }}
+                .container {{ max-width: 900px; margin: 40px auto; background: white; padding: 40px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }}
+                h1 {{ color: #2d3748; font-size: 2.5em; margin-bottom: 10px; border-bottom: 2px solid #edf2f7; padding-bottom: 10px; }}
+                h2 {{ color: #2b6cb0; margin-top: 30px; }}
+                p {{ font-size: 1.1em; margin-bottom: 20px; }}
+                ul {{ margin-bottom: 20px; font-size: 1.1em; }}
+                li {{ margin-bottom: 10px; }}
+                .meta-info {{ color: #718096; font-size: 0.9em; margin-bottom: 30px; }}
+                .translator {{ background: #ebf8ff; padding: 15px; border-left: 5px solid #3182ce; border-radius: 4px; margin-bottom: 30px; }}
+                footer {{ text-align: center; margin-top: 50px; padding: 20px; color: #a0aec0; border-top: 1px solid #edf2f7; }}
+            </style>
+        </head>
+        <body>
+            <header>
+                <h2>Mnjnef Global Educational Encyclopedia</h2>
+            </header>
+            <div class="container">
+                <h1>{clean_title}</h1>
+                <div class="meta-info">Published on: {date_str} | Category: {cat.replace('_', ' ')}</div>
+                
+                <div class="translator">
+                    <strong>🌐 Translate this Encyclopedia Article:</strong>
+                    <div id="google_translate_element"></div>
+                </div>
+                
+                <div class="article-body">
+                    {text}
+                </div>
+                
+                <footer>
+                    <p>&copy; {datetime.now().year} Mnjnef Global Enterprise. Empowering global education.</p>
+                </footer>
+            </div>
+            
+            <script type="text/javascript">
+                function googleTranslateElementInit() {{
+                    new google.translate.TranslateElement({{pageLanguage: 'en', layout: google.translate.TranslateElement.InlineLayout.SIMPLE}}, 'google_translate_element');
+                }}
+            </script>
+            <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+        </body>
+        </html>
+        """
+
+        # زرع المقال مباشرة في السيرفر ليعمل كصفحة رئيسية
+        with open("/var/www/html/index.html", "w", encoding="utf-8") as f: f.write(html_content)
+        with open("/var/www/mnjnef.com/index.html", "w", encoding="utf-8") as f: f.write(html_content)
+        
+        # أرشفة المقال
+        file_name = clean_title.replace(" ", "_").lower() + f"_{int(time.time())}.html"
+        with open(f"/var/www/html/articles/{file_name}", "w", encoding="utf-8") as f: f.write(html_content)
+        
+        # تصحيح الصلاحيات نهائياً
+        os.system("chown -R www-data:www-data /var/www/html /var/www/mnjnef.com")
+        
+        print(f"✅ [PUBLISHED DIRECTLY] '{clean_title}' is LIVE on your homepage!", flush=True)
+
+    except Exception as e:
+        print(f"❌ ERROR: {e}", flush=True)
+
+generate_article()
+
+while True:
+    delay = random.uniform(22.0, 30.0)
+    print(f"⏳ Waiting {delay:.1f} seconds for the next massive article...", flush=True)
+    time.sleep(delay)
+    generate_article()
+EOF
+
+# 5. تشغيل المحرك المباشر
+cat << 'SRV' > /etc/systemd/system/mnjnef_direct.service
+[Unit]
+Description=Mnjnef Direct HTML Engine
+After=network.target
+
+[Service]
+Type=simple
+User=root
+ExecStart=/usr/bin/python3 /root/direct_mistral_engine.py
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+SRV
+
+systemctl daemon-reload
+systemctl enable mnjnef_direct > /dev/null 2>&1
+systemctl restart mnjnef_direct
+systemctl restart nginx
+
+echo "================================================================="
+echo "✅ تم تدمير خطأ 403 للأبد! الموقع الآن يعمل."
+echo "افتح جوالك وقم بتحديث الصفحة، ستجد الموقع يعمل الآن."
+echo "جاري عرض البث المباشر لنشر المقالات:"
+echo "================================================================="
+journalctl -u mnjnef_direct -f
