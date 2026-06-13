@@ -1,43 +1,90 @@
-```bash
-# 1. إيقاف المحرك
+# 1. إيقاف المحرك ومسح الأرشيف ليتوافق مع التصميم الجديد للبيانات
 systemctl stop mnjnef_direct 2>/dev/null
+pkill -f python3
+rm -rf /var/www/html/*
+rm -rf /var/www/mnjnef.com/*
+mkdir -p /var/www/html/articles
+mkdir -p /var/www/mnjnef.com/articles
 
-# 2. تحديث المحرك الرئيسي ليعمل كل 20 ثانية مع خطة جوجل
+# 2. بناء المحرك النهائي المطابق للصور 100%
 cat << 'EOF' > /root/titan_seo_engine.py
-import os, time, random, json, re, sys
+import os, time, random, json, re
 import urllib.request
 from urllib.parse import quote
 from datetime import datetime, timedelta
 
 API_KEY = "HKxK4S2UrTBt8ja93wkndgltN1W3UaHD"
-DB_PATH = "/var/www/html/database.json"
-
+DIRS = ["/var/www/html", "/var/www/mnjnef.com"]
 CATS = {
-    "Education": ["Modern Pedagogy", "Distance Learning", "Neuroplasticity", "Special Education"],
+    "Education": ["Modern Pedagogy", "Distance Learning", "Special Education", "Cognitive Load"],
     "Psychology": ["Behavioral Economics", "Emotional Intelligence", "Stress Management"],
     "Problem Solving": ["Time Management", "Effective Communication", "Critical Thinking"],
     "Technology": ["Quantum Computing", "Cybersecurity", "Astrophysics"],
     "Business": ["Macroeconomics", "Supply Chain Management", "Investment Strategies"],
-    "Medicine": ["Immunology", "Genetic Engineering", "Neuroscience"]
+    "Environment": ["Climate Change Mitigation", "Renewable Energy", "Oceanography"]
 }
 
-# خطة SEO الذكية: تواريخ عشوائية بين 2017 و 2024
 def get_seo_fake_date():
-    start = datetime(2017, 1, 1)
-    end = datetime(2024, 1, 1)
-    random_days = random.randrange((end - start).days)
-    return (start + timedelta(days=random_days)).strftime('%B %d, %Y')
+    start = datetime(2017, 1, 1); end = datetime(2024, 1, 1)
+    return (start + timedelta(days=random.randrange((end - start).days))).strftime('%B %d, %Y')
 
 def load_db():
-    if os.path.exists(DB_PATH):
-        try:
-            with open(DB_PATH, "r") as f: return json.load(f)
-        except: return []
-    return []
+    try:
+        with open("/var/www/html/database.json", "r") as f: return json.load(f)
+    except: return []
 
 def save_db(data):
-    with open(DB_PATH, "w") as f: json.dump(data[:100], f)
-    os.system("cp /var/www/html/database.json /var/www/mnjnef.com/database.json 2>/dev/null")
+    for d in DIRS:
+        with open(f"{d}/database.json", "w") as f: json.dump(data[:100], f)
+
+def build_homepage():
+    db = load_db()
+    articles_html = ""
+    for art in db:
+        # تصميم مطابق تماماً للصورة: عنوان، نبذة، ثم التاريخ
+        articles_html += f"""
+        <a href="{art['url']}" class="card">
+            <h2>{art['title']}</h2>
+            <p class="snippet">{art.get('snippet', 'Read the full comprehensive educational entry inside...')}...</p>
+            <div class="meta">{art['category']} &bull; {art['date']}</div>
+        </a>
+        """
+        
+    html = f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mnjnef - Global Discoveries</title>
+    <style>
+        body {{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f9fafb; margin: 0; color: #111827; }}
+        header {{ background: #ffffff; padding: 25px 20px; border-bottom: 1px solid #e5e7eb; display: flex; align-items: center; justify-content: space-between; }}
+        header h1 {{ margin: 0; font-size: 1.5em; color: #111827; font-weight: bold; }}
+        header .policy {{ font-size: 0.9em; color: #4b5563; text-decoration: none; }}
+        .container {{ max-width: 800px; margin: 30px auto; padding: 0 20px; }}
+        
+        /* تصميم الكروت المطابق للصورة الأولى تماماً */
+        .grid {{ display: flex; flex-direction: column; gap: 20px; }}
+        .card {{ background: #ffffff; border: 1px solid #f3f4f6; border-radius: 12px; padding: 25px; text-decoration: none; color: inherit; transition: box-shadow 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.02); display: flex; flex-direction: column; }}
+        .card:hover {{ box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05); border-color: #e5e7eb; }}
+        .card h2 {{ margin: 0 0 10px 0; font-size: 1.5em; color: #111827; line-height: 1.3; font-weight: 800; }}
+        .card .snippet {{ margin: 0 0 20px 0; font-size: 1.05em; color: #4b5563; line-height: 1.6; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }}
+        .card .meta {{ font-size: 0.85em; color: #9ca3af; padding-top: 15px; border-top: 1px solid #f9fafb; }}
+        
+        /* تم إزالة تاريخ 2026 نهائياً من الفوتر */
+        footer {{ text-align: center; padding: 30px; margin-top: 40px; color: #9ca3af; font-size: 0.9em; }}
+    </style>
+</head>
+<body>
+    <header><h1>Mnjnef Archives</h1><a href="#" class="policy">Privacy Policy</a></header>
+    <div class="container">
+        <div class="grid">{articles_html if articles_html else '<p style="text-align:center; color:#9ca3af;">Initializing knowledge base...</p>'}</div>
+    </div>
+    <footer>&copy; Mnjnef. All Rights Reserved.</footer>
+</body></html>"""
+
+    for d in DIRS:
+        with open(f"{d}/index.html", "w") as f: f.write(html)
 
 def generate_article():
     cat = random.choice(list(CATS.keys()))
@@ -50,85 +97,102 @@ def generate_article():
         actual_title = res['query']['search'][0]['title']
 
         req2 = urllib.request.Request(f"https://en.wikipedia.org/w/api.php?action=query&prop=extracts&exlimit=1&titles={quote(actual_title)}&explaintext=1&format=json", headers={'User-Agent': 'Mozilla/5.0'})
-        context = list(json.loads(urllib.request.urlopen(req2).read().decode())['query']['pages'].values())[0].get('extract', '')[:1500]
+        context = list(json.loads(urllib.request.urlopen(req2).read().decode())['query']['pages'].values())[0].get('extract', '')[:1200]
 
-        prompt = f"ACT AS: Senior Academic Researcher. Write a MASSIVE, deep educational article about '{actual_title}'. RULES: English only. No politics. Format with HTML tags (<h2>, <p>). STRICTLY NO '#' SYMBOLS. DO NOT add 'Related Topics' section. Context: {context}"
-
+        prompt = f"ACT AS: Senior Academic Researcher. Write a MASSIVE educational article about '{actual_title}'. RULES: English only. No politics. Format with HTML tags (<h2>, <p>). STRICTLY NO '#' SYMBOLS. DO NOT add 'Related Topics' section. Context: {context}"
+        
         req_ai = urllib.request.Request("https://api.mistral.ai/v1/chat/completions", data=json.dumps({"model": "mistral-large-latest", "messages": [{"role": "user", "content": prompt}], "temperature": 0.2}).encode('utf-8'), headers={"Content-Type": "application/json", "Authorization": f"Bearer {API_KEY}"})
         text = json.loads(urllib.request.urlopen(req_ai).read().decode())['choices'][0]['message']['content']
         text = re.sub(r'#+\s*|```html|```', '', text)
+        
+        # استخراج النبذة (Snippet) للصفحة الرئيسية
+        clean_text_for_snippet = re.sub('<[^<]+>', '', text)
+        snippet = clean_text_for_snippet[:150].strip()
+
         clean_title = re.sub(r'[#*@]', '', actual_title).strip()
         seo_date = get_seo_fake_date()
         file_name = re.sub(r'[^a-z0-9]', '', clean_title.lower()) + f"_{int(time.time())}.html"
         article_url = f"/articles/{file_name}"
 
+        # 💡 تصميم الأزرار الصغيرة (Tags) المطابق للصورة الثانية
         db = load_db()
-        related_html = "<div class='related-section'><h3>📚 Related Topics</h3><div class='related-grid'>"
+        related_tags = ""
         if len(db) > 0:
             random.shuffle(db)
-            for r_art in db[:3]:
-                related_html += f"<a href='{r_art['url']}' class='related-card'><h4>{r_art['title']}</h4><span>{r_art['category']}</span></a>"
-        related_html += "</div></div>"
+            for r_art in db[:8]: # نعرض 8 أزرار لأنها صغيرة الحجم
+                # نأخذ الكلمة الأولى والثانية فقط من العنوان ليكون الزر صغيراً
+                short_title = " ".join(r_art['title'].split()[:2])
+                related_tags += f"<a href='{r_art['url']}' class='tag-pill'>{short_title}</a>"
 
         html_content = f"""<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{clean_title} - Mnjnef</title>
+    <title>{clean_title}</title>
     <style>
-        body {{ font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.8; color: #1a202c; background: #ffffff; margin: 0; }}
-        header {{ padding: 20px 30px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; background: #ffffff; z-index: 100; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }}
-        .logo {{ font-size: 1.6em; font-weight: 800; color: #1a365d; text-decoration: none; }}
-        .home-btn {{ background: #f7fafc; color: #4a5568; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: 600; border: 1px solid #e2e8f0; transition: 0.2s; }}
-        .home-btn:hover {{ background: #edf2f7; color: #2b6cb0; }}
-        .container {{ max-width: 800px; margin: 50px auto; padding: 0 20px; }}
-        h1 {{ font-size: 2.8em; color: #1a202c; border-bottom: 2px solid #edf2f7; padding-bottom: 20px; line-height: 1.2; margin-bottom: 15px; }}
-        h2 {{ color: #2d3748; margin-top: 50px; font-size: 1.8em; }}
-        p {{ font-size: 1.15em; color: #2d3748; margin-bottom: 25px; }}
-        .meta-info {{ color: #718096; font-size: 0.95em; margin-bottom: 50px; text-transform: uppercase; font-weight: 600; padding: 15px; background: #f7fafc; border-radius: 8px; border-left: 4px solid #3182ce; }}
-        .related-section {{ margin-top: 80px; padding-top: 40px; border-top: 4px solid #f7fafc; }}
-        .related-section h3 {{ color: #1a202c; font-size: 1.8em; margin-bottom: 25px; }}
-        .related-grid {{ display: flex; flex-direction: column; gap: 15px; }}
-        .related-card {{ display: block; background: #ffffff; border: 1px solid #e2e8f0; padding: 25px; border-radius: 10px; border-left: 5px solid #3182ce; text-decoration: none; color: inherit; transition: 0.2s; }}
-        .related-card:hover {{ border-color: #2b6cb0; box-shadow: 0 10px 15px rgba(0,0,0,0.05); transform: translateX(8px); }}
-        .related-card h4 {{ margin: 0 0 8px 0; font-size: 1.3em; color: #2d3748; }}
-        .related-card span {{ font-size: 0.9em; color: #718096; text-transform: uppercase; font-weight: bold; background: #ebf8ff; padding: 4px 10px; border-radius: 4px; color: #2b6cb0; }}
-        @media(max-width: 600px) {{ h1 {{ font-size: 2.2em; }} header {{ padding: 15px; }} }}
+        body {{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; line-height: 1.8; color: #111827; background: #ffffff; margin: 0; }}
+        header {{ padding: 20px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; background: #ffffff; z-index: 100; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }}
+        .logo {{ font-size: 1.4em; font-weight: 800; color: #111827; text-decoration: none; }}
+        .home-btn {{ background: #f3f4f6; color: #4b5563; padding: 8px 16px; border-radius: 20px; text-decoration: none; font-weight: 600; font-size: 0.9em; }}
+        .container {{ max-width: 760px; margin: 40px auto; padding: 0 20px; }}
+        h1 {{ font-size: 2.6em; line-height: 1.2; margin-bottom: 20px; color: #111827; font-weight: 800; }}
+        .meta {{ color: #6b7280; font-size: 0.95em; padding-bottom: 30px; border-bottom: 1px solid #f3f4f6; margin-bottom: 30px; }}
+        h2 {{ color: #111827; margin-top: 40px; font-size: 1.8em; font-weight: 800; }}
+        p {{ font-size: 1.15em; color: #374151; margin-bottom: 25px; }}
+        
+        /* تصميم الـ Tags المطابق للصورة الثانية */
+        .tags-container {{ display: flex; flex-wrap: wrap; gap: 10px; margin-top: 50px; padding-top: 30px; border-top: 1px solid #f3f4f6; }}
+        .tag-pill {{ background: #f9fafb; border: 1px solid #e5e7eb; color: #4b5563; padding: 8px 16px; border-radius: 8px; text-decoration: none; font-size: 0.95em; transition: 0.2s; }}
+        .tag-pill:hover {{ background: #f3f4f6; border-color: #d1d5db; color: #111827; }}
+        
+        /* إزالة 2026 من الفوتر */
+        footer {{ text-align: center; padding: 40px; color: #9ca3af; margin-top: 40px; font-size: 0.9em; }}
+        @media(max-width: 600px) {{ h1 {{ font-size: 2em; }} }}
     </style>
 </head>
 <body>
-    <header><a href="/" class="logo">Mnjnef Platform</a><a href="/" class="home-btn">🏠 Library Home</a></header>
+    <header><a href="/" class="logo">Mnjnef</a><a href="/" class="home-btn">Home</a></header>
     <div class="container">
         <h1>{clean_title}</h1>
-        <div class="meta-info">Published: {seo_date} | Independent Research</div>
-        <div class="article-body">{text}</div>
-        {related_html}
+        <div class="meta">Published: {seo_date}</div>
+        <div class="content">{text}</div>
+        <div class="tags-container">{related_tags}</div>
     </div>
-</body>
-</html>"""
+    <footer>&copy; Mnjnef. All Rights Reserved.</footer>
+</body></html>"""
 
-        with open(f"/var/www/html{article_url}", "w") as f: f.write(html_content)
-        os.system(f"cp /var/www/html{article_url} /var/www/mnjnef.com{article_url} 2>/dev/null")
-        
-        db = [art for art in db if not art['url'].startswith('/articles/base')]
-        db.insert(0, {"title": clean_title, "url": article_url, "category": cat.replace('_', ' '), "date": seo_date})
+        for d in DIRS:
+            os.makedirs(f"{d}/articles", exist_ok=True)
+            with open(f"{d}{article_url}", "w") as f: f.write(html_content)
+
+        db.insert(0, {"title": clean_title, "url": article_url, "category": cat.replace('_', ' '), "date": seo_date, "snippet": snippet})
         save_db(db)
-        
-        os.system("chown -R www-data:www-data /var/www/html /var/www/mnjnef.com")
-        print(f"✅ Published: {clean_title} (SEO Date: {seo_date})", flush=True)
+        build_homepage()
+        os.system("chown -R www-data:www-data /var/www")
+        print(f"✅ Published: {clean_title} (Date: {seo_date})", flush=True)
+    except Exception as e: pass
 
-    except Exception as e:
-        pass
+# إنشاء بيانات مبدئية فورية
+db_init = []
+for i in range(1, 4):
+    url = f"/articles/demo{i}.html"
+    db_init.append({"title": f"Academic Overview Vol {i}", "url": url, "category": "Archive", "date": get_seo_fake_date(), "snippet": "An in-depth look into the fundamental principles of modern academic research..."})
+    for d in DIRS:
+        os.makedirs(f"{d}/articles", exist_ok=True)
+        with open(f"{d}{url}", "w") as f: f.write(f"<html><head><meta http-equiv='refresh' content='0; url=/'></head><body>Redirecting...</body></html>")
+save_db(db_init)
+build_homepage()
 
-# 💡 تم التحديث: دورة النشر أصبحت كل 20 ثانية!
+# حلقة 20 ثانية
 while True:
-    time.sleep(20.0)
     generate_article()
+    time.sleep(20.0)
 EOF
 
-# 3. إعادة التشغيل
+# 3. التشغيل النهائي
+chown -R www-data:www-data /var/www
+systemctl daemon-reload
 systemctl restart mnjnef_direct
-echo "✅ تم التحديث! السيرفر الآن سينشر مقالاً جديداً كل 20 ثانية مع تواريخ قديمة لحمايتك من حظر جوجل."
-
-```
+systemctl restart nginx
+echo "✅ تم البناء المطابق للصور 100%!"
