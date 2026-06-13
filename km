@@ -1,14 +1,13 @@
 cat << 'EOF' > /root/titan_seo_engine.py
-import os, time, random, json, re
-import urllib.request
+import os, time, random, json, re, urllib.request
 from urllib.parse import quote
 from datetime import datetime, timedelta
 
 API_KEY = "HKxK4S2UrTBt8ja93wkndgltN1W3UaHD"
 DIRS = ["/var/www/html", "/var/www/mnjnef.com"]
-CATS = {"Education": ["Modern Pedagogy", "Special Education"], "Psychology": ["Behavioral Economics"], "Problem Solving": ["Critical Thinking"], "Technology": ["Quantum Computing"], "Science": ["Astrophysics"]}
+CATS = {"Education": ["Pedagogy", "Distance Learning"], "Psychology": ["Behavioral Economics"], "Technology": ["Quantum Computing"], "Science": ["Astrophysics"]}
 
-def get_seo_date():
+def get_fake_date():
     start = datetime(2017, 1, 1); end = datetime(2024, 1, 1)
     return (start + timedelta(days=random.randrange((end - start).days))).strftime('%B %d, %Y')
 
@@ -19,66 +18,7 @@ def load_db():
 
 def save_db(data):
     for d in DIRS:
-        os.makedirs(d, exist_ok=True)
-        with open(f"{d}/database.json", "w") as f: json.dump(data[:150], f)
+        with open(f"{d}/database.json", "w") as f: json.dump(data[:100], f)
 
-def build_pages():
-    db = load_db()
-    # 1. بناء الصفحة الرئيسية (المربعات)
-    cards = "".join([f"<a href='{a['url']}' class='card'><span class='badge'>{a['category']}</span><h2>{a['title']}</h2><div class='date'>Published: {a['date']}</div></a>" for a in db])
-    html = f"<!DOCTYPE html><html lang='en'><head><meta charset='UTF-8'><meta name='viewport' content='width=device-width, initial-scale=1.0'><title>Mnjnef Encyclopedia</title><style>body{{font-family:sans-serif;background:#f3f4f6;margin:0;}} header{{background:#1e3a8a;padding:40px 20px;text-align:center;}} header h1{{color:#fff;margin:0;font-size:2.5em;}} header a{{color:#bfdbfe;text-decoration:none;margin-top:10px;display:inline-block;border:1px solid #bfdbfe;padding:5px 15px;border-radius:5px;}} .container{{max-width:900px;margin:40px auto;padding:0 20px;display:flex;flex-direction:column;gap:20px;}} .card{{background:#fff;padding:25px;border-radius:10px;text-decoration:none;color:#111;border-left:5px solid #3b82f6;box-shadow:0 2px 5px rgba(0,0,0,0.05);}} .badge{{background:#eff6ff;color:#1e40af;padding:5px 10px;border-radius:5px;font-size:0.8em;font-weight:bold;text-transform:uppercase;}} .card h2{{margin:15px 0 10px 0;}} .date{{color:#666;font-size:0.9em;}} footer{{text-align:center;padding:30px;color:#666;}}</style></head><body><header><h1>Mnjnef Encyclopedia</h1><a href='/privacy.html'>Privacy Policy</a></header><div class='container'>{cards if cards else '<p>Indexing...</p>'}</div><footer>&copy; Mnjnef Encyclopedia</footer></body></html>"
-    
-    # 2. بناء صفحة الخصوصية لأدسنس
-    privacy = f"<!DOCTYPE html><html lang='en'><head><title>Privacy Policy - Mnjnef</title><style>body{{font-family:sans-serif;line-height:1.6;padding:40px;max-width:800px;margin:auto;}} h1{{color:#1e3a8a;}}</style></head><body><a href='/'>&larr; Home</a><h1>Privacy Policy</h1><p>Mnjnef Encyclopedia respects your privacy. We use standard analytics and cookies to improve user experience. We may partner with third-party networks like Google AdSense, which use cookies to serve ads based on your visit history. You can opt-out via Google's settings. Our platform is dedicated to global academic research.</p></body></html>"
-    
-    for d in DIRS:
-        with open(f"{d}/index.html", "w") as f: f.write(html)
-        with open(f"{d}/privacy.html", "w") as f: f.write(privacy)
-
-def generate_article():
-    cat = random.choice(list(CATS.keys())); topic = random.choice(CATS[cat])
-    try:
-        req = urllib.request.Request(f"https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch={quote(topic)}&utf8=&format=json", headers={'User-Agent': 'Mozilla/5.0'})
-        res = json.loads(urllib.request.urlopen(req).read().decode())
-        if not res.get('query', {}).get('search'): return
-        actual_title = res['query']['search'][0]['title']
-
-        req2 = urllib.request.Request(f"https://en.wikipedia.org/w/api.php?action=query&prop=extracts&exlimit=1&titles={quote(actual_title)}&explaintext=1&format=json", headers={'User-Agent': 'Mozilla/5.0'})
-        context = list(json.loads(urllib.request.urlopen(req2).read().decode())['query']['pages'].values())[0].get('extract', '')[:1200]
-
-        prompt = f"ACT AS: Senior Academic. Write a MASSIVE educational article about '{actual_title}'. RULES: English only. No politics. Format with HTML tags (<h2>, <p>). STRICTLY NO '#' SYMBOLS. DO NOT add 'Related Topics' section."
-        req_ai = urllib.request.Request("https://api.mistral.ai/v1/chat/completions", data=json.dumps({"model": "mistral-large-latest", "messages": [{"role": "user", "content": prompt}], "temperature": 0.2}).encode('utf-8'), headers={"Content-Type": "application/json", "Authorization": f"Bearer {API_KEY}"})
-        text = json.loads(urllib.request.urlopen(req_ai).read().decode())['choices'][0]['message']['content'].replace('```html','').replace('```','')
-        
-        clean_title = re.sub(r'[#*@]', '', actual_title).strip()
-        seo_date = get_seo_date()
-        file_name = re.sub(r'[^a-z0-9]', '', clean_title.lower()) + f"_{int(time.time())}.html"
-        article_url = f"/{file_name}"
-
-        db = load_db()
-        tags = "".join([f"<a href='{r['url']}' class='tag'>{r['title']}</a>" for r in random.sample(db, min(len(db), 6))])
-        
-        html_content = f"<!DOCTYPE html><html lang='en'><head><meta charset='UTF-8'><meta name='viewport' content='width=device-width, initial-scale=1.0'><title>{clean_title} - Mnjnef</title><style>body{{font-family:sans-serif;line-height:1.8;color:#111;margin:0;}} header{{padding:20px;border-bottom:1px solid #eee;display:flex;justify-content:space-between;align-items:center;}} .logo{{font-size:1.5em;font-weight:bold;color:#1e3a8a;text-decoration:none;}} .home{{background:#f3f4f6;color:#333;padding:8px 15px;text-decoration:none;border-radius:5px;}} .container{{max-width:800px;margin:40px auto;padding:0 20px;}} h1{{font-size:2.5em;margin-bottom:10px;}} .meta{{color:#666;margin-bottom:30px;padding-bottom:20px;border-bottom:1px solid #eee;}} .tags{{margin-top:50px;padding-top:20px;border-top:1px solid #eee;display:flex;flex-wrap:wrap;gap:10px;}} .tag{{background:#f9fafb;border:1px solid #eee;padding:8px 15px;border-radius:20px;text-decoration:none;color:#333;}} .tag:hover{{background:#eff6ff;border-color:#bfdbfe;color:#1e40af;}}</style></head><body><header><a href='/' class='logo'>Mnjnef Encyclopedia</a><a href='/' class='home'>Home</a></header><div class='container'><h1>{clean_title}</h1><div class='meta'>Published: {seo_date}</div><div>{text}</div><div class='tags'><h3>Explore More:</h3><br>{tags}</div></div></body></html>"
-
-        for d in DIRS:
-            with open(f"{d}{article_url}", "w") as f: f.write(html_content)
-
-        db.insert(0, {"title": clean_title, "url": article_url, "category": cat, "date": seo_date})
-        save_db(db)
-        build_pages()
-        os.system("chown -R www-data:www-data /var/www")
-        print(f"✅ Published: {clean_title}", flush=True)
-    except Exception as e: pass
-
-# بناء مقال أولي لكي يعمل الموقع فوراً
-save_db([{"title": "Welcome to Mnjnef Encyclopedia", "url": "/welcome.html", "category": "Archive", "date": get_seo_date()}])
-for d in DIRS:
-    os.makedirs(d, exist_ok=True)
-    with open(f"{d}/welcome.html", "w") as f: f.write("<html><head><meta http-equiv='refresh' content='0; url=/'></head></html>")
-build_pages()
-
-while True:
-    generate_article()
-    time.sleep(20.0)
 EOF
-echo "✅ تم تثبيت كود المحرك بنجاح!"
+echo "✅ الجزء الأول تم بنجاح."
