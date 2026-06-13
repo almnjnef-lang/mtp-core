@@ -1,54 +1,55 @@
-```bash
-# 1. إيقاف عمليات الذكاء الاصطناعي وإلغائها من جذور النظام
+# 1. إيقاف الخدمة ومنعها من التشغيل التلقائي عند إعادة تشغيل السيرفر
 systemctl stop mnjnef_direct 2>/dev/null
 systemctl disable mnjnef_direct 2>/dev/null
-pkill -f python3
+systemctl stop mnjnef_titan 2>/dev/null
+systemctl disable mnjnef_titan 2>/dev/null
 
-# 2. حذف ملفات التشغيل الخلفية (Services)
+# 2. القتل الإجباري لكل عمليات البايثون في الخلفية (الضربة القاضية)
+killall -9 python3 2>/dev/null
+pkill -9 -f titan_seo_engine.py 2>/dev/null
+pkill -9 -f direct_mistral_engine.py 2>/dev/null
+
+# 3. حذف ملفات الخدمات من نظام التشغيل لمنع عودتها
 rm -f /etc/systemd/system/mnjnef_direct.service
+rm -f /etc/systemd/system/mnjnef_titan.service
 systemctl daemon-reload
 
-# 3. حذف جميع أكواد البايثون والمحركات
+# 4. مسح شامل لكل الأكواد والمحركات
 rm -f /root/titan_seo_engine.py
 rm -f /root/titan_mistral_core.py
 rm -f /root/direct_mistral_engine.py
-rm -f /root/update_translator.py
 
-# 4. مسح جميع ملفات الموقع والمقالات وقواعد البيانات (الفرمتة)
+# 5. مسح جميع ملفات الموقع والمقالات (الفرمتة)
 rm -rf /var/www/html/*
 rm -rf /var/www/mnjnef.com/*
 rm -rf /root/mnjnef_site
 
-# 5. وضع صفحة ختامية نظيفة تخبر الزوار أن الموقع ينتقل لمنصة جديدة
+# 6. إنشاء صفحة الإغلاق البسيطة جداً
 cat << 'EOF' > /var/www/html/index.html
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mnjnef Encyclopedia - Update</title>
+    <title>Site Closed</title>
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f3f4f6; color: #1f2937; text-align: center; padding: 20%; margin: 0; }
-        h1 { color: #1e3a8a; font-size: 2.5em; margin-bottom: 10px; }
-        p { color: #4b5563; font-size: 1.2em; }
+        body { font-family: sans-serif; text-align: center; padding: 20%; background: #f9f9f9; color: #333; }
+        h1 { color: #d9534f; }
     </style>
 </head>
 <body>
-    <h1>Mnjnef Encyclopedia</h1>
-    <p>The global database is currently migrating to a new, faster platform. We will be back online shortly.</p>
+    <h1>Site Under Maintenance</h1>
+    <p>This site is currently closed and moving to a new platform.</p>
 </body>
 </html>
 EOF
 
-# 6. تعميم الصفحة الختامية وإعادة تشغيل واجهة السيرفر
 cp /var/www/html/index.html /var/www/mnjnef.com/index.html 2>/dev/null
 chown -R www-data:www-data /var/www
 systemctl restart nginx
 
-echo "====================================================================="
-echo "✅ تمت الفرمتة بنجاح!"
-echo "تم إيقاف الذكاء الاصطناعي، ومسح كل الأكواد، وتصفير السيرفر تماماً."
-echo "الموقع الآن يعرض صفحة انتقال بسيطة، وهو جاهز لربطه ببلوجر متى شئت."
-echo "====================================================================="
-
-```
+echo "================================================================="
+echo "✅ تم إعدام السيرفر بالكامل وإغلاق جميع العمليات بنجاح!"
+echo "لن يتم نشر أي مقال بعد الآن."
+echo "الموقع الآن يعرض رسالة الصيانة فقط."
+echo "================================================================="
