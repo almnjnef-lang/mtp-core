@@ -1,12 +1,56 @@
-# 1. إيقاف المحرك ومسح الأرشيف ليتوافق مع التصميم الجديد للبيانات
+# 1. إيقاف المحرك ومسح كل الفوضى السابقة تماماً
 systemctl stop mnjnef_direct 2>/dev/null
 pkill -f python3
 rm -rf /var/www/html/*
 rm -rf /var/www/mnjnef.com/*
-mkdir -p /var/www/html/articles
-mkdir -p /var/www/mnjnef.com/articles
 
-# 2. بناء المحرك النهائي المطابق للصور 100%
+# 2. إنشاء صفحة سياسة الخصوصية العالمية (متوافقة مع Google AdSense)
+cat << 'PRIVACY_EOF' > /var/www/html/privacy.html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Privacy Policy - Mnjnef Encyclopedia</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; line-height: 1.8; color: #1f2937; background: #ffffff; margin: 0; }
+        header { padding: 25px 20px; border-bottom: 1px solid #e5e7eb; background: #ffffff; text-align: center; }
+        .logo { font-size: 1.8em; font-weight: 800; color: #1e3a8a; text-decoration: none; }
+        .container { max-width: 800px; margin: 40px auto; padding: 0 20px; }
+        h1 { font-size: 2.2em; color: #111827; border-bottom: 2px solid #f3f4f6; padding-bottom: 15px; }
+        h2 { color: #1e40af; margin-top: 30px; font-size: 1.4em; }
+        p { font-size: 1.1em; color: #4b5563; margin-bottom: 20px; }
+        footer { text-align: center; padding: 30px; border-top: 1px solid #e5e7eb; color: #9ca3af; margin-top: 50px; }
+    </style>
+</head>
+<body>
+    <header><a href="/" class="logo">Mnjnef Encyclopedia</a></header>
+    <div class="container">
+        <h1>Privacy Policy</h1>
+        <p>Welcome to Mnjnef Encyclopedia. This Privacy Policy outlines how our global academic repository collects, uses, and safeguards information when you visit our platform.</p>
+        
+        <h2>1. Information Collection and Use</h2>
+        <p>As an open educational resource, we prioritize your privacy. We do not require account registration to access our academic archives. We automatically collect standard, non-personally identifiable log data (such as IP addresses, browser types, and access times) solely for the purpose of ensuring server stability and analyzing global academic trends.</p>
+
+        <h2>2. Cookies and Web Beacons</h2>
+        <p>Mnjnef Encyclopedia uses "cookies" to enhance user experience and optimize our platform's performance. Cookies are small text files stored on your device. You can choose to disable cookies through your individual browser options, though this may affect the functionality of certain platform features.</p>
+
+        <h2>3. Google AdSense and Third-Party Vendors</h2>
+        <p>To sustain our independent research platform, we may use third-party advertising companies, including Google AdSense, to serve ads. Third-party vendors, including Google, use cookies to serve ads based on a user's prior visits to our website or other websites. Google's use of advertising cookies enables it and its partners to serve ads to our users based on their visit to our sites and/or other sites on the Internet. Users may opt-out of personalized advertising by visiting Google's Ads Settings.</p>
+
+        <h2>4. Data Security</h2>
+        <p>We implement robust, industry-standard security measures to protect the integrity of our educational database and the minimal data we process. However, no method of transmission over the Internet is entirely secure.</p>
+
+        <h2>5. Policy Updates</h2>
+        <p>Our Independent Research Board may update this Privacy Policy periodically to reflect technological advancements or legal requirements. Continued use of Mnjnef Encyclopedia implies consent to these terms.</p>
+    </div>
+    <footer>&copy; 2026 Mnjnef Encyclopedia. All Rights Reserved.</footer>
+</body>
+</html>
+PRIVACY_EOF
+cp /var/www/html/privacy.html /var/www/mnjnef.com/privacy.html
+
+# 3. بناء المحرك العبقري (كل 20 ثانية، بدون مجلدات، اسم موسوعة، تواريخ SEO)
 cat << 'EOF' > /root/titan_seo_engine.py
 import os, time, random, json, re
 import urllib.request
@@ -21,7 +65,7 @@ CATS = {
     "Problem Solving": ["Time Management", "Effective Communication", "Critical Thinking"],
     "Technology": ["Quantum Computing", "Cybersecurity", "Astrophysics"],
     "Business": ["Macroeconomics", "Supply Chain Management", "Investment Strategies"],
-    "Environment": ["Climate Change Mitigation", "Renewable Energy", "Oceanography"]
+    "Science": ["Immunology", "Genetic Engineering", "Oceanography"]
 }
 
 def get_seo_fake_date():
@@ -35,18 +79,17 @@ def load_db():
 
 def save_db(data):
     for d in DIRS:
-        with open(f"{d}/database.json", "w") as f: json.dump(data[:100], f)
+        with open(f"{d}/database.json", "w") as f: json.dump(data[:150], f)
 
 def build_homepage():
     db = load_db()
     articles_html = ""
     for art in db:
-        # تصميم مطابق تماماً للصورة: عنوان، نبذة، ثم التاريخ
         articles_html += f"""
         <a href="{art['url']}" class="card">
+            <span class="category-pill">{art['category']}</span>
             <h2>{art['title']}</h2>
-            <p class="snippet">{art.get('snippet', 'Read the full comprehensive educational entry inside...')}...</p>
-            <div class="meta">{art['category']} &bull; {art['date']}</div>
+            <div class="meta">Published: {art['date']}</div>
         </a>
         """
         
@@ -55,32 +98,36 @@ def build_homepage():
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mnjnef - Global Discoveries</title>
+    <title>Mnjnef Encyclopedia - The Global Academic Repository</title>
     <style>
-        body {{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f9fafb; margin: 0; color: #111827; }}
-        header {{ background: #ffffff; padding: 25px 20px; border-bottom: 1px solid #e5e7eb; display: flex; align-items: center; justify-content: space-between; }}
-        header h1 {{ margin: 0; font-size: 1.5em; color: #111827; font-weight: bold; }}
-        header .policy {{ font-size: 0.9em; color: #4b5563; text-decoration: none; }}
-        .container {{ max-width: 800px; margin: 30px auto; padding: 0 20px; }}
-        
-        /* تصميم الكروت المطابق للصورة الأولى تماماً */
+        body {{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f3f4f6; margin: 0; color: #111827; }}
+        header {{ background: #1e3a8a; padding: 40px 20px; text-align: center; border-bottom: 4px solid #3b82f6; }}
+        header h1 {{ margin: 0; font-size: 2.8em; color: #ffffff; font-weight: 800; letter-spacing: -1px; }}
+        header p {{ color: #bfdbfe; font-size: 1.1em; margin-top: 10px; }}
+        .nav-links {{ margin-top: 20px; }}
+        .nav-links a {{ color: #ffffff; text-decoration: none; font-size: 0.9em; opacity: 0.8; margin: 0 10px; padding: 5px 10px; border: 1px solid rgba(255,255,255,0.3); border-radius: 4px; }}
+        .nav-links a:hover {{ opacity: 1; background: rgba(255,255,255,0.1); }}
+        .container {{ max-width: 900px; margin: 40px auto; padding: 0 20px; }}
         .grid {{ display: flex; flex-direction: column; gap: 20px; }}
-        .card {{ background: #ffffff; border: 1px solid #f3f4f6; border-radius: 12px; padding: 25px; text-decoration: none; color: inherit; transition: box-shadow 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.02); display: flex; flex-direction: column; }}
-        .card:hover {{ box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05); border-color: #e5e7eb; }}
-        .card h2 {{ margin: 0 0 10px 0; font-size: 1.5em; color: #111827; line-height: 1.3; font-weight: 800; }}
-        .card .snippet {{ margin: 0 0 20px 0; font-size: 1.05em; color: #4b5563; line-height: 1.6; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }}
-        .card .meta {{ font-size: 0.85em; color: #9ca3af; padding-top: 15px; border-top: 1px solid #f9fafb; }}
         
-        /* تم إزالة تاريخ 2026 نهائياً من الفوتر */
-        footer {{ text-align: center; padding: 30px; margin-top: 40px; color: #9ca3af; font-size: 0.9em; }}
+        .card {{ background: #ffffff; border: 1px solid #e5e7eb; border-radius: 10px; padding: 25px; text-decoration: none; color: inherit; transition: 0.2s; border-left: 5px solid #3b82f6; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }}
+        .card:hover {{ box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05); transform: translateX(5px); border-left-color: #1e3a8a; }}
+        .category-pill {{ display: inline-block; background: #eff6ff; color: #1e40af; font-size: 0.8em; font-weight: bold; text-transform: uppercase; padding: 4px 10px; border-radius: 4px; margin-bottom: 12px; }}
+        .card h2 {{ margin: 0 0 10px 0; font-size: 1.5em; color: #1f2937; line-height: 1.3; }}
+        .meta {{ font-size: 0.9em; color: #6b7280; }}
+        footer {{ text-align: center; padding: 30px; margin-top: 50px; color: #9ca3af; font-size: 0.9em; }}
     </style>
 </head>
 <body>
-    <header><h1>Mnjnef Archives</h1><a href="#" class="policy">Privacy Policy</a></header>
+    <header>
+        <h1>Mnjnef Encyclopedia</h1>
+        <p>The Global Academic & Scientific Repository</p>
+        <div class="nav-links"><a href="/privacy.html">Privacy Policy</a></div>
+    </header>
     <div class="container">
-        <div class="grid">{articles_html if articles_html else '<p style="text-align:center; color:#9ca3af;">Initializing knowledge base...</p>'}</div>
+        <div class="grid">{articles_html if articles_html else '<p style="text-align:center;">Indexing database...</p>'}</div>
     </div>
-    <footer>&copy; Mnjnef. All Rights Reserved.</footer>
+    <footer>&copy; Mnjnef Encyclopedia. All Rights Reserved.</footer>
 </body></html>"""
 
     for d in DIRS:
@@ -101,27 +148,22 @@ def generate_article():
 
         prompt = f"ACT AS: Senior Academic Researcher. Write a MASSIVE educational article about '{actual_title}'. RULES: English only. No politics. Format with HTML tags (<h2>, <p>). STRICTLY NO '#' SYMBOLS. DO NOT add 'Related Topics' section. Context: {context}"
         
-        req_ai = urllib.request.Request("https://api.mistral.ai/v1/chat/completions", data=json.dumps({"model": "mistral-large-latest", "messages": [{"role": "user", "content": prompt}], "temperature": 0.2}).encode('utf-8'), headers={"Content-Type": "application/json", "Authorization": f"Bearer {API_KEY}"})
+        req_ai = urllib.request.Request("https://api.mistral.ai/v1/chat/completions", data=json.dumps({"model": "mistral-large-latest", "messages": [{"role": "user", "content": prompt}], "temperature": 0.25}).encode('utf-8'), headers={"Content-Type": "application/json", "Authorization": f"Bearer {API_KEY}"})
         text = json.loads(urllib.request.urlopen(req_ai).read().decode())['choices'][0]['message']['content']
         text = re.sub(r'#+\s*|```html|```', '', text)
-        
-        # استخراج النبذة (Snippet) للصفحة الرئيسية
-        clean_text_for_snippet = re.sub('<[^<]+>', '', text)
-        snippet = clean_text_for_snippet[:150].strip()
-
         clean_title = re.sub(r'[#*@]', '', actual_title).strip()
         seo_date = get_seo_fake_date()
+        
+        # 💡 تم إزالة المجلدات: المقال يحفظ مباشرة في مسار الموقع
         file_name = re.sub(r'[^a-z0-9]', '', clean_title.lower()) + f"_{int(time.time())}.html"
-        article_url = f"/articles/{file_name}"
+        article_url = f"/{file_name}"
 
-        # 💡 تصميم الأزرار الصغيرة (Tags) المطابق للصورة الثانية
         db = load_db()
         related_tags = ""
         if len(db) > 0:
             random.shuffle(db)
-            for r_art in db[:8]: # نعرض 8 أزرار لأنها صغيرة الحجم
-                # نأخذ الكلمة الأولى والثانية فقط من العنوان ليكون الزر صغيراً
-                short_title = " ".join(r_art['title'].split()[:2])
+            for r_art in db[:8]:
+                short_title = " ".join(r_art['title'].split()[:3])
                 related_tags += f"<a href='{r_art['url']}' class='tag-pill'>{short_title}</a>"
 
         html_content = f"""<!DOCTYPE html>
@@ -129,70 +171,66 @@ def generate_article():
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{clean_title}</title>
+    <title>{clean_title} - Mnjnef Encyclopedia</title>
     <style>
         body {{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; line-height: 1.8; color: #111827; background: #ffffff; margin: 0; }}
-        header {{ padding: 20px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; background: #ffffff; z-index: 100; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }}
-        .logo {{ font-size: 1.4em; font-weight: 800; color: #111827; text-decoration: none; }}
-        .home-btn {{ background: #f3f4f6; color: #4b5563; padding: 8px 16px; border-radius: 20px; text-decoration: none; font-weight: 600; font-size: 0.9em; }}
-        .container {{ max-width: 760px; margin: 40px auto; padding: 0 20px; }}
+        header {{ padding: 20px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; background: #ffffff; z-index: 100; border-bottom: 1px solid #e5e7eb; }}
+        .logo {{ font-size: 1.5em; font-weight: 800; color: #1e3a8a; text-decoration: none; letter-spacing: -0.5px; }}
+        .home-btn {{ background: #f3f4f6; color: #4b5563; padding: 8px 16px; border-radius: 6px; text-decoration: none; font-weight: 600; font-size: 0.9em; border: 1px solid #e5e7eb; }}
+        .container {{ max-width: 800px; margin: 40px auto; padding: 0 20px; }}
         h1 {{ font-size: 2.6em; line-height: 1.2; margin-bottom: 20px; color: #111827; font-weight: 800; }}
         .meta {{ color: #6b7280; font-size: 0.95em; padding-bottom: 30px; border-bottom: 1px solid #f3f4f6; margin-bottom: 30px; }}
-        h2 {{ color: #111827; margin-top: 40px; font-size: 1.8em; font-weight: 800; }}
+        h2 {{ color: #1e40af; margin-top: 40px; font-size: 1.6em; font-weight: bold; }}
         p {{ font-size: 1.15em; color: #374151; margin-bottom: 25px; }}
         
-        /* تصميم الـ Tags المطابق للصورة الثانية */
         .tags-container {{ display: flex; flex-wrap: wrap; gap: 10px; margin-top: 50px; padding-top: 30px; border-top: 1px solid #f3f4f6; }}
-        .tag-pill {{ background: #f9fafb; border: 1px solid #e5e7eb; color: #4b5563; padding: 8px 16px; border-radius: 8px; text-decoration: none; font-size: 0.95em; transition: 0.2s; }}
-        .tag-pill:hover {{ background: #f3f4f6; border-color: #d1d5db; color: #111827; }}
+        .tag-pill {{ background: #f9fafb; border: 1px solid #e5e7eb; color: #4b5563; padding: 8px 15px; border-radius: 20px; text-decoration: none; font-size: 0.9em; font-weight: 500; transition: 0.2s; }}
+        .tag-pill:hover {{ background: #eff6ff; border-color: #bfdbfe; color: #1d4ed8; }}
         
-        /* إزالة 2026 من الفوتر */
-        footer {{ text-align: center; padding: 40px; color: #9ca3af; margin-top: 40px; font-size: 0.9em; }}
-        @media(max-width: 600px) {{ h1 {{ font-size: 2em; }} }}
+        footer {{ text-align: center; padding: 40px; color: #9ca3af; margin-top: 40px; font-size: 0.9em; border-top: 1px solid #f3f4f6; }}
+        @media(max-width: 600px) {{ h1 {{ font-size: 2.1em; }} }}
     </style>
 </head>
 <body>
-    <header><a href="/" class="logo">Mnjnef</a><a href="/" class="home-btn">Home</a></header>
+    <header><a href="/" class="logo">Mnjnef Encyclopedia</a><a href="/" class="home-btn">Library Home</a></header>
     <div class="container">
         <h1>{clean_title}</h1>
         <div class="meta">Published: {seo_date}</div>
         <div class="content">{text}</div>
         <div class="tags-container">{related_tags}</div>
     </div>
-    <footer>&copy; Mnjnef. All Rights Reserved.</footer>
+    <footer>&copy; Mnjnef Encyclopedia. All Rights Reserved.</footer>
 </body></html>"""
 
         for d in DIRS:
-            os.makedirs(f"{d}/articles", exist_ok=True)
             with open(f"{d}{article_url}", "w") as f: f.write(html_content)
 
-        db.insert(0, {"title": clean_title, "url": article_url, "category": cat.replace('_', ' '), "date": seo_date, "snippet": snippet})
+        db.insert(0, {"title": clean_title, "url": article_url, "category": cat.replace('_', ' '), "date": seo_date})
         save_db(db)
         build_homepage()
         os.system("chown -R www-data:www-data /var/www")
         print(f"✅ Published: {clean_title} (Date: {seo_date})", flush=True)
     except Exception as e: pass
 
-# إنشاء بيانات مبدئية فورية
+# إنشاء قاعدة بيانات مبدئية
 db_init = []
 for i in range(1, 4):
-    url = f"/articles/demo{i}.html"
-    db_init.append({"title": f"Academic Overview Vol {i}", "url": url, "category": "Archive", "date": get_seo_fake_date(), "snippet": "An in-depth look into the fundamental principles of modern academic research..."})
+    url = f"/base_vol_{i}.html"
+    db_init.append({"title": f"Academic Repository Vol {i}", "url": url, "category": "Archive", "date": get_seo_fake_date()})
     for d in DIRS:
-        os.makedirs(f"{d}/articles", exist_ok=True)
         with open(f"{d}{url}", "w") as f: f.write(f"<html><head><meta http-equiv='refresh' content='0; url=/'></head><body>Redirecting...</body></html>")
 save_db(db_init)
 build_homepage()
 
-# حلقة 20 ثانية
+# 💡 النشر كل 20 ثانية بشكل واقعي وصارم
 while True:
     generate_article()
     time.sleep(20.0)
 EOF
 
-# 3. التشغيل النهائي
+# 4. إعادة التشغيل
 chown -R www-data:www-data /var/www
 systemctl daemon-reload
 systemctl restart mnjnef_direct
 systemctl restart nginx
-echo "✅ تم البناء المطابق للصور 100%!"
+echo "✅ تم البناء! (بدون مجلدات / سياسة خصوصية AdSense / كل 20 ثانية / موسوعة منجنيف)"
