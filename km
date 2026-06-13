@@ -1,24 +1,11 @@
-cat << 'EOF' > /root/titan_seo_engine.py
-import os, time, random, json, re, urllib.request
-from urllib.parse import quote
-from datetime import datetime, timedelta
+cat << 'EOF' >> /root/titan_seo_engine.py
 
-API_KEY = "HKxK4S2UrTBt8ja93wkndgltN1W3UaHD"
-DIRS = ["/var/www/html", "/var/www/mnjnef.com"]
-CATS = {"Education": ["Pedagogy", "Distance Learning"], "Psychology": ["Behavioral Economics"], "Technology": ["Quantum Computing"], "Science": ["Astrophysics"]}
-
-def get_fake_date():
-    start = datetime(2017, 1, 1); end = datetime(2024, 1, 1)
-    return (start + timedelta(days=random.randrange((end - start).days))).strftime('%B %d, %Y')
-
-def load_db():
-    try:
-        with open("/var/www/html/database.json", "r") as f: return json.load(f)
-    except: return []
-
-def save_db(data):
+def build_pages():
+    db = load_db()
+    cards = "".join([f"<a href='{a['url']}' class='card'><span class='badge'>{a['category']}</span><h2>{a['title']}</h2><div class='date'>Published: {a['date']}</div></a>" for a in db])
+    html = f"<!DOCTYPE html><html lang='en'><head><meta charset='UTF-8'><meta name='viewport' content='width=device-width, initial-scale=1.0'><title>Mnjnef Encyclopedia</title><style>body{{font-family:sans-serif;background:#f3f4f6;margin:0;}} header{{background:#1e3a8a;padding:40px 20px;text-align:center;}} header h1{{color:#fff;margin:0;font-size:2.5em;}} header a{{color:#bfdbfe;text-decoration:none;margin-top:10px;display:inline-block;border:1px solid #bfdbfe;padding:5px 15px;border-radius:5px;}} .container{{max-width:900px;margin:40px auto;padding:0 20px;display:flex;flex-direction:column;gap:20px;}} .card{{background:#fff;padding:25px;border-radius:10px;text-decoration:none;color:#111;border-left:5px solid #3b82f6;box-shadow:0 2px 5px rgba(0,0,0,0.05);}} .badge{{background:#eff6ff;color:#1e40af;padding:5px 10px;border-radius:5px;font-size:0.8em;font-weight:bold;text-transform:uppercase;}} .card h2{{margin:15px 0 10px 0;}} .date{{color:#666;font-size:0.9em;}} footer{{text-align:center;padding:30px;color:#666;}}</style></head><body><header><h1>Mnjnef Encyclopedia</h1><a href='/privacy.html'>Privacy Policy</a></header><div class='container'>{cards if cards else '<p>Indexing...</p>'}</div><footer>&copy; Mnjnef Encyclopedia</footer></body></html>"
     for d in DIRS:
-        with open(f"{d}/database.json", "w") as f: json.dump(data[:100], f)
+        with open(f"{d}/index.html", "w") as f: f.write(html)
 
 EOF
-echo "✅ الجزء الأول تم بنجاح."
+echo "✅ الجزء الثاني تم بنجاح."
