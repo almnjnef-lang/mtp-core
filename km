@@ -1,78 +1,8 @@
-# 1. إيقاف المحرك القديم وتنظيف السيرفر تماماً
+```bash
+# 1. إيقاف المحرك
 systemctl stop mnjnef_direct 2>/dev/null
-pkill -f python3
-rm -rf /var/www/html/*
-rm -rf /var/www/mnjnef.com/*
-mkdir -p /var/www/html/articles
-mkdir -p /var/www/mnjnef.com/articles
 
-# 2. بناء الصفحة الرئيسية (واجهة المستطيلات الفخمة والاحترافية)
-cat << 'HTML' > /var/www/html/index.html
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mnjnef Global Encyclopedia</title>
-    <style>
-        body { font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f4f7f6; color: #1a202c; margin: 0; padding: 0; }
-        header { background: #1a365d; color: #ffffff; padding: 50px 20px; text-align: center; border-bottom: 5px solid #3182ce; }
-        header h1 { margin: 0; font-size: 3em; font-weight: 800; letter-spacing: -1px; }
-        header p { font-size: 1.2em; color: #bee3f8; margin-top: 10px; }
-        .container { max-width: 900px; margin: 40px auto; padding: 0 20px; }
-        
-        /* تصميم المستطيلات المتداخلة */
-        .grid { display: flex; flex-direction: column; gap: 25px; }
-        .article-card { display: flex; flex-direction: column; background: #ffffff; border: 1px solid #e2e8f0; border-left: 6px solid #3182ce; padding: 30px; border-radius: 12px; text-decoration: none; color: inherit; transition: all 0.3s ease; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
-        .article-card:hover { transform: translateX(10px); box-shadow: 0 12px 20px rgba(0,0,0,0.1); border-left-color: #2b6cb0; }
-        .badge { align-self: flex-start; background: #ebf8ff; color: #2b6cb0; font-size: 0.85em; font-weight: bold; text-transform: uppercase; padding: 6px 15px; border-radius: 20px; margin-bottom: 15px; }
-        .article-card h2 { margin: 0 0 10px 0; font-size: 1.7em; color: #2d3748; line-height: 1.3; }
-        .date { color: #718096; font-size: 0.95em; font-weight: 500; }
-        
-        footer { text-align: center; padding: 40px; margin-top: 60px; color: #a0aec0; border-top: 1px solid #e2e8f0; }
-    </style>
-</head>
-<body>
-    <header>
-        <h1>Mnjnef Encyclopedia</h1>
-        <p>The Global Academic & Scientific Repository</p>
-    </header>
-    <div class="container">
-        <div class="grid" id="articlesGrid">
-            <!-- سيتم حقن المستطيلات هنا برمجياً -->
-        </div>
-    </div>
-    <footer>&copy; 2026 Mnjnef Research Platform. All Rights Reserved.</footer>
-
-    <script>
-        async function fetchArticles() {
-            try {
-                const res = await fetch('/database.json?t=' + new Date().getTime());
-                const articles = await res.json();
-                const grid = document.getElementById('articlesGrid');
-                if(articles.length > 0) {
-                    grid.innerHTML = '';
-                    articles.forEach(art => {
-                        grid.innerHTML += `
-                            <a href="${art.url}" class="article-card">
-                                <span class="badge">${art.category}</span>
-                                <h2>${art.title}</h2>
-                                <span class="date">Published: ${art.date}</span>
-                            </a>
-                        `;
-                    });
-                }
-            } catch (e) { console.error(e); }
-        }
-        fetchArticles();
-        setInterval(fetchArticles, 10000); // تحديث الصفحة الرئيسية تلقائياً
-    </script>
-</body>
-</html>
-HTML
-cp /var/www/html/index.html /var/www/mnjnef.com/index.html
-
-# 3. محرك الذكاء الاصطناعي الشامل (توليد، تصميم المقال، روابط ذات صلة، وتاريخ مزور)
+# 2. تحديث المحرك الرئيسي ليعمل كل 20 ثانية مع خطة جوجل
 cat << 'EOF' > /root/titan_seo_engine.py
 import os, time, random, json, re, sys
 import urllib.request
@@ -91,7 +21,7 @@ CATS = {
     "Medicine": ["Immunology", "Genetic Engineering", "Neuroscience"]
 }
 
-# نظام آلة الزمن (تواريخ قديمة لتجاوز حظر جوجل)
+# خطة SEO الذكية: تواريخ عشوائية بين 2017 و 2024
 def get_seo_fake_date():
     start = datetime(2017, 1, 1)
     end = datetime(2024, 1, 1)
@@ -109,21 +39,6 @@ def save_db(data):
     with open(DB_PATH, "w") as f: json.dump(data[:100], f)
     os.system("cp /var/www/html/database.json /var/www/mnjnef.com/database.json 2>/dev/null")
 
-# إنشاء مقالات أساسية فورية لكي لا تظهر شاشة التحميل للزائر
-def create_fallback_data():
-    db = []
-    for i in range(1, 4):
-        title = f"Fundamental Academic Archive Vol {i}"
-        url = f"/articles/base{i}.html"
-        cat = "Archive"
-        date = get_seo_fake_date()
-        html = f"""<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>{title}</title><style>body {{ font-family: 'Segoe UI', Roboto, sans-serif; line-height: 1.8; color: #1a202c; background: #ffffff; margin: 0; }} header {{ padding: 20px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; background: #ffffff; }} .logo {{ font-size: 1.5em; font-weight: bold; color: #1a365d; text-decoration: none; }} .home-btn {{ background: #f7fafc; color: #4a5568; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: bold; border: 1px solid #e2e8f0; }} .container {{ max-width: 800px; margin: 40px auto; padding: 0 20px; }} h1 {{ font-size: 2.5em; border-bottom: 2px solid #edf2f7; padding-bottom: 20px; margin-bottom: 15px; color: #1a202c; }}</style></head><body><header><a href="/" class="logo">Mnjnef Encyclopedia</a><a href="/" class="home-btn">🏠 Home</a></header><div class="container"><h1>{title}</h1><p>Our independent research team is indexing the database. Comprehensive articles will populate here automatically.</p></div></body></html>"""
-        with open(f"/var/www/html{url}", "w") as f: f.write(html)
-        os.system(f"cp /var/www/html{url} /var/www/mnjnef.com{url} 2>/dev/null")
-        db.append({"title": title, "url": url, "category": cat, "date": date})
-    save_db(db)
-
-# إنشاء المقالات الحقيقية
 def generate_article():
     cat = random.choice(list(CATS.keys()))
     topic = random.choice(CATS[cat])
@@ -147,12 +62,11 @@ def generate_article():
         file_name = re.sub(r'[^a-z0-9]', '', clean_title.lower()) + f"_{int(time.time())}.html"
         article_url = f"/articles/{file_name}"
 
-        # بناء واجهة المقال + روابط ذات صلة (المستطيلات السفلية)
         db = load_db()
         related_html = "<div class='related-section'><h3>📚 Related Topics</h3><div class='related-grid'>"
         if len(db) > 0:
             random.shuffle(db)
-            for r_art in db[:3]: # سحب 3 مقالات كأقتراحات
+            for r_art in db[:3]:
                 related_html += f"<a href='{r_art['url']}' class='related-card'><h4>{r_art['title']}</h4><span>{r_art['category']}</span></a>"
         related_html += "</div></div>"
 
@@ -173,8 +87,6 @@ def generate_article():
         h2 {{ color: #2d3748; margin-top: 50px; font-size: 1.8em; }}
         p {{ font-size: 1.15em; color: #2d3748; margin-bottom: 25px; }}
         .meta-info {{ color: #718096; font-size: 0.95em; margin-bottom: 50px; text-transform: uppercase; font-weight: 600; padding: 15px; background: #f7fafc; border-radius: 8px; border-left: 4px solid #3182ce; }}
-        
-        /* مواضيع ذات صلة - المستطيلات */
         .related-section {{ margin-top: 80px; padding-top: 40px; border-top: 4px solid #f7fafc; }}
         .related-section h3 {{ color: #1a202c; font-size: 1.8em; margin-bottom: 25px; }}
         .related-grid {{ display: flex; flex-direction: column; gap: 15px; }}
@@ -182,7 +94,6 @@ def generate_article():
         .related-card:hover {{ border-color: #2b6cb0; box-shadow: 0 10px 15px rgba(0,0,0,0.05); transform: translateX(8px); }}
         .related-card h4 {{ margin: 0 0 8px 0; font-size: 1.3em; color: #2d3748; }}
         .related-card span {{ font-size: 0.9em; color: #718096; text-transform: uppercase; font-weight: bold; background: #ebf8ff; padding: 4px 10px; border-radius: 4px; color: #2b6cb0; }}
-        
         @media(max-width: 600px) {{ h1 {{ font-size: 2.2em; }} header {{ padding: 15px; }} }}
     </style>
 </head>
@@ -200,7 +111,6 @@ def generate_article():
         with open(f"/var/www/html{article_url}", "w") as f: f.write(html_content)
         os.system(f"cp /var/www/html{article_url} /var/www/mnjnef.com{article_url} 2>/dev/null")
         
-        # فلترة المقالات الوهمية القديمة وإضافة الجديد
         db = [art for art in db if not art['url'].startswith('/articles/base')]
         db.insert(0, {"title": clean_title, "url": article_url, "category": cat.replace('_', ' '), "date": seo_date})
         save_db(db)
@@ -211,36 +121,14 @@ def generate_article():
     except Exception as e:
         pass
 
-# التنفيذ الفوري
-create_fallback_data()
-generate_article()
-
-# دورة النشر كل 25 ثانية
+# 💡 تم التحديث: دورة النشر أصبحت كل 20 ثانية!
 while True:
-    time.sleep(random.uniform(25.0, 30.0))
+    time.sleep(20.0)
     generate_article()
 EOF
 
-# 4. تثبيت المحرك وإعادة تشغيل السيرفر
-cat << 'SRV' > /etc/systemd/system/mnjnef_direct.service
-[Unit]
-Description=Mnjnef Final Master Engine
-After=network.target
-
-[Service]
-Type=simple
-User=root
-ExecStart=/usr/bin/python3 /root/titan_seo_engine.py
-Restart=always
-RestartSec=5
-
-[Install]
-WantedBy=multi-user.target
-SRV
-
-systemctl daemon-reload
-systemctl enable mnjnef_direct 2>/dev/null
+# 3. إعادة التشغيل
 systemctl restart mnjnef_direct
-systemctl restart nginx
+echo "✅ تم التحديث! السيرفر الآن سينشر مقالاً جديداً كل 20 ثانية مع تواريخ قديمة لحمايتك من حظر جوجل."
 
-echo "✅ تم البناء النهائي! تم تفعيل خطة SEO الذكية، وتم إصلاح الواجهات بالكامل!"
+```
