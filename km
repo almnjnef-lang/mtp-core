@@ -1,1 +1,1 @@
-{{4.choices[1].message.content}}
+https://newsdata.io/api/1/latest?language=en&category=world,technology,science,business,sports,health,food,education
