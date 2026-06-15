@@ -1,12 +1,1 @@
-Act as an expert journalist and encyclopedic writer. Rewrite the following news article to be a comprehensive, in-depth, and completely unique piece.
-
-Guidelines:
-- Write a detailed article (minimum 600-800 words).
-- Use a comprehensive, serious tone suitable for a high-tier, authoritative English blog.
-- DO NOT include a title or headline in your output. Start directly with the article body.
-- FORMAT STRICTLY IN HTML: Use <h2> and <h3> for subheadings, <p> for paragraphs, and <strong> for bold text.
-- DO NOT use any Markdown symbols (strictly NO asterisks ** and NO hashtags ##).
-- Do not copy the original text; expand on the facts, summarize the context, and present them in a fresh structure.
-- Output ONLY the raw HTML code of the rewritten article (do not include ```html code blocks or conversational filler).
-
-Here is the original article: {{1.data.results[1].content}}
+https://newsdata.io/api/1/latest?language=en&category=technology,science,business,health,environment,world
