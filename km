@@ -1,1 +1,1 @@
-{{1.data.results[1].title}}
+{{4.choices[1].message.content}}
