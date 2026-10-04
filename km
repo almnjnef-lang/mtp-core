@@ -2,9 +2,9 @@ import discord
 from discord.ext import commands
 from google import genai
 
-# تم إضافة توكن الديسكورد الخاص بك مباشرة
+# توكن البوت ومفتاح Gemini جاهزان
 DISCORD_BOT_TOKEN = "MTU1NjA5ODc1ODcxNzIxODg5OA.Gr0AaX.EPktKv_2KQmALr1wydQrBLbIzwVQrc83nfMD5o"
-GEMINI_API_KEY = "ضع_هنا_GEMINI_API_KEY"
+GEMINI_API_KEY = "AQ.Ab8RN6Jre032NB2AHhqd-lNSII6NJOPjjwW9MMT-ID3AhcAQFg"
 
 ai_client = genai.Client(api_key=GEMINI_API_KEY)
 
